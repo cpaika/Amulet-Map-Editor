@@ -188,10 +188,13 @@ def render(xs,ys,Z,L):
                       scene=dict(xaxis_title="m East",yaxis_title="m North",zaxis_title="elev (m)",
                                  aspectmode="manual",aspectratio=dict(x=1,y=1,z=0.35),
                                  camera=dict(eye=dict(x=1.4,y=-1.4,z=1.0))),
-                      width=1100,height=850,margin=dict(l=0,r=0,t=70,b=0))
+                      autosize=True,margin=dict(l=0,r=0,t=70,b=0))
     out=os.path.join(HERE,"trowbridge_noise_3d.html")
-    fig.write_html(out,include_plotlyjs="inline")
-    print("[3d] wrote",out,file=sys.stderr)
+    # CDN (not inline) keeps the file small + responsive layout -> loads on mobile
+    fig.write_html(out, include_plotlyjs="cdn", full_html=True,
+                   default_width="100%", default_height="92vh",
+                   config={"responsive": True})
+    print("[3d] wrote",out,os.path.getsize(out)//1024,"KB",file=sys.stderr)
 
 if __name__=="__main__":
     if "--render-only" in sys.argv:

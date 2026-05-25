@@ -127,6 +127,51 @@ This is why Trowbridge Circle's contribution from Main Street (154 m away) is
   levels carry roughly ±3–5 dB uncertainty; the **relative ranking** is driven
   by measured volumes and true distances and is robust.
 
+## Air quality at 6 Trowbridge Circle
+
+Modelled from the **Open-Meteo / Copernicus CAMS** air-quality model (free, no
+key; `python3 air_quality.py`). Generally **Good-to-Moderate**, typical of
+suburban central Massachusetts.
+
+![Air quality, past 12 months](trowbridge_air_quality.png)
+
+- **Right now:** US AQI **30 ("Good")**, PM2.5 2.9 µg/m³.
+- **Past 12 months:** US-AQI mean **45**; by daily-max category — **51 % Good,
+  38 % Moderate, 10 % USG (unhealthy for sensitive groups), 1 % Unhealthy.**
+
+| Pollutant | Annual mean | 95th pct | Max | Note |
+|---|---:|---:|---:|---|
+| PM2.5 (µg/m³) | **9.0** | 22.5 | 77.3 | right at the 2024 EPA annual standard (9.0); 24-h peaks (~77) are wildfire-smoke days, still under the 35 24-h standard only on average |
+| NO₂ (µg/m³) | 10.0 | 28.6 | 70.8 | **low** — consistent with being far from highways |
+| Ozone (µg/m³) | 75 | 124 | 179 | the main regional issue; summer afternoons |
+
+### Local source breakdown (added on top of the regional background)
+
+The CAMS values above are regional. On top of that, a calibrated near-road
+decay model (`dC = A·AADT·e^(−d/L)`, calibrated so a 100k-AADT highway kerb ≈
++18 µg/m³ NO₂, per HEI near-road studies) estimates the **local** increment at
+the house, and aircraft from Worcester Regional Airport (ORH, ~10 km WSW):
+
+| Local source | NO₂ increment | PM2.5 increment |
+|---|---:|---:|
+| Road traffic (Main St 154 m + South St 148 m + cul-de-sac) | **+2.6 µg/m³** | +0.4 µg/m³ |
+| Aircraft (ORH, ~10 km — LTO emissions stay near the airfield) | +0.06 µg/m³ | +0.008 µg/m³ |
+
+So local traffic adds only ~3 µg/m³ NO₂ to the ~10 µg/m³ regional mean, and
+**aircraft is negligible** at this distance. A home right on I-290 or Route 9
+would see a *much* larger road term (tens of µg/m³ NO₂ at the kerb).
+
+**Takeaways:** Particulate and NO₂ are low — the low NO₂ is the air-quality
+echo of the same fact that makes it quiet: it's away from heavy traffic.
+Summer **ozone** (regional, not local) and occasional **wildfire-smoke** PM2.5
+spikes are the only times air dips into the Moderate/USG range. Annual PM2.5
+sits essentially **at** the new stricter EPA limit, like most of the Northeast.
+
+*Caveat:* CAMS is a regional model (~11 km grid), so this is **area** air
+quality, not hyperlocal. Immediately beside I-290 or Route 9 the traffic-related
+NO₂/PM2.5 would run higher than these values; 6 Trowbridge Circle's distance
+from those corridors keeps its traffic-related share on the low end.
+
 ## Files / how to run
 
 ```bash
