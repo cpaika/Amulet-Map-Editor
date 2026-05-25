@@ -221,6 +221,7 @@ def dominant_roads(lvl, idx, n=6):
 # --------------------------------------------------------------------------- #
 RECEIVERS = [
     ("6 Trowbridge Circle (TARGET)",            42.2940843, -71.7007366),
+    ("17A EK Court (off S. Grafton St)",         42.2442981, -71.7438384),
     ("Edgemere (residential, off Rt 20)",        42.2487048, -71.7411810),
     ("Sherwood Ave (mid-town residential)",      42.2840550, -71.7270729),
     ("Jordan Rd (Fairlawn, near lake)",          42.2670815, -71.7496331),
@@ -321,7 +322,61 @@ def run_map(step=35.0, radius=2200.0):
     print(f"[map] saved {out}", file=sys.stderr)
 
 
+def _load_boundary():
+    """Shrewsbury town outline as a metric polygon (x,y)."""
+    ring = json.load(open(os.path.join(HERE, "boundary_shrewsbury.json")))["ring"]
+    return np.array([ll_to_m(lat, lon) for lon, lat in ring])
+
+def _inside(poly, x, y):
+    vx, vy = poly[:,0], poly[:,1]
+    n = len(poly); inside = False; j = n-1
+    for i in range(n):
+        if ((vy[i] > y) != (vy[j] > y)) and \
+           (x < (vx[j]-vx[i])*(y-vy[i])/(vy[j]-vy[i]+1e-12) + vx[i]):
+            inside = not inside
+        j = i
+    return inside
+
+def run_survey(stride=6, sample=900, seed=1):
+    """Average the FULL model over a representative sample of Shrewsbury houses.
+    Houses = residential-height (3-9 m) building cells inside the town boundary,
+    thinned on a grid stride so large footprints aren't over-counted."""
+    poly = _load_boundary()
+    cand = []
+    for jy in range(0, NY, stride):
+        for ix in range(0, NX, stride):
+            h = BLDG[jy, ix]
+            if 3.0 <= h <= 9.0:
+                x = X0 + ix*RES; y = Y0 + jy*RES
+                if _inside(poly, x, y):
+                    cand.append((x, y))
+    rng = np.random.default_rng(seed)
+    if len(cand) > sample:
+        cand = [cand[i] for i in rng.choice(len(cand), sample, replace=False)]
+    print(f"[survey] {len(cand)} sampled Shrewsbury houses ...", file=sys.stderr)
+    levels = np.array([total_leq(x, y)[0] for x, y in cand])
+    tro = total_leq(*ll_to_m(42.2940843, -71.7007366))[0]
+    ek  = total_leq(*ll_to_m(42.2442981, -71.7438384))[0]
+    pct = lambda v: 100.0*np.mean(levels < v)
+    print("="*66)
+    print("Average Shrewsbury house  (full model, dB(A) daytime Leq)")
+    print("="*66)
+    print(f"  houses sampled        {len(levels)}")
+    print(f"  mean                  {levels.mean():.1f}")
+    print(f"  median                {np.median(levels):.1f}")
+    print(f"  10th / 90th pctile    {np.percentile(levels,10):.1f} / {np.percentile(levels,90):.1f}")
+    print(f"  quietest / loudest    {levels.min():.1f} / {levels.max():.1f}")
+    print("-"*66)
+    print(f"  6 Trowbridge Circle   {tro:.1f}   ({tro-levels.mean():+.1f} vs mean; "
+          f"quieter than {100-pct(tro):.0f}% of houses)")
+    print(f"  17A EK Court          {ek:.1f}   ({ek-levels.mean():+.1f} vs mean; "
+          f"quieter than {100-pct(ek):.0f}% of houses)")
+
+
 if __name__ == "__main__":
-    run_table()
-    if "--map" in sys.argv:
-        run_map()
+    if "--survey" in sys.argv:
+        run_survey()
+    else:
+        run_table()
+        if "--map" in sys.argv:
+            run_map()

@@ -20,6 +20,7 @@ louder**, i.e. roughly **3–5× louder** to the ear.
 | Location | Leq dB(A) | vs. Trowbridge |
 |---|---:|---|
 | Shrewsbury Town Hall / common | 49.3 | −1 (about the same) |
+| 17A EK Court (off S. Grafton St) | 50.1 | −1 (about the same) |
 | **6 Trowbridge Circle (target)** | **50.7** | reference |
 | Sherwood Ave (mid-town residential) | 54.4 | +4 (~1.3× louder) |
 | Jordan Rd (Fairlawn, near lake) | 55.0 | +4 (~1.3× louder) |
@@ -33,6 +34,25 @@ Scale: every **+10 dB ≈ twice as loud**. Dominant sources at 6 Trowbridge
 Circle (after shielding): Main Street (45 dB, AADT 14,002) and the cul-de-sac
 itself; the highways (Route 9 AADT 44k, I-290 AADT 92.8k) are audible only as a
 distant ~30–35 dB hum.
+
+## Bottom line — 6 Trowbridge Circle in plain terms
+
+- **vs. 17A EK Court:** ~50–51 dB(A) at both (50.7 vs 50.1) — effectively
+  identical, within the model's noise. Both are quiet, set-back cul-de-sac
+  spots; you would not perceive a difference standing in either yard.
+- **vs. the average Shrewsbury house:** averaging the full model over **900
+  sampled homes town-wide**, the typical Shrewsbury house is **~54 dB(A)**
+  (mean 54.7, median 53.9), spanning ~44 dB in deep interiors to ~74 dB
+  fronting the highways. 6 Trowbridge Circle (50.7) is **~4 dB quieter than
+  average — quieter than ~83 % of houses in town**; 17A EK Court (~88 %).
+- **What ~51 dB(A) sounds like outside:** a calm suburban background — birds,
+  rustling leaves, and a faint, steady hum of distant highway traffic. Roughly
+  the level of a quiet library or a refrigerator a few feet away, and well
+  below normal conversation (~60 dB at 1 m). You can chat in a relaxed voice in
+  the yard without raising it, and it sits at/under the WHO ~53 dB guideline
+  for residential road noise.
+
+(Reproduce with `python3 sound_model.py --survey`.)
 
 ## Data (all real, downloaded — see `fetch_data.sh`)
 
