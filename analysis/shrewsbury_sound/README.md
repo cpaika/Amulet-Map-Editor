@@ -61,6 +61,42 @@ Airport corridor passes ~7 km south).
 
 (Reproduce with `python3 sound_model.py --survey`.)
 
+## Can a noise fence make 6 Trowbridge Circle quieter? — No, not meaningfully
+
+Modelled on the **1 m LiDAR** (`python3 fence_analysis.py`). The verdict: a
+fence or berm buys **≤ ~1 dB at the house, ≤ 1.6 dB even for a full 3 m
+perimeter wall** — below the ~3 dB you'd need to *perceive* any difference.
+
+| Scenario (north side, toward Main St) | Δ at house | Δ at front yard |
+|---|---:|---:|
+| 6 ft (1.8 m) fence | −0.1 dB | −0.2 dB |
+| 8 ft (2.4 m) fence | −0.3 dB | −0.4 dB |
+| 10 ft (3.0 m) fence | −0.5 dB | −0.9 dB |
+| 4 m berm+fence | −0.7 dB | −1.6 dB |
+| **full 3 m perimeter wall** (upper bound) | **−1.6 dB** | — |
+| 8 ft wall blocking the cul-de-sac (best single fence) | −1.1 dB | — |
+
+**Why so little — three reasons the LiDAR makes clear:**
+1. **You're on a rise.** The house pad is 163.4 m; the ground falls to ~158 m
+   toward Main Street (≈159.5 m), so your ears sit **~5 m above the road,
+   looking slightly downhill at it.** An elevated receiver "sees over" any
+   practical fence — barriers work best when source *and* receiver are low and
+   near the fence, the opposite of here.
+2. **Noise comes from all sides.** Main Street (~45 dB, 154 m to the N), your
+   **own cul-de-sac** (Trowbridge Circle, ~44 dB, only 23 m to the S), and
+   South Street (~42 dB, 148 m SW). A fence on one side can't touch the others.
+3. **The loud sources are far and at shallow angles** (154 m+), where a low
+   near-receiver barrier gives almost no path-length difference.
+
+**What that means:** there's little to fix — it's already quiet (~50 dB,
+quieter than ~79 % of town). If you specifically want a calmer *patio*, the
+best lever is the **house's own shadow** (put seating on the side away from
+Main Street) plus a **solid wall placed close to and between that seating and
+the nearest source**, kept low — but even then expect only ~1–2 dB. Dense
+vegetation adds ≤ ~1–2 dB acoustically (mostly psychological/visual). The real
+levers (the highways, your street) aren't fixable from the yard; for indoor
+quiet, upgraded windows on any Main-Street-facing room do more than any fence.
+
 ## Data (all real, downloaded — see `fetch_data.sh`)
 
 | Layer | Source | Used for |
