@@ -271,6 +271,7 @@ def run_map(step=35.0, radius=2200.0):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    import matplotlib.patheffects as pe
     xs = np.arange(X0+160, X0+(NX-20)*RES, step)
     ys = np.arange(Y0+160, Y0+(NY-20)*RES, step)
     W, H = len(xs), len(ys)
@@ -301,9 +302,12 @@ def run_map(step=35.0, radius=2200.0):
     for label, lat, lon in RECEIVERS:
         x,y = ll_to_m(lat,lon)
         if label.startswith("6 Trowbridge"):
-            ax.plot(x,y,"*",color="white",ms=20,mec="k",mew=1.2)
-            ax.annotate("6 Trowbridge Circle", (x,y), color="white",
-                        fontsize=9, weight="bold", xytext=(8,8), textcoords="offset points")
+            ax.annotate("6 Trowbridge Circle", xy=(x,y), xytext=(x+1250, y+1050),
+                        color="white", fontsize=9, weight="bold",
+                        path_effects=[pe.withStroke(linewidth=2.5, foreground="k")],
+                        arrowprops=dict(arrowstyle="-|>", color="white", lw=1.6,
+                                        mutation_scale=14,
+                                        path_effects=[pe.withStroke(linewidth=3, foreground="k")]))
         else:
             ax.plot(x,y,"o",color="white",ms=4,mec="k",mew=0.6)
     fig.colorbar(im, ax=ax, label="A-weighted Leq, dB", shrink=0.8)
