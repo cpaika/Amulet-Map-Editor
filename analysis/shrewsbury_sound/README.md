@@ -19,32 +19,39 @@ louder**, i.e. roughly **3–5× louder** to the ear.
 
 | Location | Leq dB(A) | vs. Trowbridge |
 |---|---:|---|
-| Shrewsbury Town Hall / common | 49.3 | −1 (about the same) |
-| 17A EK Court (off S. Grafton St) | 50.1 | −1 (about the same) |
-| **6 Trowbridge Circle (target)** | **50.7** | reference |
-| Sherwood Ave (mid-town residential) | 54.4 | +4 (~1.3× louder) |
-| Jordan Rd (Fairlawn, near lake) | 55.0 | +4 (~1.3× louder) |
-| Edgemere (residential, off Rt 20) | 55.3 | +5 (~1.4× louder) |
-| Reservoir St (far north, near I-290) | 61.1 | +10 (~2× louder) |
-| Quinsigamond Ave (lakeside, by Rt 9/290) | 65.9 | +15 (~2.9× louder) |
-| Grafton St (fronting MA-140) | 69.7 | +19 (~3.7× louder) |
-| Harrington Ave (off Route 9) | 73.9 | +23 (~5× louder) |
+| Shrewsbury Town Hall / common | 48.5 | −2 (about the same) |
+| **6 Trowbridge Circle (target)** | **50.5** | reference |
+| 17A EK Court (Half Moon Cove, by Rt 20) | 50.9 | +0 (about the same) |
+| Sherwood Ave (mid-town residential) | 54.1 | +4 (~1.3× louder) |
+| Jordan Rd (Fairlawn, near lake) | 54.7 | +4 (~1.3× louder) |
+| Edgemere (residential, off Rt 20) | 55.4 | +5 (~1.4× louder) |
+| Reservoir St (far north, near I-290) | 60.2 | +10 (~2× louder) |
+| Quinsigamond Ave (lakeside, by Rt 9/290) | 65.3 | +15 (~2.8× louder) |
+| Grafton St (fronting MA-140) | 69.5 | +19 (~3.7× louder) |
+| Harrington Ave (off Route 9) | 71.4 | +21 (~4.2× louder) |
 
 Scale: every **+10 dB ≈ twice as loud**. Dominant sources at 6 Trowbridge
-Circle (after shielding): Main Street (45 dB, AADT 14,002) and the cul-de-sac
-itself; the highways (Route 9 AADT 44k, I-290 AADT 92.8k) are audible only as a
-distant ~30–35 dB hum.
+Circle (after shielding): Main Street (~45 dB, AADT 14,002) and the cul-de-sac
+itself; the highways (Route 9 ~41k, I-290 ~86k AADT) are audible only as a
+distant ~30–35 dB hum. Aircraft is negligible here (Leq ~12 dB; the Worcester
+Airport corridor passes ~7 km south).
 
 ## Bottom line — 6 Trowbridge Circle in plain terms
 
-- **vs. 17A EK Court:** ~50–51 dB(A) at both (50.7 vs 50.1) — effectively
-  identical, within the model's noise. Both are quiet, set-back cul-de-sac
-  spots; you would not perceive a difference standing in either yard.
+- **vs. 17A EK Court:** ~50–51 dB(A) at both (50.5 vs 50.9) — about the same
+  for road noise. But they are different *kinds* of quiet: 6 Trowbridge Circle
+  is an inland cul-de-sac shielded by houses, while **17A EK Court is waterfront
+  on Half Moon Cove (Lake Quinsigamond), ~200 m from Route 20** — so its noise
+  is Route 20 (which you hear), it gets a small (+1 dB) boost from sound
+  reflecting off the open water, and it catches **real aircraft overflights**
+  (Leq ~40 dB, single-event Lmax ~68 dB) because it sits near the Worcester
+  Airport departure corridor. 6 Trowbridge Circle gets essentially none of
+  these. Net daytime road Leq is a wash; EK Court's soundscape is just busier.
 - **vs. the average Shrewsbury house:** averaging the full model over **900
   sampled homes town-wide**, the typical Shrewsbury house is **~54 dB(A)**
-  (mean 54.7, median 53.9), spanning ~44 dB in deep interiors to ~74 dB
-  fronting the highways. 6 Trowbridge Circle (50.7) is **~4 dB quieter than
-  average — quieter than ~83 % of houses in town**; 17A EK Court (~88 %).
+  (mean 54.0, median 53.3), spanning ~44 dB in deep interiors to ~72 dB
+  fronting the highways. 6 Trowbridge Circle (50.5) is **~3.5 dB quieter than
+  average — quieter than ~79 % of houses in town**; 17A EK Court (50.9, ~76 %).
 - **What ~51 dB(A) sounds like outside:** a calm suburban background — birds,
   rustling leaves, and a faint, steady hum of distant highway traffic. Roughly
   the level of a quiet library or a refrigerator a few feet away, and well
@@ -58,13 +65,16 @@ distant ~30–35 dB hum.
 
 | Layer | Source | Used for |
 |---|---|---|
-| Road network + **measured AADT**, speed limit, lanes, functional class | **MassDOT Road Inventory 2021** (ArcGIS REST) — 8,197 segments, 6,815 with measured counts | traffic emission per road |
-| Terrain elevation (~30 m) | **SRTM 1-arcsec** (AWS Terrain Tiles) — 83–238 m relief | source/receiver heights, terrain shielding |
+| Road network + **measured AADT**, speed, lanes, class | **MassDOT Road Inventory 2021** (geometry) + **Traffic Inventory 2024** (current AADT + measured truck %) | traffic emission per road |
+| Terrain (town-wide ~30 m; **1 m at the house**) | **SRTM** (town) + **USGS 3DEP / MassGIS LiDAR 1 m** (house 3D map, water) | source/receiver heights, terrain & barrier shielding |
 | Building footprints (29,468) | **OpenStreetMap** (Overpass) — rasterised to max height | acoustic screening by houses/buildings |
+| Open water (Lake Quinsigamond, ponds) | **OpenStreetMap** — rasterised to a water mask | hard/reflective surface acoustics |
+| Aircraft | **Worcester Regional Airport (ORH)** runways (OSM) + ops | overflight noise layer |
 
-Measured volumes anchor the model: I-290 = 92,751 AADT, Route 9 (Turnpike
-Rd/Belmont St/Boston Tpk) = 41k–44k, Route 20 = 19k–25k, MA-140 (Grafton St) =
-14k–18k, Main Street = 14,002.
+Measured 2024 volumes anchor the model: **I-290 ≈ 84–88k** AADT (5 % heavy),
+Route 9 = 35–46k (6 % heavy), Route 20 ≤ 25k, MA-140 (Grafton St) = 10–17k,
+Main Street = 14,002. Truck split (single-unit / combination) is the measured
+per-route value from Traffic Inventory, not an assumption.
 
 ## Method
 
@@ -72,19 +82,20 @@ Each road is split into ~15 m segments treated as incoherent point
 sub-sources (89,781 in total). For every receiver each sub-source is
 propagated and the results are energy-summed with a suburban ambient floor.
 
-**Emission** — CoRTN basic noise level (UK DoT, *Calculation of Road Traffic
-Noise*, 1988), driven by the measured data:
+**Emission** — **FHWA Traffic Noise Model (TNM) REMELs** (US-standard), with
+separate automobile / medium-truck / heavy-truck energy-mean A-levels fit to
+the published TNM REMEL curves (average pavement, cruise):
 
 ```
-L10(1h)@10m = 42.2 + 10·log10(q) + 33·log10(V + 40 + 500/V)
-                   + 10·log10(1 + 5·P/V) − 68.8        (Leq ≈ L10 − 3)
+LE_auto(s) = 26.9 + 25.8·log10(s)     # ~70.7 dBA @ 50 mph, 15 m
+LE_med (s) = 41.9 + 21.7·log10(s)     # single-unit trucks
+LE_hvy (s) = 60.0 + 14.9·log10(s)     # combination trucks
 ```
 
-with hourly flow `q = AADT/18`, mean speed `V` from the posted limit, and
-heavy-vehicle fraction `P` from functional class (and truck-route flag). Each
-sub-source's sound power is calibrated so an infinite line reproduces this
-level at 10 m (verified: model returns 70.0 dB at 10 m for a 70 dB line, with
-the correct ~3 dB per distance-doubling falloff).
+Per-road hourly flow `= AADT/18` is split by the **measured** truck percentages
+and energy-summed as an incoherent line of point sub-sources. Calibrated to
+TNM (verified: 1000 autos @ 50 mph = **67.0 dBA at 15 m**; I-290 = 77.8 dBA at
+15 m), with the correct ~3 dB per distance-doubling line falloff.
 
 **Propagation** (ISO 9613-2 style), per sub-source:
 
@@ -103,29 +114,42 @@ Leq = Lw − Adiv − Aatm − ( Abar  if the sight line is blocked
   the **real terrain+building profile** sampled along each sight line, so a
   receiver screened by rows of houses or by a hill is correctly quieter.
   Obstructions within 12 m of either end (your own house, the curb) are ignored.
+- **Water** — where the sight line crosses Lake Quinsigamond (a rasterised
+  water mask), the soft-ground attenuation is removed over the water fraction
+  and up to **+2.6 dB image reflection** is added. This only matters when a
+  *loud* source lies across the water (so it adds +1 dB at waterfront EK Court,
+  whose loud source — Route 20 — is on the land side).
+
+**Aircraft** is a separate additive layer: Worcester Airport (ORH) overflights
+modelled along the runway-11/29 corridor with a climb/descent altitude profile,
+per-operation SEL/Lmax (jet 94/88 dBA @ 305 m; GA quieter), energy-averaged
+over a 16-h day. Negligible at Trowbridge (Leq ~12 dB), but ~40 dB Leq /
+~68 dB single-overflight Lmax at EK Court near the corridor.
 
 This is why Trowbridge Circle's contribution from Main Street (154 m away) is
 ~45 dB rather than ~56 dB: the intervening houses diffract it.
 
+### Cross-validation
+The USDOT National Transportation Noise Map (TNM-based, **no shielding**) bins
+I-290 at 70–80 dBA, Route 9/20 frontage 60–70, and quiet interiors below 45–50.
+This model agrees at unshielded frontages (Harrington 71, Grafton 70) and
+correctly reads **lower behind barriers/terrain** (Trowbridge 50, Town Hall 49)
+— exactly where the no-shielding national map over-predicts.
+
 ## What is *not* modelled
 
-- Facade/ground reflections, lateral diffraction around buildings, and
-  meteorological focusing (downwind enhancement). Net effect: a few dB,
-  location-dependent.
-- **Water surfaces are treated as soft ground.** Lake Quinsigamond is
-  acoustically hard/reflective, so sound carries farther across it; paths that
-  cross the lake (e.g. from I-290 on the Worcester shore) are slightly
-  **under**-estimated. Bounded by the hard-ground ceiling at ≤~2 dB for the
-  genuinely lakeside sites (Quinsigamond Ave, Jordan Rd) and **negligible for
-  6 Trowbridge Circle and 17A EK Court**, which are inland on rising ground
-  with their significant sources on land — verified: removing *all* ground
-  attenuation lifts EK Court by only 0.9 dB, and its over-water share is ~0.
-- Non-road sources: rail (the Worcester Main Line is ~4.9 km off), aircraft,
-  lawn equipment, HVAC, commercial yards. The 40 dB(A) ambient floor is a
-  stand-in for these.
-- AADT is the 2021 annual average; a specific hour/season differs. Absolute
-  levels carry roughly ±3–5 dB uncertainty; the **relative ranking** is driven
-  by measured volumes and true distances and is robust.
+- Facade reflections, lateral (around-the-side) diffraction, and meteorological
+  focusing (downwind enhancement). Net effect: a few dB, location-dependent.
+- Town-wide terrain is 30 m SRTM (the house 3D map uses 1 m LiDAR). Per the
+  data audit, 30 m is adequate for mid/far-field shielding; the near-field that
+  matters for the target is resolved at 1 m.
+- Other non-road sources: rail (Worcester Main Line ~4.9 km off), lawn
+  equipment, HVAC, commercial yards. The 40 dB(A) ambient floor stands in for
+  these.
+- Levels are a daytime average; nights are quieter, peak hours louder. Absolute
+  values carry ~±3 dB uncertainty; the **relative ranking** is driven by
+  measured volumes and true distances and is robust (and cross-checks against
+  the national TNM map above).
 
 ## Air quality at 6 Trowbridge Circle
 
@@ -202,18 +226,23 @@ from those corridors keeps its traffic-related share on the low end.
 
 ```bash
 python3 sound_model.py          # comparison table (needs only committed data)
-python3 sound_model.py --map    # also re-render noise_map.png (~1 min)
+python3 sound_model.py --survey # town-wide average-house statistics
+python3 sound_model.py --map    # re-render noise_map.png (~1 min)
+python3 trowbridge3d.py         # 1 m LiDAR 3D noise map of the house (HTML)
+python3 air_quality.py          # air-quality summary + comparison + charts
 ./fetch_data.sh                 # re-download raw data + rebuild the grids
 ```
 
-Committed (model runs offline from these): `sound_model.py`, `ri_roads.json`
-(MassDOT roads+AADT), `terrain_grid.npz` (SRTM), `building_grid.npz` (OSM),
-`noise_map.png`. Helpers: `fetch_ri.py`, `build_dataset.py`, `fetch_data.sh`.
-Requires Python 3 + numpy (+ matplotlib for the map).
+Committed (model runs offline): `sound_model.py`, `ri_roads.json`,
+`terrain_grid.npz`, `building_grid.npz`, `water_grid.npz`, `house_dem.npz`,
+`house_buildings.json`, plus the rendered `noise_map.png`,
+`trowbridge_noise_3d.html`, and air-quality charts. Helpers: `fetch_ri.py`,
+`build_dataset.py`, `build_water.py`, `fetch_data.sh`. Requires Python 3 +
+numpy (+ matplotlib for charts, plotly for the 3D HTML).
 
 ## Sources
 
-- [MassDOT Road Inventory 2021 (AADT, ArcGIS REST)](https://gis.massdot.state.ma.us/arcgis/rest/services/Roads/RoadInventoryHistory/MapServer/17)
-- [MassDOT Traffic Volume & Classification](https://www.mass.gov/traffic-volume-and-classification-in-massachusetts)
-- [AWS Terrain Tiles (SRTM 1-arcsec)](https://registry.opendata.aws/terrain-tiles/) · [OpenStreetMap / Overpass](https://www.openstreetmap.org/copyright)
-- [USDOT National Transportation Noise Map](https://www.bts.gov/geospatial/national-transportation-noise-map) · CoRTN (UK DoT, 1988) · ISO 9613-2 outdoor sound propagation.
+- [MassDOT Road Inventory 2021](https://gis.massdot.state.ma.us/arcgis/rest/services/Roads/RoadInventoryHistory/MapServer/17) (geometry/speed) · [Traffic Inventory 2024](https://gis.massdot.state.ma.us/arcgis/rest/services/Roads/TrafficInventoryYearEnd/FeatureServer/1) (AADT + truck %)
+- [USGS 3DEP 1 m / EPQS](https://epqs.nationalmap.gov/v1/json) · [MassGIS LiDAR Terrain](https://www.mass.gov/info-details/massgis-data-lidar-terrain-data) · [AWS Terrain Tiles (SRTM)](https://registry.opendata.aws/terrain-tiles/) · [OpenStreetMap / Overpass](https://www.openstreetmap.org/copyright)
+- [USDOT National Transportation Noise Map](https://www.bts.gov/geospatial/national-transportation-noise-map) (cross-validation) · [FHWA TNM Technical Manual](https://www.fhwa.dot.gov/environment/noise/traffic_noise_model/) · ISO 9613-2 outdoor sound propagation · [Open-Meteo Air Quality / CAMS](https://open-meteo.com/en/docs/air-quality-api)
+- Address verification: [MassGIS Standardized Assessors' Parcels (L3)](https://www.mass.gov/info-details/massgis-data-property-tax-parcels)

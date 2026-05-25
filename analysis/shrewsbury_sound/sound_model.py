@@ -49,6 +49,10 @@ MN, ME = float(_T["mn"]), float(_T["me"])
 TERR = _T["elev"].astype(np.float32)                 # (NY, NX) ground elevation
 BLDG = _B["height"].astype(np.float32)               # (NY, NX) building height
 SURF = TERR + BLDG                                    # top-of-obstruction surface
+try:                                                  # 1.0 = open water (hard, reflective)
+    WATER = np.load(os.path.join(HERE, "water_grid.npz"))["water"].astype(np.float32)
+except FileNotFoundError:
+    WATER = np.zeros_like(TERR)
 
 def ll_to_m(lat, lon):
     return ((lon-LON0)*ME, (lat-LAT0)*MN)
@@ -90,13 +94,33 @@ FCLASS_DEF_AADT = {1:40000,2:25000,3:12000,4:7000,5:3000,6:1200,7:400,0:600}
 # --------------------------------------------------------------------------- #
 #  Build point sub-sources from the Road Inventory.
 # --------------------------------------------------------------------------- #
-def cortn_leq10(q, v_kmh, p_heavy):
-    """CoRTN basic noise level L10(1h) at 10 m, converted to Leq, dB(A)."""
-    q = max(q, 1.0); v = max(v_kmh, 8.0)
-    l10 = (42.2 + 10*math.log10(q)
-           + 33*math.log10(v + 40 + 500/v)
-           + 10*math.log10(1 + 5*p_heavy/v) - 68.8)
-    return l10 - 3.0
+# --- FHWA TNM emission (REMEL energy-mean A-levels at 15 m, average pavement,
+#     cruise) fit to the published TNM REMEL curves; engine+tire energy sum is
+#     captured by log-linear fits over the 25-70 mph range used here. ---
+def _tnm_LE(s_mph):
+    s = max(s_mph, 20.0)
+    auto = 26.9 + 25.8*math.log10(s)     # ~70.7 dBA @ 50 mph
+    med  = 41.9 + 21.7*math.log10(s)     # ~78.8 dBA @ 50 mph (single-unit truck)
+    hvy  = 60.0 + 14.9*math.log10(s)     # ~85.3 dBA @ 50 mph (combination truck)
+    return auto, med, hvy
+TNM_KLINE = -16.7   # line-source constant, calibrated to TNM: 1000 autos@50mph@15m -> 67 dBA
+
+# measured heavy-vehicle split by route (Traffic Inventory 2024, Shrewsbury):
+# (f_medium = single-unit %, f_heavy = combination %)
+ROUTE_TRUCK = {290:(0.024,0.026), 9:(0.051,0.009), 20:(0.051,0.009), 140:(0.049,0.011)}
+FCLASS_TRUCK = {1:(0.03,0.04),2:(0.03,0.03),3:(0.045,0.012),4:(0.04,0.01),
+                5:(0.03,0.008),6:(0.03,0.006),7:(0.02,0.004),0:(0.03,0.008)}
+
+def tnm_leq10(aadt, f_med, f_heavy, s_mph):
+    """Daytime-hour Leq at 10 m from a road, via TNM REMELs + incoherent line."""
+    s = max(s_mph, 20.0); N = max(aadt*HOURLY_FRAC, 1.0)
+    Na, Nm, Nh = N*(1-f_med-f_heavy), N*f_med, N*f_heavy
+    LEa, LEm, LEh = _tnm_LE(s)
+    e = 0.0
+    for LE, Ni in ((LEa,Na),(LEm,Nm),(LEh,Nh)):
+        if Ni > 0: e += 10**((LE + 10*math.log10(Ni/s) + TNM_KLINE)/10)
+    leq15 = 10*math.log10(e) if e > 0 else 0.0
+    return leq15 + 1.76    # 15 m -> 10 m along the line (~3 dB/doubling)
 
 def build_sources():
     d = json.load(open(os.path.join(HERE, "ri_roads.json")))
@@ -109,13 +133,15 @@ def build_sources():
         fclass = a.get("F_Class") or 0
         aadt = a.get("AADT") or FCLASS_DEF_AADT.get(fclass, 800)
         if aadt < 250: continue
-        mph = a.get("Speed_Lim") or a.get("Speed") or FCLASS_MPH.get(fclass, 30)
-        v = max(15.0, float(mph)) * 1.609344
-        p = FCLASS_HEAVY.get(fclass, 3)
-        if a.get("Truck_Rte") in (1, "1", "Y", "yes"): p += 2
-        leq10 = cortn_leq10(aadt*HOURLY_FRAC, v, p)
-        name = a.get("St_Name") or (f"Route {a.get('Route_Number')}" if a.get("Route_Number") else "(local)")
         rt = a.get("Route_Number")
+        rtn = int(rt) if rt and str(rt).isdigit() else None
+        if rtn == 290:                       # Traffic Inventory 2024 Shrewsbury value
+            aadt = min(aadt, 85700)
+        mph = a.get("Speed_Lim") or a.get("Speed") or FCLASS_MPH.get(fclass, 30)
+        mph = max(15.0, float(mph))
+        f_med, f_heavy = ROUTE_TRUCK.get(rtn, FCLASS_TRUCK.get(fclass, (0.03,0.008)))
+        leq10 = tnm_leq10(aadt, f_med, f_heavy, mph)
+        name = a.get("St_Name") or (f"Route {rt}" if rt else "(local)")
         key = f"Route {rt}" if rt and str(rt).isdigit() and int(rt) < 1000 else name
         roadmeta.setdefault(key, {"name": name, "aadt": 0})
         roadmeta[key]["aadt"] = max(roadmeta[key]["aadt"], aadt)
@@ -166,6 +192,7 @@ def barrier_atten(rx, ry, rz, idx):
     px = rx + (sx-rx)[:,None]*t              # (n,K)
     py = ry + (sy-ry)[:,None]*t
     surf = sample_grid(SURF, px.ravel(), py.ravel()).reshape(nseg, K)
+    wfrac = sample_grid(WATER, px.ravel(), py.ravel()).reshape(nseg, K).mean(axis=1)
     losz = rz + (sz-rz)[:,None]*t            # straight line height
     intr = surf - losz                       # >0 where terrain/buildings block
     # ignore obstructions hugging the receiver or source (own house / curb)
@@ -187,25 +214,51 @@ def barrier_atten(rx, ry, rz, idx):
         N = 2*delta/WAVELEN                            # Fresnel number
         a = np.clip(10*np.log10(3 + 20*N), 0, BAR_CAP)
         Abar[m] = a; blocked[m] = True
-    return Abar, blocked, d
+    return Abar, blocked, d, wfrac
 
 def leq_at(rx, ry, rz=None, cull=MAX_RANGE):
     if rz is None:
         rz = terr_at(rx, ry) + H_RCV
     d0 = np.hypot(SX-rx, SY-ry)
     idx = np.where(d0 <= cull)[0]
-    Abar, blocked, d = barrier_atten(rx, ry, rz, idx)
+    Abar, blocked, d, wfrac = barrier_atten(rx, ry, rz, idx)
     Adiv = 20*np.log10(np.maximum(d, D_MIN)) + 8.0
     Aatm = AIR_DB_PER_M * d
     hm = np.maximum((rz + SZ[idx])/2 - (sample_grid(TERR, SX[idx], SY[idx])), 0.5)
     Agr = ground_atten(d, hm)
+    # water is acoustically hard & reflective: it removes soft-ground attenuation
+    # over the water portion of the path and adds up to ~+3 dB image reflection
+    Agr = Agr * (1 - wfrac)
+    refl = 2.6 * wfrac
     excess = np.where(blocked, Abar, Agr)
-    lvl = SLW[idx] - Adiv - Aatm - excess
+    lvl = SLW[idx] - Adiv - Aatm - excess + refl
     return lvl, idx
 
-def total_leq(rx, ry, rz=None):
+# --- Aircraft: Worcester Regional Airport (ORH) overflights ------------------
+ORH = (42.2673, -71.8757)
+RWY_HDG = math.radians(110.0)        # primary runway 11/29 centerline (ESE-WNW)
+AC_JET_OPS, AC_GA_OPS = 20.0, 55.0   # ops/day (commercial jet / general aviation)
+AC_PERIOD = 16*3600.0                # daytime averaging period, s
+
+def aircraft(rx, ry):
+    """Returns (aircraft Leq dB(A), typical single-overflight Lmax dB(A))."""
+    ox, oy = ll_to_m(*ORH)
+    vx, vy = math.sin(RWY_HDG), math.cos(RWY_HDG)
+    along = (rx-ox)*vx + (ry-oy)*vy
+    perp = abs(-(rx-ox)*vy + (ry-oy)*vx)         # offset from the flight corridor
+    alt = min(3000.0, 300.0 + 0.085*abs(along))  # climb/descent altitude profile
+    slant = math.hypot(perp, alt)
+    lvl = lambda ref: ref - 20*math.log10(max(slant,100)/305.0) - AIR_DB_PER_M*slant
+    sel_j, lmax_j = lvl(94), lvl(88)             # jet  SEL/Lmax at 305 m reference
+    sel_g, lmax_g = lvl(83), lvl(78)             # GA quieter
+    e = AC_JET_OPS*10**(sel_j/10) + AC_GA_OPS*10**(sel_g/10)
+    return 10*math.log10(e/AC_PERIOD), max(lmax_j, lmax_g)
+
+def total_leq(rx, ry, rz=None, with_air=True):
     lvl, idx = leq_at(rx, ry, rz)
     e = np.sum(10**(lvl/10)) + 10**(AMBIENT_LEQ/10)
+    if with_air:
+        e += 10**(aircraft(rx, ry)[0]/10)
     return 10*math.log10(e), lvl, idx
 
 def dominant_roads(lvl, idx, n=6):
@@ -221,7 +274,7 @@ def dominant_roads(lvl, idx, n=6):
 # --------------------------------------------------------------------------- #
 RECEIVERS = [
     ("6 Trowbridge Circle (TARGET)",            42.2940843, -71.7007366),
-    ("17A EK Court (off S. Grafton St)",         42.2442981, -71.7438384),
+    ("17A EK Court (Half Moon Cove, by Rt 20)",  42.2442981, -71.7438384),
     ("Edgemere (residential, off Rt 20)",        42.2487048, -71.7411810),
     ("Sherwood Ave (mid-town residential)",      42.2840550, -71.7270729),
     ("Jordan Rd (Fairlawn, near lake)",          42.2670815, -71.7496331),

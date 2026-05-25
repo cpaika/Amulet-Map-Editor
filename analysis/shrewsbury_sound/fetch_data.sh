@@ -28,6 +28,20 @@ curl -s -A "$UA" -H "Accept: application/json" \
   --data-urlencode "data@buildings.ql" \
   "https://overpass-api.de/api/interpreter" -o buildings.json
 
-echo "Rebuilding compact grids (terrain_grid.npz, building_grid.npz) ..."
-python3 build_dataset.py
+echo "4/4  OSM open water (Lake Quinsigamond + ponds) ..."
+cat > water_all.ql <<EOF
+[out:json][timeout:120];
+( way["natural"="water"](${BOX_OVERPASS});
+  relation["natural"="water"](${BOX_OVERPASS}); );
+out geom;
+EOF
+curl -s -A "$UA" -H "Accept: application/json" \
+  --data-urlencode "data@water_all.ql" \
+  "https://overpass-api.de/api/interpreter" -o water_all.json
+
+echo "Rebuilding compact grids (terrain, buildings, water) ..."
+SOUND_RAW="$(pwd)" python3 build_dataset.py
+SOUND_RAW="$(pwd)" python3 build_water.py
+echo "Note: current AADT (Traffic Inventory 2024) and house LiDAR are fetched"
+echo "      inline by the model build; see sound_model.py / trowbridge3d.py."
 echo "Done."

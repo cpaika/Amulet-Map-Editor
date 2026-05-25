@@ -1,5 +1,7 @@
 # bulky raw downloads — regenerate with fetch_data.sh / the fetch_*.py scripts
 buildings.json
+water_all.json
+*.ql
 *.tiff
 *.hgt
 *.hgt.gz
