@@ -161,6 +161,32 @@ So local traffic adds only ~3 µg/m³ NO₂ to the ~10 µg/m³ regional mean, an
 **aircraft is negligible** at this distance. A home right on I-290 or Route 9
 would see a *much* larger road term (tens of µg/m³ NO₂ at the kerb).
 
+### Comparison: 6 Trowbridge Circle vs 17A EK Court
+
+![Air quality comparison](air_quality_compare.png)
+
+| Metric | 6 Trowbridge Circle | 17A EK Court |
+|---|---:|---:|
+| 12-mo US AQI mean | 45 | 45 |
+| PM2.5 annual mean (µg/m³) | 9.0 | 9.0 |
+| Ozone mean (µg/m³) | 75 | 75 |
+| % days Good / Moderate / USG+ | 51 / 38 / 11 | 51 / 38 / 11 |
+| NO₂ regional mean (µg/m³) | 10.0 | 10.0 |
+| **NO₂ local road increment** | **+2.6** | **+4.4** |
+| PM2.5 local road increment | +0.44 | +0.71 |
+| Aircraft NO₂ (ORH) | +0.02 | +0.04 |
+
+**The regional air is identical** — both sit in the same airshed (the CAMS
+grid is ~11 km, and they're ~6 km apart), so PM2.5, ozone and US AQI match
+exactly. The only real difference is **local traffic**: 17A EK Court is
+~200 m from Route 20 (Sunderland Rd / Hartford Tpk / Southwest Cutoff), giving
+it a **~70 % larger road-NO₂ increment (+4.4 vs +2.6 µg/m³)** and roughly 60 %
+more road PM2.5 than 6 Trowbridge Circle. Both are still well within healthy
+ranges and both dwarfed by the regional background — but the same proximity to
+Route 20 that makes EK Court louder also makes its near-road air marginally
+dirtier. Aircraft is negligible at both (EK Court is ~11 km from Worcester
+Airport, Trowbridge ~15 km).
+
 **Takeaways:** Particulate and NO₂ are low — the low NO₂ is the air-quality
 echo of the same fact that makes it quiet: it's away from heavy traffic.
 Summer **ozone** (regional, not local) and occasional **wildfire-smoke** PM2.5
