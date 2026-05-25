@@ -1,81 +1,120 @@
 # How loud is 6 Trowbridge Circle vs. the rest of Shrewsbury, MA?
 
-A physics-based **estimate** of outdoor noise. It is not a measurement — it
-models the dominant outdoor noise source in a suburb (road traffic) and
-compares the target address to representative locations around town.
+A comprehensive, data-driven **estimate** of outdoor daytime noise. Road
+traffic is by far the dominant outdoor noise source in a suburb, so the model
+builds the traffic-noise field across town from **measured** inputs and a
+physically grounded propagation model, then reads it off at 6 Trowbridge
+Circle and at comparison locations.
+
+![Modelled noise map of Shrewsbury](noise_map.png)
 
 ## TL;DR
 
-6 Trowbridge Circle is **one of the quietest spots in Shrewsbury**, with a
-modelled daytime traffic Leq of about **44 dB(A)** — essentially the suburban
-ambient floor. It is a cul-de-sac whose only real nearby source is **Main
-Street, ~154 m away**; every state highway is 1–3 km off.
+6 Trowbridge Circle sits in the **quietest tier** of Shrewsbury — a modelled
+daytime Leq of about **51 dB(A)**, tied with the town-center/common area and
+several dB below other residential streets. It is a cul-de-sac shielded from
+Main Street by intervening houses, and it is **1–3 km from every state
+highway**. Homes fronting Route 9, Route 140 or near I-290 are **15–23 dB
+louder**, i.e. roughly **3–5× louder** to the ear.
 
 | Location | Leq dB(A) | vs. Trowbridge |
 |---|---:|---|
-| Edgemere (residential, ~500 m off Rt 20) | 44.0 | about the same |
-| **6 Trowbridge Circle (target)** | **44.4** | reference |
-| Sherwood Ave (mid-town residential) | 45.2 | about the same |
-| Jordan Rd (Fairlawn, near lake) | 48.8 | +4 dB (~1.4× louder) |
-| Shrewsbury Town Hall / center | 51.3 | +7 dB (~1.6× louder) |
-| Reservoir St (~280 m from I-290) | 51.9 | +7 dB (~1.7× louder) |
-| Harrington Ave (~200 m off Route 9) | 64.3 | +20 dB (~4× louder) |
-| Home fronting Route 9 (25 m) | 67.0 | +23 dB (~4.8× louder) |
-| Quinsigamond Ave (lakeside, by Route 9) | 67.4 | +23 dB (~4.9× louder) |
-| Home along I-290 (60 m) | 67.5 | +23 dB (~5× louder) |
-| Grafton St (fronting MA-140) | 69.7 | +25 dB (~5.8× louder) |
+| Shrewsbury Town Hall / common | 49.3 | −1 (about the same) |
+| **6 Trowbridge Circle (target)** | **50.7** | reference |
+| Sherwood Ave (mid-town residential) | 54.4 | +4 (~1.3× louder) |
+| Jordan Rd (Fairlawn, near lake) | 55.0 | +4 (~1.3× louder) |
+| Edgemere (residential, off Rt 20) | 55.3 | +5 (~1.4× louder) |
+| Reservoir St (far north, near I-290) | 61.1 | +10 (~2× louder) |
+| Quinsigamond Ave (lakeside, by Rt 9/290) | 65.9 | +15 (~2.9× louder) |
+| Grafton St (fronting MA-140) | 69.7 | +19 (~3.7× louder) |
+| Harrington Ave (off Route 9) | 73.9 | +23 (~5× louder) |
 
-Reading the scale: every **+10 dB ≈ twice as loud** to the ear. A home right
-on Route 9, MA-140, or I-290 sounds roughly **4–6× louder** than Trowbridge
-Circle. The town center is mildly louder (+7 dB). Other deep-residential
-pockets (Edgemere, Sherwood Ave) are about the same as Trowbridge.
+Scale: every **+10 dB ≈ twice as loud**. Dominant sources at 6 Trowbridge
+Circle (after shielding): Main Street (45 dB, AADT 14,002) and the cul-de-sac
+itself; the highways (Route 9 AADT 44k, I-290 AADT 92.8k) are audible only as a
+distant ~30–35 dB hum.
+
+## Data (all real, downloaded — see `fetch_data.sh`)
+
+| Layer | Source | Used for |
+|---|---|---|
+| Road network + **measured AADT**, speed limit, lanes, functional class | **MassDOT Road Inventory 2021** (ArcGIS REST) — 8,197 segments, 6,815 with measured counts | traffic emission per road |
+| Terrain elevation (~30 m) | **SRTM 1-arcsec** (AWS Terrain Tiles) — 83–238 m relief | source/receiver heights, terrain shielding |
+| Building footprints (29,468) | **OpenStreetMap** (Overpass) — rasterised to max height | acoustic screening by houses/buildings |
+
+Measured volumes anchor the model: I-290 = 92,751 AADT, Route 9 (Turnpike
+Rd/Belmont St/Boston Tpk) = 41k–44k, Route 20 = 19k–25k, MA-140 (Grafton St) =
+14k–18k, Main Street = 14,002.
 
 ## Method
 
-* **Geometry** — every road within 8 km is pulled from OpenStreetMap
-  (`osm_roads.json`). Each source→receiver distance is the true nearest
-  distance to that road's polyline, so the comparison is driven by real
-  layout, not guesses. 6 Trowbridge Circle = 42.2940843, -71.7007366.
-* **Source emission** — CoRTN basic noise level (UK DoT, *Calculation of Road
-  Traffic Noise*, 1988): `L10(1h)@10m = 42.2 + 10·log10(q) + speed/heavy
-  corrections`, converted to Leq (≈ L10 − 3).
-* **Propagation** — soft-ground line-source spreading (~4.5 dB per distance
-  doubling = `15·log10(d/10)`), air absorption (~5 dB/km, A-weighted), and a
-  single 5 dB built-up screening allowance for roads > 150 m away (blocked by
-  intervening houses/trees).
-* **Combination** — all roads energy-summed, plus a 42 dB(A) suburban ambient
-  floor.
+Each road is split into ~15 m segments treated as incoherent point
+sub-sources (89,781 in total). For every receiver each sub-source is
+propagated and the results are energy-summed with a suburban ambient floor.
 
-## Caveats (why the absolute numbers are ±3–5 dB)
+**Emission** — CoRTN basic noise level (UK DoT, *Calculation of Road Traffic
+Noise*, 1988), driven by the measured data:
 
-* **Traffic volumes are typical-by-class, not measured.** Exact MassDOT AADT
-  counts weren't pulled; values are typical for each road class (I-290 ≈ 78k,
-  MA-9 ≈ 33k, US-20 ≈ 18k, MA-140 ≈ 16k AADT). This shifts absolute levels but
-  the *ranking* is dominated by distance and is robust.
-* Terrain, real barriers/walls, building reflections, wind/temperature, and
-  non-road sources (rail, lawn equipment, the nearby commercial strips) are
-  modelled only crudely or not at all.
-* "Fronting" receivers that geocoded onto a road centerline slightly overstate
-  the level for a set-back home.
-* This is a daytime average. Nights are quieter everywhere; the *relative*
-  picture holds.
-
-## Run it
-
-```bash
-python3 sound_model.py
+```
+L10(1h)@10m = 42.2 + 10·log10(q) + 33·log10(V + 40 + 500/V)
+                   + 10·log10(1 + 5·P/V) − 68.8        (Leq ≈ L10 − 3)
 ```
 
-No dependencies beyond the Python 3 standard library. Edit `RECEIVERS` or the
-traffic tables (`BY_REF` / `BY_NAME` / `BY_HIGHWAY`) in `sound_model.py` to
-try other locations or plug in real AADT counts.
+with hourly flow `q = AADT/18`, mean speed `V` from the posted limit, and
+heavy-vehicle fraction `P` from functional class (and truck-route flag). Each
+sub-source's sound power is calibrated so an infinite line reproduces this
+level at 10 m (verified: model returns 70.0 dB at 10 m for a 70 dB line, with
+the correct ~3 dB per distance-doubling falloff).
+
+**Propagation** (ISO 9613-2 style), per sub-source:
+
+```
+Leq = Lw − Adiv − Aatm − ( Abar  if the sight line is blocked
+                           Agr   otherwise )
+```
+
+- **Adiv** geometric divergence `20·log10(d) + 8` (point source over ground),
+  with a 10 m floor (you are never inside the carriageway).
+- **Aatm** atmospheric absorption, ~2.5 dB/km (A-weighted, ~10 °C/70 % RH).
+- **Agr** ISO 9613-2 alternative soft-ground attenuation,
+  `4.8 − (2·hm/d)(17 + 300/d) ≥ 0`, with mean path height `hm` from the DEM.
+- **Abar** barrier diffraction (Maekawa `10·log10(3 + 20·N)`, `N = 2δ/λ`,
+  λ at 550 Hz, capped at 20 dB). The path-length difference δ is computed from
+  the **real terrain+building profile** sampled along each sight line, so a
+  receiver screened by rows of houses or by a hill is correctly quieter.
+  Obstructions within 12 m of either end (your own house, the curb) are ignored.
+
+This is why Trowbridge Circle's contribution from Main Street (154 m away) is
+~45 dB rather than ~56 dB: the intervening houses diffract it.
+
+## What is *not* modelled
+
+- Facade/ground reflections, lateral diffraction around buildings, and
+  meteorological focusing (downwind enhancement). Net effect: a few dB,
+  location-dependent.
+- Non-road sources: rail (the Worcester Main Line is ~4.9 km off), aircraft,
+  lawn equipment, HVAC, commercial yards. The 40 dB(A) ambient floor is a
+  stand-in for these.
+- AADT is the 2021 annual average; a specific hour/season differs. Absolute
+  levels carry roughly ±3–5 dB uncertainty; the **relative ranking** is driven
+  by measured volumes and true distances and is robust.
+
+## Files / how to run
+
+```bash
+python3 sound_model.py          # comparison table (needs only committed data)
+python3 sound_model.py --map    # also re-render noise_map.png (~1 min)
+./fetch_data.sh                 # re-download raw data + rebuild the grids
+```
+
+Committed (model runs offline from these): `sound_model.py`, `ri_roads.json`
+(MassDOT roads+AADT), `terrain_grid.npz` (SRTM), `building_grid.npz` (OSM),
+`noise_map.png`. Helpers: `fetch_ri.py`, `build_dataset.py`, `fetch_data.sh`.
+Requires Python 3 + numpy (+ matplotlib for the map).
 
 ## Sources
 
-* Road geometry: OpenStreetMap (© OpenStreetMap contributors, ODbL) via the
-  Overpass API. Geocoding via Nominatim.
-* Emission/propagation: CoRTN (UK Dept. of Transport, 1988); soft-ground
-  line-source attenuation rule of thumb (~4.5 dB/doubling).
-* Context on local highways (MA-9, US-20, I-290 Lake Quinsigamond crossing,
-  MA-140) and the Trowbridge neighborhood: USDOT National Transportation Noise
-  Map, MassDOT, and local listings.
+- [MassDOT Road Inventory 2021 (AADT, ArcGIS REST)](https://gis.massdot.state.ma.us/arcgis/rest/services/Roads/RoadInventoryHistory/MapServer/17)
+- [MassDOT Traffic Volume & Classification](https://www.mass.gov/traffic-volume-and-classification-in-massachusetts)
+- [AWS Terrain Tiles (SRTM 1-arcsec)](https://registry.opendata.aws/terrain-tiles/) · [OpenStreetMap / Overpass](https://www.openstreetmap.org/copyright)
+- [USDOT National Transportation Noise Map](https://www.bts.gov/geospatial/national-transportation-noise-map) · CoRTN (UK DoT, 1988) · ISO 9613-2 outdoor sound propagation.
