@@ -112,6 +112,14 @@ This is why Trowbridge Circle's contribution from Main Street (154 m away) is
 - Facade/ground reflections, lateral diffraction around buildings, and
   meteorological focusing (downwind enhancement). Net effect: a few dB,
   location-dependent.
+- **Water surfaces are treated as soft ground.** Lake Quinsigamond is
+  acoustically hard/reflective, so sound carries farther across it; paths that
+  cross the lake (e.g. from I-290 on the Worcester shore) are slightly
+  **under**-estimated. Bounded by the hard-ground ceiling at ≤~2 dB for the
+  genuinely lakeside sites (Quinsigamond Ave, Jordan Rd) and **negligible for
+  6 Trowbridge Circle and 17A EK Court**, which are inland on rising ground
+  with their significant sources on land — verified: removing *all* ground
+  attenuation lifts EK Court by only 0.9 dB, and its over-water share is ~0.
 - Non-road sources: rail (the Worcester Main Line is ~4.9 km off), aircraft,
   lawn equipment, HVAC, commercial yards. The 40 dB(A) ambient floor is a
   stand-in for these.
