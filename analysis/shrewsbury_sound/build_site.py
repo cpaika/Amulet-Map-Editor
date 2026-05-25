@@ -145,4 +145,14 @@ lg.addTo(map);
 </script></body></html>"""
 open(os.path.join(WEB,"index.html"),"w").write(HTML.replace("__DATA__", DATA))
 print("[site] wrote", os.path.join(WEB,"index.html"))
+
+# ---- single self-contained artifact (overlay + 3D inlined as data URIs) -----
+import base64
+_ov = base64.b64encode(open(os.path.join(WEB,"noise_overlay.png"),"rb").read()).decode()
+_d3 = base64.b64encode(open(os.path.join(WEB,"noise_3d.html"),"rb").read()).decode()
+_art = (open(os.path.join(WEB,"index.html")).read()
+        .replace("'noise_overlay.png'", "'data:image/png;base64,"+_ov+"'")
+        .replace('src="noise_3d.html"', 'src="data:text/html;base64,'+_d3+'"'))
+open(os.path.join(HERE,"shrewsbury_sound.html"),"w").write(_art)
+print("[site] wrote standalone shrewsbury_sound.html")
 print("[site] receiver levels:", {m['name'][:18]:m['leq'] for m in markers})
