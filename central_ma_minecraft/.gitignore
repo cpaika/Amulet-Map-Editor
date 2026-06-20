@@ -1,0 +1,7 @@
+# raw working data (large intermediate rasters, uncompressed worlds)
+work/
+__pycache__/
+*.pyc
+*.tif
+# generated worlds are delivered as zips under dist/
+out/

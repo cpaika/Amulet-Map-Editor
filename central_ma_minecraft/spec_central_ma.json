@@ -1,0 +1,7 @@
+{
+  "name": "Central Massachusetts 1:1",
+  "tiles": [
+    {"name": "worcester_quinsigamond_shrewsbury", "lon": -71.7576, "lat": 42.2793, "w": 8200, "h": 3400},
+    {"name": "princeton_mt_wachusett", "lon": -71.8820, "lat": 42.4700, "w": 3000, "h": 4600}
+  ]
+}
