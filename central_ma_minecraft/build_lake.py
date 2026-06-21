@@ -83,11 +83,30 @@ def _ring_area(r):
     return abs(sum(x[i]*y[i+1]-x[i+1]*y[i] for i in range(len(r)-1))) / 2
 
 
+# a point inside Lake Quinsigamond's open water (vertical datum anchor)
+ANCHOR_LON, ANCHOR_LAT = -71.7470, 42.2700
+
+
+def _pt_in_ring(lon, lat, ring):
+    inside = False; j = len(ring) - 1
+    for i in range(len(ring)):
+        xi, yi = ring[i][0], ring[i][1]; xj, yj = ring[j][0], ring[j][1]
+        if ((yi > lat) != (yj > lat)) and \
+           (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
 def _largest_waterbody_surface(feats, elev, xmin, xmax, ymin, ymax, W, H):
     sx = W / (xmax - xmin); sy = H / (ymax - ymin)
+    # prefer the waterbody whose outer ring contains the Quinsigamond anchor
     best = None; best_a = -1
     for f in feats:
         rings = f["geometry"]["rings"]
+        outer = max(rings, key=_ring_area)
+        if _pt_in_ring(ANCHOR_LON, ANCHOR_LAT, outer):
+            best = f; break
         a = sum(_ring_area(r) for r in rings)
         if a > best_a:
             best_a = a; best = f
