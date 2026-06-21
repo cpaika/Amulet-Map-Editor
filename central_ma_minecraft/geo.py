@@ -5,7 +5,9 @@ import time
 import io
 import urllib.request
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFile
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 R = 20037508.342789244
 
@@ -70,14 +72,25 @@ def fetch_mosaic(cx_merc, cy_merc, merc_w, merc_h, px_w, px_h, kind, tile_px=200
             by1 = my1 - ry * sy
             by0 = my1 - (ry + th) * sy
             bbox = f"{bx0},{by0},{bx1},{by1}"
-            if kind == "elev":
-                url = ELEV_URL.format(bbox=bbox, w=tw, h=th)
-                im = Image.open(io.BytesIO(_get(url)))
-                a = np.array(im, dtype=np.float32)
-                out[ry:ry + th, rx:rx + tw] = a[:th, :tw]
-            else:
-                url = IMG_URL.format(bbox=bbox, w=tw, h=th)
-                im = Image.open(io.BytesIO(_get(url))).convert("RGB")
-                a = np.array(im, dtype=np.uint8)
-                out[ry:ry + th, rx:rx + tw] = a[:th, :tw]
+            try:
+                if kind == "elev":
+                    url = ELEV_URL.format(bbox=bbox, w=tw, h=th)
+                    im = Image.open(io.BytesIO(_get(url)))
+                    a = np.array(im, dtype=np.float32)
+                    if a.shape[:2] != (th, tw):
+                        raise ValueError("bad size")
+                    out[ry:ry + th, rx:rx + tw] = a[:th, :tw]
+                else:
+                    url = IMG_URL.format(bbox=bbox, w=tw, h=th)
+                    im = Image.open(io.BytesIO(_get(url))).convert("RGB")
+                    a = np.array(im, dtype=np.uint8)
+                    if a.shape[:2] != (th, tw):
+                        raise ValueError("bad size")
+                    out[ry:ry + th, rx:rx + tw] = a[:th, :tw]
+            except Exception:
+                # no coverage (open ocean) -> sea level / neutral water color
+                if kind == "elev":
+                    out[ry:ry + th, rx:rx + tw] = 0.0
+                else:
+                    out[ry:ry + th, rx:rx + tw] = (60, 90, 110)
     return out
