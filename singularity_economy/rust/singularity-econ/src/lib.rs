@@ -9,13 +9,15 @@
 //!   R1 saturating recursive AI, R2 robot bootstrap, R3 capex momentum,
 //!   B4 credit discipline.
 
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
 // Parameters
 // ---------------------------------------------------------------------------
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Loops {
     pub b1_supply_response: f64,
     pub b2_backlash: f64,
@@ -40,7 +42,8 @@ impl Default for Loops {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Params {
     // timeline
     pub start_year: i32,
@@ -261,8 +264,9 @@ fn logistic(x: f64) -> f64 {
 // State
 // ---------------------------------------------------------------------------
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 pub enum Binding {
     Power,
     Chips,
@@ -270,7 +274,8 @@ pub enum Binding {
     Demand,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Pools {
     pub ai_services: f64,
     pub silicon: f64,
@@ -289,7 +294,8 @@ pub struct Pools {
     pub gdp_index: f64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct YearState {
     pub year: i32,
     pub binding: Binding,

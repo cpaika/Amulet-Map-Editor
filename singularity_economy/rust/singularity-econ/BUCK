@@ -1,0 +1,21 @@
+# Buck2 targets for the model core. Third-party-free by design: the "serde"
+# cargo feature is off here, so this builds with rustc alone. The
+# dependency-full paths (CLI, parity vs Python goldens, proptest) run under
+# cargo -- see ../../BUILDING.md.
+
+rust_library(
+    name = "core",
+    srcs = glob(["src/lib.rs"]),
+    crate = "singularity_econ",
+    crate_root = "src/lib.rs",
+    edition = "2021",
+    visibility = ["PUBLIC"],
+)
+
+rust_test(
+    name = "core_test",
+    srcs = glob(["src/lib.rs"]),
+    crate = "singularity_econ_test",
+    crate_root = "src/lib.rs",
+    edition = "2021",
+)

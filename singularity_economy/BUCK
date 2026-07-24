@@ -1,0 +1,34 @@
+# Python reference implementation and test suites.
+# The Python model (model_v2.py) is the executable specification; the Rust
+# crate under rust/singularity-econ is the fast, typed port held to golden
+# parity with it.
+
+python_library(
+    name = "models",
+    srcs = [
+        "model.py",
+        "model_v2.py",
+        "scenarios.py",
+        "valuation.py",
+        "companies.py",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+python_test(
+    name = "test_model_v2",
+    srcs = ["test_model_v2.py"],
+    deps = [":models"],
+)
+
+python_test(
+    name = "test_model",
+    srcs = ["test_model.py"],
+    deps = [":models"],
+)
+
+python_test(
+    name = "test_valuation",
+    srcs = ["test_valuation.py"],
+    deps = [":models"],
+)
