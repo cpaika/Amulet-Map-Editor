@@ -13,10 +13,10 @@ the model's outputs sit at the strong end and are barely priced.
 |---|---|---|
 | Total capex 2032 | power_growth_ceiling +0.22, power_supply_gain +0.20, power_base_growth +0.13 | The size of the whole buildout is set by the power supply side. Demand parameters barely register. |
 | Cognitive displacement 2032 | singularity_year −0.62, adoption_halflife −0.61, backlash_gain −0.14 | Displacement is timing × integration friction. Capability magnitude (singularity_boost ρ=0.01) is irrelevant within the sampled range. |
-| Credit-crunch depth | internal_funding_share +0.52 (nothing else above 0.03) | The financing accident is a capital-structure choice, not a demand outcome. Monitor the externally-funded share of capex. |
+| Credit-crunch depth | internal_funding_share +0.65 (nothing else above 0.07) | The financing accident is a capital-structure choice, not a demand outcome. Monitor the externally-funded share of capex. |
 | Power margin 2032 | singularity_year +0.30, all else <0.02 | Power rents are robust to nearly everything — the only thing that moves them is when the demand shock lands. |
 | Robot production 2032 | singularity_year −0.80, component_supply_gain +0.10 | This decade's robot volume is a start-date variable. Learning rates, costs, bootstrap gains — all second order before 2033. |
-| Silicon rent duration | power_growth_ceiling +0.23, momentum_gain +0.20, chip gains −0.16 | **Cross-coupling: power scarcity shields silicon rents.** Unlocking power feeds demand through to chips and *extends* chip scarcity; permitting reform rotates rents from power stocks to silicon stocks. |
+| Silicon rent duration | chip_base_growth −0.38, chip_supply_gain −0.30, momentum_gain +0.15, power_supply_gain +0.10 | Post-review, silicon rent duration is dominated by chips' own supply side; the power cross-coupling persists at smaller magnitude (+0.10) — permitting reform still rotates rents toward silicon, more mildly than first estimated. |
 
 ## Meadows' twelve points, annotated
 

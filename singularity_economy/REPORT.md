@@ -83,11 +83,19 @@ study sharpen the book's foundations:
 
 - **Power rents never normalize within the horizon in any sampled world** —
   stronger than v1's claim. Power binds ~96–100% of runs through 2034.
-- **Silicon rent duration is regime-dependent** (p10 normalizes 2031, median
-  2036): it emerges from the supply-response gain — the formal version of the
-  IP-moat vs commodity-capacity distinction the book was built on.
-- **Credit crunch occurs in ~25% of runs**, driven almost entirely by the
-  externally-funded share of capex (Spearman ρ=+0.52) — the circular-financing
+- **Silicon rent duration is regime-dependent and bimodal** (median
+  normalizes 2032; the p90 tail never does): it emerges from the
+  supply-response gain — the formal version of the IP-moat vs
+  commodity-capacity distinction. An explicit IP-toll sector (no supply
+  response) holds peak margins through 2036 while commodity silicon decays
+  in a damped hog-cycle — the design's headline contrast, now implemented
+  and adversarially code-reviewed (12 findings fixed, incl. a utilization
+  double-count that had overstated rent persistence).
+- **Median 2036 silicon capacity ends at ~1.37x demand — an endogenous glut
+  even under the thesis** — sharpening the rule: harvest commodity-capacity
+  semis into strength; only IP tolls are decade holds.
+- **Credit crunch occurs in ~33% of runs**, driven almost entirely by the
+  externally-funded share of capex (Spearman ρ=+0.65) — the circular-financing
   risk (§5b) now has a model probability and a leading indicator.
 - **Peak desired/deliverable queue ratio ~2.3x** — sold-out-through-2030
   order books are the model's natural state, not an anomaly.
