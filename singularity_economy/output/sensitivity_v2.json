@@ -1,0 +1,158 @@
+{
+  "ai_capex_2032": [
+    {
+      "param": "power_growth_ceiling",
+      "rho": 0.221
+    },
+    {
+      "param": "power_supply_gain",
+      "rho": 0.196
+    },
+    {
+      "param": "power_base_growth",
+      "rho": 0.127
+    },
+    {
+      "param": "singularity_year",
+      "rho": -0.087
+    },
+    {
+      "param": "momentum_gain",
+      "rho": 0.034
+    },
+    {
+      "param": "adoption_halflife",
+      "rho": -0.013
+    }
+  ],
+  "cog_displacement_2032": [
+    {
+      "param": "singularity_year",
+      "rho": -0.62
+    },
+    {
+      "param": "adoption_halflife",
+      "rho": -0.613
+    },
+    {
+      "param": "backlash_gain",
+      "rho": -0.135
+    },
+    {
+      "param": "max_displacement_rate",
+      "rho": 0.128
+    },
+    {
+      "param": "singularity_boost",
+      "rho": 0.014
+    },
+    {
+      "param": "internal_funding_share",
+      "rho": -0.012
+    }
+  ],
+  "min_credit_multiplier": [
+    {
+      "param": "internal_funding_share",
+      "rho": 0.519
+    },
+    {
+      "param": "singularity_year",
+      "rho": -0.03
+    },
+    {
+      "param": "robot_learning_rate",
+      "rho": 0.016
+    },
+    {
+      "param": "power_supply_gain",
+      "rho": 0.011
+    },
+    {
+      "param": "max_displacement_rate",
+      "rho": 0.011
+    },
+    {
+      "param": "chip_base_growth",
+      "rho": -0.01
+    }
+  ],
+  "power_margin_2032": [
+    {
+      "param": "singularity_year",
+      "rho": 0.299
+    },
+    {
+      "param": "transition_drag",
+      "rho": 0.016
+    },
+    {
+      "param": "adoption_halflife",
+      "rho": -0.014
+    },
+    {
+      "param": "component_supply_gain",
+      "rho": 0.013
+    },
+    {
+      "param": "robot_learning_rate",
+      "rho": 0.013
+    },
+    {
+      "param": "momentum_gain",
+      "rho": 0.011
+    }
+  ],
+  "robot_prod_2032": [
+    {
+      "param": "singularity_year",
+      "rho": -0.803
+    },
+    {
+      "param": "component_supply_gain",
+      "rho": 0.097
+    },
+    {
+      "param": "singularity_boost",
+      "rho": -0.012
+    },
+    {
+      "param": "backlash_gain",
+      "rho": 0.012
+    },
+    {
+      "param": "power_supply_gain",
+      "rho": 0.009
+    },
+    {
+      "param": "chip_base_growth",
+      "rho": -0.008
+    }
+  ],
+  "silicon_rent_normalization_year": [
+    {
+      "param": "power_growth_ceiling",
+      "rho": 0.233
+    },
+    {
+      "param": "momentum_gain",
+      "rho": 0.199
+    },
+    {
+      "param": "chip_base_growth",
+      "rho": -0.161
+    },
+    {
+      "param": "chip_supply_gain",
+      "rho": -0.161
+    },
+    {
+      "param": "power_supply_gain",
+      "rho": 0.133
+    },
+    {
+      "param": "adoption_halflife",
+      "rho": -0.106
+    }
+  ]
+}

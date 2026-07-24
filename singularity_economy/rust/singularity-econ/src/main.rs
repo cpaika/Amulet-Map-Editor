@@ -13,6 +13,11 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     match args.get(1).map(String::as_str) {
         Some("run") | None => run_baseline(),
+        Some("sa") => {
+            let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(20_000);
+            let seed: u64 = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(11);
+            sensitivity(n, seed);
+        }
         Some("mc") => {
             let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(10_000);
             let seed: u64 = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(7);
@@ -186,4 +191,109 @@ fn monte_carlo(n: usize, seed: u64) {
         "min_gdp_growth": dist(&min_gdp_growth),
     });
     println!("{}", serde_json::to_string_pretty(&out).unwrap());
+}
+
+// ---------------------------------------------------------------------------
+// Sensitivity analysis: Spearman rank correlation of each sampled parameter
+// against the investable outputs, over a large Monte Carlo sample.
+// ---------------------------------------------------------------------------
+
+fn ranks(v: &[f64]) -> Vec<f64> {
+    let mut idx: Vec<usize> = (0..v.len()).collect();
+    idx.sort_by(|&a, &b| v[a].partial_cmp(&v[b]).unwrap());
+    let mut r = vec![0.0; v.len()];
+    for (rank, &i) in idx.iter().enumerate() {
+        r[i] = rank as f64;
+    }
+    r
+}
+
+fn spearman(a: &[f64], b: &[f64]) -> f64 {
+    let (ra, rb) = (ranks(a), ranks(b));
+    let n = ra.len() as f64;
+    let ma = ra.iter().sum::<f64>() / n;
+    let mb = rb.iter().sum::<f64>() / n;
+    let mut cov = 0.0;
+    let mut va = 0.0;
+    let mut vb = 0.0;
+    for i in 0..ra.len() {
+        let da = ra[i] - ma;
+        let db = rb[i] - mb;
+        cov += da * db;
+        va += da * da;
+        vb += db * db;
+    }
+    cov / (va.sqrt() * vb.sqrt()).max(1e-12)
+}
+
+pub fn sensitivity(n: usize, seed: u64) {
+    let mut draw = Draw::new(seed);
+    let param_names = [
+        "singularity_year", "singularity_boost", "adoption_halflife",
+        "max_displacement_rate", "chip_supply_gain", "chip_base_growth",
+        "power_supply_gain", "power_base_growth", "power_growth_ceiling",
+        "capex_gdp_cap", "component_supply_gain", "robot_cost_2028_k",
+        "robot_learning_rate", "internal_funding_share", "momentum_gain",
+        "backlash_gain", "transition_drag",
+    ];
+    let mut param_vals: Vec<Vec<f64>> = vec![Vec::new(); param_names.len()];
+    let mut out_silicon_norm: Vec<f64> = Vec::new();
+    let mut out_power_margin_32: Vec<f64> = Vec::new();
+    let mut out_credit_min: Vec<f64> = Vec::new();
+    let mut out_disp_32: Vec<f64> = Vec::new();
+    let mut out_robot_32: Vec<f64> = Vec::new();
+    let mut out_capex_32: Vec<f64> = Vec::new();
+
+    for _ in 0..n {
+        let p = draw.params();
+        let vals = [
+            p.singularity_year as f64, p.singularity_boost, p.adoption_halflife,
+            p.max_displacement_rate, p.chip_supply_gain, p.chip_base_growth,
+            p.power_supply_gain, p.power_base_growth, p.power_growth_ceiling,
+            p.capex_gdp_cap, p.component_supply_gain, p.robot_cost_2028_k,
+            p.robot_learning_rate, p.internal_funding_share, p.momentum_gain,
+            p.backlash_gain, p.transition_drag,
+        ];
+        for (i, v) in vals.iter().enumerate() {
+            param_vals[i].push(*v);
+        }
+        let states = simulate(&p);
+        let norm = states.iter()
+            .find(|s| s.year > p.singularity_year
+                  && s.silicon_margin <= p.normal_margin + 0.02)
+            .map_or(2040.0, |s| s.year as f64);
+        out_silicon_norm.push(norm);
+        for s in &states {
+            if s.year == 2032 {
+                out_power_margin_32.push(s.power_margin);
+                out_disp_32.push(s.cog_displacement);
+                out_robot_32.push(s.robot_prod_m);
+                out_capex_32.push(s.ai_capex);
+            }
+        }
+        out_credit_min.push(states.iter()
+            .map(|s| s.credit_multiplier).fold(f64::MAX, f64::min));
+    }
+
+    let outputs: [(&str, &Vec<f64>); 6] = [
+        ("silicon_rent_normalization_year", &out_silicon_norm),
+        ("power_margin_2032", &out_power_margin_32),
+        ("min_credit_multiplier", &out_credit_min),
+        ("cog_displacement_2032", &out_disp_32),
+        ("robot_prod_2032", &out_robot_32),
+        ("ai_capex_2032", &out_capex_32),
+    ];
+
+    let mut report = serde_json::Map::new();
+    for (oname, ovals) in outputs {
+        let mut rows: Vec<(String, f64)> = param_names.iter().enumerate()
+            .map(|(i, pn)| (pn.to_string(), spearman(&param_vals[i], ovals)))
+            .collect();
+        rows.sort_by(|a, b| b.1.abs().partial_cmp(&a.1.abs()).unwrap());
+        let top: Vec<_> = rows.iter().take(6)
+            .map(|(k, v)| serde_json::json!({"param": k, "rho": (v * 1000.0).round() / 1000.0}))
+            .collect();
+        report.insert(oname.to_string(), serde_json::Value::Array(top));
+    }
+    println!("{}", serde_json::to_string_pretty(&report).unwrap());
 }
