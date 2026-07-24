@@ -1,0 +1,374 @@
+<title>Singularity 2027 — Model & Trade Book</title>
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #F7F6F2; --panel: #FFFFFF; --ink: #1D2226; --ink-2: #575D57;
+    --ink-3: #8A9088; --hair: #DDDAD1; --accent: #0E5F5B; --accent-soft: #E3EEEC;
+    --long: #1E7A46; --long-bg: #E4F0E8; --short: #AF4237; --short-bg: #F6E7E4;
+    --warn: #8F6A1B; --warn-bg: #F4ECDA;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --paper: #15181B; --panel: #1C2126; --ink: #E9E6DF; --ink-2: #A8AEA6;
+      --ink-3: #6E756D; --hair: #2E343A; --accent: #63BFB4; --accent-soft: #1E2C2B;
+      --long: #66C08A; --long-bg: #1C2B22; --short: #E0837A; --short-bg: #2F211F;
+      --warn: #D2A94E; --warn-bg: #2B2517;
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #15181B; --panel: #1C2126; --ink: #E9E6DF; --ink-2: #A8AEA6;
+    --ink-3: #6E756D; --hair: #2E343A; --accent: #63BFB4; --accent-soft: #1E2C2B;
+    --long: #66C08A; --long-bg: #1C2B22; --short: #E0837A; --short-bg: #2F211F;
+    --warn: #D2A94E; --warn-bg: #2B2517;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --paper: #F7F6F2; --panel: #FFFFFF; --ink: #1D2226; --ink-2: #575D57;
+    --ink-3: #8A9088; --hair: #DDDAD1; --accent: #0E5F5B; --accent-soft: #E3EEEC;
+    --long: #1E7A46; --long-bg: #E4F0E8; --short: #AF4237; --short-bg: #F6E7E4;
+    --warn: #8F6A1B; --warn-bg: #F4ECDA;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans);
+         margin: 0; line-height: 1.55; font-size: 16px; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 40px 22px 90px; }
+  header.mast { border-bottom: 3px double var(--hair); padding-bottom: 22px; margin-bottom: 30px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
+             text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+  h1 { font-family: var(--serif); font-size: clamp(30px, 5vw, 44px); line-height: 1.12;
+       margin: 0 0 12px; text-wrap: balance; font-weight: 600; }
+  .dek { color: var(--ink-2); max-width: 62ch; margin: 0; font-size: 17px; }
+  .disclaimer { background: var(--warn-bg); color: var(--ink); border-left: 3px solid var(--warn);
+                padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 22px 0 0; }
+  .statband { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+              gap: 12px; margin: 28px 0 8px; }
+  .stat { background: var(--panel); border: 1px solid var(--hair); border-radius: 8px;
+          padding: 14px 16px; }
+  .stat b { display: block; font-family: var(--mono); font-size: 26px; font-weight: 600;
+            font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .stat span { font-size: 12.5px; color: var(--ink-2); }
+  h2 { font-family: var(--serif); font-size: 27px; font-weight: 600; margin: 52px 0 6px;
+       text-wrap: balance; }
+  h2 .no { font-family: var(--mono); font-size: 14px; color: var(--accent); vertical-align: .35em;
+           letter-spacing: .1em; margin-right: 8px; }
+  h3 { font-size: 17px; margin: 30px 0 10px; }
+  .rule { height: 2px; background: var(--accent); width: 46px; border: 0; margin: 0 0 18px; }
+  p { max-width: 70ch; } li { max-width: 68ch; margin-bottom: 7px; }
+  strong { font-weight: 650; }
+  .findings li { margin-bottom: 12px; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--hair); border-radius: 8px;
+               background: var(--panel); margin: 16px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th { text-align: left; font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+       text-transform: uppercase; color: var(--ink-2); font-weight: 600;
+       padding: 12px 14px; border-bottom: 1px solid var(--hair); }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.tk { font-family: var(--mono); font-weight: 600; white-space: nowrap;
+          font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+          letter-spacing: .08em; padding: 2px 8px; border-radius: 99px; }
+  .pill.long { color: var(--long); background: var(--long-bg); }
+  .pill.short { color: var(--short); background: var(--short-bg); }
+  .pill.watch { color: var(--warn); background: var(--warn-bg); }
+  .pill.pair { color: var(--accent); background: var(--accent-soft); }
+  .sizecell { font-family: var(--mono); font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+  /* chart */
+  .viz { background: var(--panel); border: 1px solid var(--hair); border-radius: 8px;
+         padding: 20px 20px 14px; margin: 18px 0; }
+  .viz h4 { margin: 0 0 2px; font-size: 15px; }
+  .viz .sub { color: var(--ink-2); font-size: 13px; margin: 0 0 16px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--ink-2);
+            margin: 12px 0 4px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+              margin-right: 6px; vertical-align: -1px; }
+  .bars { display: grid; grid-template-columns: repeat(11, 1fr); gap: 6px; align-items: end;
+          height: 190px; }
+  .col { display: flex; flex-direction: column-reverse; gap: 2px; height: 100%; cursor: default; }
+  .seg { border-radius: 3px; min-height: 2px; transition: opacity .12s; }
+  .col:hover .seg { opacity: .82; }
+  .xlab { display: grid; grid-template-columns: repeat(11, 1fr); gap: 6px; margin-top: 8px;
+          font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); text-align: center; }
+  #tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--paper);
+         font-family: var(--mono); font-size: 12px; padding: 8px 10px; border-radius: 6px;
+         opacity: 0; z-index: 10; max-width: 240px; line-height: 1.5; }
+  .killgrid { display: grid; gap: 12px; margin: 16px 0; }
+  .kill { background: var(--panel); border: 1px solid var(--hair); border-left: 3px solid var(--short);
+          border-radius: 0 8px 8px 0; padding: 13px 16px; font-size: 14px; }
+  .kill b { font-family: var(--mono); }
+  .callout { background: var(--accent-soft); border-radius: 8px; padding: 16px 20px;
+             margin: 18px 0; font-size: 15px; max-width: none; }
+  footer { margin-top: 60px; border-top: 1px solid var(--hair); padding-top: 18px;
+           color: var(--ink-3); font-size: 13px; }
+  a { color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { .seg, .col:hover .seg { transition: none; } }
+</style>
+
+<div class="wrap">
+<header class="mast">
+  <p class="eyebrow">Overnight Desk Note · 2026-07-24 · Conditional Scenario Research</p>
+  <h1>Singularity 2027: an economy model, and the trades that survived their own red team</h1>
+  <p class="dek">Thesis as given: software singularity in 2027, general-purpose robotics ramping from 2028.
+  Seventeen research agents swept every affected vertical; a calibrated bottleneck simulation ran 800
+  Monte-Carlo economies; 45 candidate trades were then attacked by adversarial reviewers. 20 survived.</p>
+  <p class="disclaimer"><strong>Not investment advice.</strong> Everything here is scenario analysis conditional
+  on the stated thesis. Markets imply roughly a 20–35% probability of anything like a 2027 singularity —
+  the thesis itself is the book's largest risk, and position sizing must start there.</p>
+  <div class="statband">
+    <div class="stat"><b>17</b><span>research agents, 562 web lookups</span></div>
+    <div class="stat"><b>800</b><span>Monte-Carlo economies, 36 model tests</span></div>
+    <div class="stat"><b>45</b><span>trades adversarially attacked</span></div>
+    <div class="stat"><b>20 / 25</b><span>survived / killed with revival triggers</span></div>
+  </div>
+</header>
+
+<h2><span class="no">01</span>What the model robustly says</h2>
+<hr class="rule">
+<div class="viz">
+  <h4>Which constraint caps the AI buildout, by year</h4>
+  <p class="sub">Share of 800 Monte-Carlo runs in which each constraint binds. Hover a column for exact shares.</p>
+  <div class="bars" id="bars"></div>
+  <div class="xlab" id="xlab"></div>
+  <div class="legend">
+    <span><i style="background:var(--s1)"></i>Power (turbines, transformers, queues)</span>
+    <span><i style="background:var(--s2)"></i>Chips (CoWoS, HBM, EUV)</span>
+    <span><i style="background:var(--s3)"></i>Capital willingness</span>
+    <span><i style="background:var(--s4)"></i>Demand / adoption friction</span>
+  </div>
+</div>
+<ol class="findings">
+  <li><strong>Power is the constraint of the decade.</strong> It binds in 84% of runs in 2026 and 60–81% every
+      year through 2033. Evidence: gas turbines sold out through 2030 (GE Vernova selling 2031 slots at
+      +10–20% pricing), transformer lead times 3–5 years, switchgear sold out through 2028, interconnection
+      queues 5–10 years. Scarcity rents concentrate in energized capacity and the equipment that creates it.</li>
+  <li><strong>Chips get a secondary window, 2027–2030</strong> — CoWoS packaging, HBM stacking, EUV output —
+      then capacity catches up. Historical law: capacity-scarcity rents die 1–3 years after the supply response;
+      IP-moat rents (TSMC, ASML, CUDA) persist for decades.</li>
+  <li><strong>Capital becomes the binding constraint late (2034+)</strong> — the boom ends with financing
+      discipline, not demand exhaustion. Early symptoms exist now: Oracle −49.5% on credit fears, Alphabet's
+      first negative-FCF quarter, $250B+ of AI bonds.</li>
+  <li><strong>The "Cisco moment" (capex growth &lt;15%) has a median arrival of 2036</strong> under the thesis
+      (p10: 2034). If the singularity is real, picks-and-shovels have years of runway; the early-deceleration
+      tail is the fizzle worlds, and scenario weights — not top-timing — carry that risk.</li>
+  <li><strong>Casualty decay is back-half loaded:</strong> median cognitive-work displacement ~7% (2028) →
+      ~25% (2030) → ~50% (2032); IT-services pool −32% by 2033. History says casualty multiples die 2–4 years
+      before revenue — under the thesis, mid-2026 is <em>early</em>, which is when shorts must be placed.</li>
+  <li><strong>Robotics is a component story now, a labor story later.</strong> Median 2032 robot production is
+      ~0.8M units/yr; physical-labor displacement stays under 5% through 2036 — yet pure plays at 145–400x
+      already price the p90 outcome.</li>
+  <li><strong>Transition-recession tail:</strong> world GDP growth goes negative in ~10% of runs. The gated
+      credit shorts and the steepener hedge this tail.</li>
+</ol>
+
+<h2><span class="no">02</span>What the market already prices</h2>
+<hr class="rule">
+<ul>
+  <li><strong>Crowding sits in semis, not in multiples:</strong> NVDA ~21x forward, TSM 19.5x — the risk is the
+      E in a fizzle, not the P/E. Record hedge-fund chip exposure, but the Mag-7 already corrected in March 2026.</li>
+  <li><strong>The punished capex payers are the neglected longs:</strong> MSFT −25% over a year to 20.6x, GOOGL
+      sold off <em>for raising capex</em>, ORCL halved. If 2027 agent revenue vindicates 2026 capex, this is where
+      the asymmetry lives.</li>
+  <li><strong>First-order casualty shorts are over:</strong> Chegg at $0.97, Concentrix at 1.9x forward,
+      Salesforce −49%. Remaining short alpha is only in names still priced as durable — payroll, staffing,
+      seat-data, AI-narrative logistics.</li>
+  <li><strong>The bond market prices no singularity</strong> (10y 4.71%, negative simple ERP), and S&amp;P short
+      interest is at a record — a hedged melt-up, not euphoria.</li>
+  <li><strong>~$2T of private AI-lab marks must clear through IPOs</strong> (Anthropic Oct 2026, OpenAI 2027) —
+      the cycle's mark-to-market events for the whole complex.</li>
+</ul>
+
+<h2><span class="no">03</span>The book — longs</h2>
+<hr class="rule">
+<p>Every position survived a dedicated adversarial review. Sizing buckets are relative;
+entry rules and invalidation triggers come from the red team.</p>
+<div class="tablewrap"><table>
+  <tr><th>Ticker</th><th>Stance</th><th>Size</th><th>Case</th><th>Entry / invalidation</th></tr>
+  <tr><td class="tk">TSM</td><td><span class="pill long">LONG</span></td><td class="sizecell">core · anchor</td>
+      <td>The convergence pick — named by reviewers as the better expression of the ASML, Micron <em>and</em> SK Hynix theses. Owns both 2026 chokepoints (N2 wafers, CoWoS), four years of committed price hikes, 67.7% GM, $69B net cash, 19.5x fwd vs ~27% EPS CAGR. IP-moat rent class.</td>
+      <td>Now. Book-level risk: Taiwan — hedge outside the sector.</td></tr>
+  <tr><td class="tk">GOOGL</td><td><span class="pill long">LONG</span></td><td class="sizecell">core</td>
+      <td>"Best-capitalized compute owner at a market-plus price": TPU full stack, DeepMind, Waymo, self-funded capex. FCF just went negative on capex — that is the entry mechanism, not the risk.</td>
+      <td>Add on capex-tantrum dips (~$317 zone). Kill: Cloud backlog stalls.</td></tr>
+  <tr><td class="tk">MSFT</td><td><span class="pill long">LONG</span></td><td class="sizecell">core</td>
+      <td>The punished aggregator: −25% to 20.6x on capex/seat fears while owning enterprise agent distribution + OpenAI economics.</td>
+      <td>Half now, half after the Jul-29 print. Kill: Azure cc growth &lt;38%.</td></tr>
+  <tr><td class="tk">AVGO</td><td><span class="pill long">LONG</span></td><td class="sizecell">core</td>
+      <td>Custom-ASIC royalty on hyperscaler in-sourcing: $73B AI backlog, &gt;$100B FY27 AI revenue line of sight at 75%+ GM.</td>
+      <td>Now; priciest semi long (24.4x) — size below TSM. Kill: a second-gen ASIC re-compete loss.</td></tr>
+  <tr><td class="tk">CEG</td><td><span class="pill long">LONG</span></td><td class="sizecell">core</td>
+      <td>Contracted 20-yr nuclear PPAs (Microsoft/Crane, Meta/Clinton, Walmart) — the royalty-acre of the buildout, now at 24x after the July dip (cheaper than the thesis assumed).</td>
+      <td>Add toward $255–260. Kill: Crane slips past 2027.</td></tr>
+  <tr><td class="tk">NVDA</td><td><span class="pill long">LONG</span></td><td class="sizecell">medium</td>
+      <td>21x forward prices deceleration; the thesis makes the TAM 2–4x consensus. ASIC share loss is real but inside a faster-growing pool.</td>
+      <td>Now. Kill: two consecutive hyperscaler capex guidance cuts.</td></tr>
+  <tr><td class="tk">VST</td><td><span class="pill long">LONG</span></td><td class="sizecell">medium</td>
+      <td>Outright merchant-power scarcity (not a CEG-convergence trade — the discount is structural).</td>
+      <td>Now; add on theme selloffs with ERCOT/PJM forwards intact.</td></tr>
+  <tr><td class="tk">NRG</td><td><span class="pill long">LONG</span></td><td class="sizecell">medium −</td>
+      <td>Bought 13GW of existing gas below replacement cost — highest-torque, highest-fragility power leg (4.2x levered).</td>
+      <td>Size at 50–60% of other power longs.</td></tr>
+  <tr><td class="tk">6501.T</td><td><span class="pill long">LONG</span></td><td class="sizecell">medium</td>
+      <td>Hitachi Energy is the purest transformer-bottleneck asset (3–5yr lead times, +60–80% pricing) inside a 24x conglomerate.</td>
+      <td>Add on Japan-macro dips. Kill: Hitachi Energy book-to-bill &lt;1.2x.</td></tr>
+  <tr><td class="tk">CLS</td><td><span class="pill long">LONG</span></td><td class="sizecell">starter</td>
+      <td>Cheapest AI-networking growth (~30x for 50%+), but a 6–7% margin ODM with top-3 customers at 65% of revenue.</td>
+      <td>1/3 position only pre-print; add on raise-and-dip. Kill: a top-3 customer dual-sources away.</td></tr>
+  <tr><td class="tk">ASML</td><td><span class="pill long">LONG</span></td><td class="sizecell">starter</td>
+      <td>The monopoly is real; 49x forward is double its 10-yr median. "The moat protects the business, not your entry multiple" (2021→22: −50% with the monopoly intact).</td>
+      <td>Scale in on export-control scares toward ~35x effective.</td></tr>
+  <tr><td class="tk">MP</td><td><span class="pill long">LONG</span></td><td class="sizecell">option-like</td>
+      <td>Only Western magnet chain; DoD $110/kg floor, Apple offtake; −55% from high. But 161x NTM and China's export-control listing targets MP's own equipment supply.</td>
+      <td>Half at ~$44, half reserved for a truce-headline flush to $35–38. Venture-sized.</td></tr>
+  <tr><td class="tk">U-UN.TO</td><td><span class="pill long">LONG</span></td><td class="sizecell">option-like</td>
+      <td>Physical uranium at a 9.6% NAV discount; 197Mlb reactor demand vs ~160Mlb mine supply; every nuclear PPA adds demand. Ballast.</td>
+      <td>Now.</td></tr>
+</table></div>
+
+<h2><span class="no">04</span>The book — shorts</h2>
+<hr class="rule">
+<div class="tablewrap"><table>
+  <tr><th>Ticker</th><th>Stance</th><th>Structure</th><th>Case</th><th>Discipline</th></tr>
+  <tr><td class="tk">RHI</td><td><span class="pill short">SHORT</span></td><td class="sizecell">put spreads only</td>
+      <td>The strongest fundamental short: perm placement is the first AI casualty; revenue −4.9%, NI −35.5%, dividend payout above net income, still ~23x.</td>
+      <td>24% SI + 8.7% yield = &gt;15%/yr carry on stock borrow — 12–18mo put spreads, ≤50bps premium, entered on IV crush or squeeze rallies &gt;$42.</td></tr>
+  <tr><td class="tk">HUBS</td><td><span class="pill short">SHORT</span></td><td class="sizecell">delta-one, moderate</td>
+      <td>Best SaaS short: demand cracks visible now, and AI search is independently destroying the inbound/SEO engine it sells.</td>
+      <td>Respect the floor: $1.4B net cash, past Alphabet interest — cover into capitulation below ~$8.5B EV.</td></tr>
+  <tr><td class="tk">CHRW</td><td><span class="pill short">SHORT</span></td><td class="sizecell">delta-one, post-print</td>
+      <td>+110% in a year to 32x on its own AI-efficiency story while AI commoditizes brokerage itself. A cost-out sugar high capitalized as durable.</td>
+      <td>Four straight beats — do not stand in front of Jul-29. Enter on post-beat strength $210–225.</td></tr>
+  <tr><td class="tk">MRVL / AVGO</td><td><span class="pill pair">PAIR</span></td><td class="sizecell">half size</td>
+      <td>Socket erosion (Trainium3 lost to Alchip; Maia at risk to Broadcom) shorted against the share gainer.</td>
+      <td>Enter short leg on relief toward $225–230. Kill: MRVL names a new hyperscale socket.</td></tr>
+  <tr><td class="tk">PLTR</td><td><span class="pill short">SHORT</span></td><td class="sizecell">small, options only</td>
+      <td>Valuation short (~57x sales) — the weakest kind: growth is accelerating and AIP currently <em>benefits</em> from agents.</td>
+      <td>3–6mo put spreads only, after the Aug-3 print, on a failed rally. Never naked.</td></tr>
+  <tr><td class="tk">ALLY</td><td><span class="pill watch">GATED</span></td><td class="sizecell">armed, not entered</td>
+      <td>Displacement-credit thesis is real but early — EPS is mechanically rising on CD repricing through 2026.</td>
+      <td>Arm on 3 consecutive Manheim down-months or 2 quarters of rising 30+/60+ DPD. Then delta-one.</td></tr>
+</table></div>
+
+<h3>Structured macro (replacing killed expressions)</h3>
+<ul>
+  <li><strong>Rates:</strong> 10s30s steepener or payer swaptions — <em>not</em> a TLT ETF short (negative carry
+      of 1.5–2.5%/yr eats the ~8–10% target move). Trade it after a QRA that raises coupon sizes.</li>
+  <li><strong>Natural gas:</strong> long-dated 2027–28 Henry Hub calls instead of EQT equity — the power-demand
+      repricing lives in the back of the curve, without paying a post-rally multiple through a storage glut.</li>
+  <li><strong>Copper:</strong> 2028+ deferred futures/calls instead of FCX at 19x on a tariff-inflated COMEX premium.</li>
+  <li><strong>Gold:</strong> modest GLD as the fiscal-endgame hedge; pairs with the steepener.</li>
+</ul>
+
+<h2><span class="no">05</span>The kills that saved money</h2>
+<hr class="rule">
+<p>45 trades attacked; 25 killed. The most valuable vetoes — each would have been an expensive,
+plausible-sounding mistake:</p>
+<div class="killgrid">
+  <div class="kill"><b>Short TCS — killed (high confidence).</b> Incoherent with the thesis itself: enterprise AI
+    <em>integration</em> is what TCS sells. 2026–28 is a services super-cycle <em>before</em> displacement; the
+    $2.6B AI run-rate is additive now.</div>
+  <div class="kill"><b>Short Atlassian — killed (high confidence).</b> The 125:1 "capture ratio" was a category
+    error: Claude Code ARR is inference spend, not reallocated Jira budget — and Atlassian shipped agent
+    integrations <em>into</em> the coding tools. Fundamentals accelerating.</div>
+  <div class="kill"><b>Short Synchrony — killed (high confidence).</b> Retailer Share Arrangements contractually
+    absorb ~50% of incremental charge-offs — the equity is half-hedged against exactly the scenario being
+    shorted. Purer expression: OMF (no loss-sharing buffer), gated on delinquency data.</div>
+  <div class="kill"><b>Long Nabtesco — killed (high confidence).</b> Product-category error caught by review:
+    humanoids use harmonic/planetary actuators and roller screws, <em>not</em> RV cycloidal reducers sized for
+    100kg+ industrial arms.</div>
+  <div class="kill"><b>Long Micron — killed at this entry.</b> The blowout is <em>spot</em> commodity DRAM (+700%
+    yoy) — the most mean-reverting price series in semis — not the contracted HBM story; $1.12T cap for a memory
+    company is the cycle marker. Revives on a 30–40% spot-scare drawdown with SCA floors intact.</div>
+  <div class="kill"><b>Long GE Vernova — killed at this price.</b> The confirming quarter contained a 33% EBIT
+    miss, and the FCF guide-raise is substantially slot <em>deposits</em>, not margin. Revives at ~$700–800 or on
+    two consecutive Power-EBIT beats. The franchise is real; the entry isn't.</div>
+  <div class="kill"><b>Short ManpowerGroup — killed.</b> Right 2028 robotics thesis, unsurvivable path: 19.9%
+    short interest, a +34.8% squeeze day already on the tape, and capitulation upgrades still ahead as fuel.</div>
+  <div class="kill"><b>Short ADP / PAYX — killed.</b> The elasticity assumption was empirically wrong (2009:
+    employment −5%, ADP revenue ~flat — realized elasticity &lt;0.5), and PAYX's SMB base is physical-labor
+    heavy, robotics-gated to 2028+. Revives via Jan-2028 puts only on negative pays-per-control.</div>
+</div>
+<p class="callout"><strong>Watchlist with hard triggers</strong> — killed today, right thesis: GEV ($700–800),
+MU (−30–40% spot scare, SCA floors holding), SK Hynix (post-Jul-28 seller exhaustion), BESI (€140–160s or HBM
+hybrid-bonding re-adoption), POWL (22–25x), LITE (12–14x; optics has never held scarcity rents), SYM (&lt;$25 or
+GM &gt;28%), WDAY puts (cRPO &lt;10%), SYF→OMF puts (DPD inflection + payment rate &lt;15.5%).</p>
+
+<h2><span class="no">06</span>Book-level risks</h2>
+<hr class="rule">
+<ol>
+  <li><strong>The thesis is the book.</strong> If capability plateaus, longs de-rate 30–60% (fizzle scenario) and
+      shorts squeeze. The 10% fizzle weight and 12% discount rate are load-bearing.</li>
+  <li><strong>Taiwan</strong> is the anchor position's single point of failure — no intra-sector diversification
+      exists; only sizing and out-of-book hedges.</li>
+  <li><strong>The levered periphery cracks first</strong> (neoclouds, DC SPVs, Oracle credit): a 2027 refinancing
+      accident repriced everything in 2001, including the honest suppliers.</li>
+  <li><strong>IPO event risk:</strong> Anthropic (Oct 2026) and OpenAI (2027) are the mark-to-market events for
+      ~$2T of private value — a discounted print is a de-gross signal.</li>
+  <li><strong>Crowding asymmetry:</strong> in a broad risk-off, longs de-rate faster than casualty shorts fall;
+      both legs lose initially.</li>
+  <li><strong>Backlogs are deposits, not GAAP revenue</strong> — a 2027 digestion year converts "sold out through
+      2030" into cancellations.</li>
+</ol>
+
+<footer>
+  Method: 17-agent vertical research sweep → calibrated bottleneck simulation (800-run Monte Carlo, 36 tests) →
+  45-trade screen with verified mid-2026 financials → 15 adversarial red-team agents (priced-in / thesis-failure /
+  structural lenses). Full model, calibration evidence, verdicts, and valuation engine:
+  <span style="font-family:var(--mono)">singularity_economy/</span> on branch
+  <span style="font-family:var(--mono)">claude/economy-models-singularity-2027-bj3cwo</span>.
+  Scenario analysis conditional on a stated thesis — not investment advice.
+</footer>
+</div>
+<div id="tip" role="status"></div>
+
+<script>
+const DATA = {
+  years: [2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036],
+  power:  [.838,.378,.589,.685,.760,.811,.809,.759,.647,.524,.411],
+  chips:  [0,.328,.246,.253,.240,.186,.145,.101,.054,.022,0],
+  capital:[0,0,0,0,0,.003,.045,.140,.299,.454,.589],
+  demand: [.163,.295,.165,.062,0,0,.001,0,0,0,0],
+};
+const SERIES = [
+  ["power","Power","--s1"],["chips","Chips","--s2"],
+  ["capital","Capital","--s3"],["demand","Demand","--s4"],
+];
+const bars = document.getElementById('bars');
+const xlab = document.getElementById('xlab');
+const tip = document.getElementById('tip');
+DATA.years.forEach((y, i) => {
+  const col = document.createElement('div');
+  col.className = 'col';
+  let lines = [y + ' — binding constraint:'];
+  SERIES.forEach(([key, name, cssVar]) => {
+    const v = DATA[key][i];
+    if (v > 0.004) {
+      const seg = document.createElement('div');
+      seg.className = 'seg';
+      seg.style.height = (v * 100) + '%';
+      seg.style.background = `var(${cssVar})`;
+      col.appendChild(seg);
+    }
+    if (v > 0.004) lines.push(name + ': ' + Math.round(v * 100) + '%');
+  });
+  col.addEventListener('pointermove', e => {
+    tip.innerHTML = lines.join('<br>');
+    tip.style.opacity = 1;
+    tip.style.left = Math.min(e.clientX + 14, window.innerWidth - 190) + 'px';
+    tip.style.top = (e.clientY + 14) + 'px';
+  });
+  col.addEventListener('pointerleave', () => { tip.style.opacity = 0; });
+  bars.appendChild(col);
+  const l = document.createElement('div');
+  l.textContent = String(y).slice(2);
+  xlab.appendChild(l);
+});
+</script>
