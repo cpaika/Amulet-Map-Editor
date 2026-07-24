@@ -5,7 +5,7 @@
 capability across cognitive work with task costs 100–1000x below wages;
 general-purpose robotics ramps from 2028.
 **Process:** 17-agent research sweep (562 web lookups) → calibrated bottleneck
-simulation with 800-run Monte Carlo (36 tests across the model and valuation engines) → 45-candidate
+simulation, later rebuilt as a Rust systems-dynamics engine (47 tests incl. loop ablations and conclusion locks) → 45-candidate
 screen → per-ticker financial verification → adversarial red team (every trade
 attacked on priced-in, thesis-failure, and structural lenses).
 
