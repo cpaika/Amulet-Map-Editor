@@ -5,15 +5,20 @@
 capability across cognitive work with task costs 100–1000x below wages;
 general-purpose robotics ramps from 2028.
 **Process:** 17-agent research sweep (562 web lookups) → calibrated bottleneck
-simulation with 800-run Monte Carlo (`model.py`, 36 tests) → 45-candidate
+simulation with 800-run Monte Carlo (36 tests across the model and valuation engines) → 45-candidate
 screen → per-ticker financial verification → adversarial red team (every trade
 attacked on priced-in, thesis-failure, and structural lenses).
 
 > **This is scenario analysis conditional on the stated thesis, not investment
 > advice.** Position sizing must reflect that the thesis itself is the largest
 > risk: prediction markets imply the marginal investor carries only ~20–35%
-> probability of anything like a 2027 singularity. Everything below is
-> probability-weighted across five scenarios including a fizzle.
+> probability of anything like a 2027 singularity. All expected values below
+> are **conditional on the thesis** — the scenario weights (baseline 35% /
+> fast-takeoff 15% / delayed 25% / friction 15% / fizzle 10%) put ~90% on
+> singularity variants by construction. At an unconditional p(thesis) of ~30%,
+> mentally triple the fizzle weight: most longs' expected upside compresses
+> ~40-60% and the shorts weaken more — which is why every short carries
+> structural discipline (spreads, gates, pairs).
 
 ---
 
@@ -39,7 +44,7 @@ Findings that survive the 800-run Monte Carlo over wide parameter priors:
 2. **Chips get a secondary window (2027–2030, ~25–33% of runs)** — CoWoS
    packaging, HBM stacking, and EUV tool output are the specific chokepoints,
    after which capacity growth catches up.
-3. **Capital becomes the binding constraint late (2034+ in 30–60% of runs)** —
+3. **Capital becomes the binding constraint late (2034+, reaching ~45–60% of runs by 2035–36)** —
    the boom ends not with demand exhaustion but with financing discipline;
    already visible in embryo (Oracle –49.5% on credit fears, first negative
    FCF quarter at Alphabet, $250B+ AI bonds outstanding).
@@ -59,8 +64,12 @@ Findings that survive the 800-run Monte Carlo over wide parameter priors:
    2–4 years before the labor market notices — but pure plays priced at 400x
    already assume the p90.
 7. **Transition-recession tail:** worst-year world GDP growth goes negative in
-   ~10% of runs as displaced labor income outruns recycled demand. The
-   consumer-credit and duration legs of the book hedge this tail.
+   ~10% of runs as displaced labor income outruns recycled demand. **At
+   inception this tail is only partially hedged**: the credit shorts (ALLY,
+   SYF-via-OMF) and the steepener are trigger-armed, not live. The always-on
+   protection is the GLD allocation and the defined-risk structure of the
+   shorts; treat the recession tail as accepted risk until the credit
+   triggers arm.
 
 ## 2. What the market already prices (July 2026)
 
@@ -68,7 +77,7 @@ The market is mid-correction, not euphoric — this materially improves the
 entry point for thesis-consistent trades:
 
 - **Crowding is concentrated in semis** (record hedge-fund chipmaker exposure)
-  yet the multiples are not bubbly: NVDA ~21x forward, TSM 19.5x, AVGO 24.9x.
+  yet the multiples are not bubbly: NVDA ~21x forward, TSM 19.5x, AVGO 24.4x.
   The risk in these names is the E, not the P/E (the Cisco lesson: revenue
   peaked 3 quarters *after* the stock).
 - **Capex payers have been punished**: MSFT –19% YTD (20.6x fwd), GOOGL sold
@@ -77,9 +86,11 @@ entry point for thesis-consistent trades:
 - **First-order casualties are already dead**: Chegg $0.97, Concentrix –63%
   (1.9x fwd), EPAM –52%, Salesforce –49% (11.3x fwd), Adobe 8.2x. The market
   reprices casualties within 2–4 quarters of evidence. **The remaining short
-  alpha is only in names still priced as durable** (ADP 20x, PAYX ~21x, RHI
-  ~23x with falling earnings, ManpowerGroup UP 19% because robotics is beyond
-  the market's dating horizon).
+  alpha is only in names still priced as durable** — though the red team
+  subsequently killed most single-name expressions of even this (ADP's
+  employment elasticity is empirically <0.5; PAYX's SMB base is physical-labor
+  heavy; MAN is a 19.9%-SI squeeze trap). What survived: RHI via put spreads,
+  HUBS, CHRW post-print. The kill discipline of §5 applies here first.
 - **The bond market prices no singularity**: 10y at 4.71%, negative simple
   ERP, S&P short interest at record 3.7% of float — a hedged melt-up.
 - **Private marks price the thesis far harder than public markets** (Anthropic
@@ -121,7 +132,7 @@ rules and invalidation triggers come from those reviews.
 
 | # | Ticker | Trade | Why it survives everything | Entry / invalidation |
 |---|--------|-------|---------------------------|---------------------|
-| 1 | **TSM** | Long TSMC | The convergence pick: named by the red team as the better expression of the ASML, MU, AND SK Hynix theses. Owns both 2026 chokepoints (N2 wafers, CoWoS packaging), 4 years of committed price hikes, 67.7% GM, net cash $69B — at 19.5x fwd with ~27% consensus EPS CAGR. IP-moat rent class (persists decades, per history). | Enter now. Invalidation: Taiwan escalation (book-level risk, hedge separately); CoWoS gap closing with pricing-power rollback. |
+| 1 | **TSM** | Long TSMC | The convergence pick: named by the red team as the better expression of the ASML, MU, AND SK Hynix theses. Owns both 2026 chokepoints (N2 wafers, CoWoS packaging), 4 years of committed price hikes, 67.7% GM, net cash $69B — at 19.5x fwd with ~27% consensus EPS CAGR. IP-moat rent class (persists decades, per history). | Enter now — but per the red-team verdict, size at HALF a normal anchor weight, or full weight only when paired with 12-month ~20%-OTM puts (~2-3%/yr cost). Invalidation: CoWoS gap closing with pricing-power rollback. |
 | 2 | **GOOGL** | Long Alphabet | Reframed by red team: "best-capitalized compute owner at market-plus price." TPU full stack (4.3M units/yr), DeepMind, Waymo; self-funds capex from search cash flow. | Add on capex-tantrum dips (~$317 zone). Invalidation: Cloud backlog growth stalling; paid-click erosion without AI-revenue offset. |
 | 3 | **MSFT** | Long Microsoft | The punished aggregator: -25% over 1yr to 20.6x fwd on capex/seat fears while owning enterprise agent distribution + OpenAI economics. Asymmetric skew at this multiple. | Half now, half after Jul-29 print. Invalidation: Azure cc growth <38%. |
 | 4 | **AVGO** | Long Broadcom | Custom-ASIC royalty on hyperscaler in-sourcing: $73B AI backlog, >$100B FY27 AI revenue line of sight, 75%+ GM, leverage now 1.0x. The inference mix-shift winner. | Enter now; most expensive of the semi longs (24.4x) — size below TSM. Invalidation: a named second-gen ASIC program re-compete loss. |
@@ -153,7 +164,7 @@ rules and invalidation triggers come from those reviews.
 | 2 | **HUBS** | Short HubSpot | Moderate size, delta-one acceptable. Best SaaS short: demand cracks visible NOW (softer pipeline, longer cycles) + independent kill-shot (AI search destroying the inbound/SEO engine it sells). | Respect the floor: $1.4B net cash, M&A interest (Alphabet approach) — cover into capitulation, don't press below ~$8.5B EV. |
 | 3 | **CHRW** | Short CH Robinson | Delta-one after Jul-29 print only — 4 straight beats, do not stand in front. AI-margin story is a cost-out sugar high while AI commoditizes brokerage itself. | Enter on post-beat strength $210-225, or on first AGP-per-load stabilization with falling volumes. |
 | 4 | **MRVL / AVGO** | Pair: short Marvell vs long Broadcom | Half size. Socket erosion (Trainium3 lost to Alchip, Maia at risk to AVGO) vs the share gainer. | Enter short leg on relief toward $225-230. Kill if MRVL names a new hyperscale socket win. |
-| 5 | **PLTR** | Short Palantir | Small, put spreads only, AFTER Aug-3 print. Growth is accelerating (+85%) and AIP is currently the agent BENEFICIARY — this is a valuation short, the weakest kind. | 3-6mo put spreads on failed post-print rally. |
+| 5 | **PLTR** | Short Palantir (relative) | Small, put spreads only, AFTER Aug-3 print — run explicitly against the MSFT/GOOGL long sleeve as a relative bet (per §6): agents commoditize the integration layer faster than the aggregators. Growth is accelerating (+85%), so never naked. | 3-6mo put spreads on failed post-print rally. |
 | 6 | **ALLY** | Short Ally (GATED) | Do not enter today: EPS mechanically rising on CD repricing. The 2027-28 displacement-credit thesis is real but early. | Arm when Manheim posts 3 consecutive down months OR ALLY 30+/60+ DPD inflects up 2 quarters. Then delta-one. |
 
 ### Structured macro (replacing killed expressions)
@@ -167,14 +178,39 @@ rules and invalidation triggers come from those reviews.
   paying a post-rally equity multiple through a storage glut.
 - **Copper**: 2028+ deferred futures/calls instead of FCX at 19x on a
   tariff-inflated COMEX premium with a proven one-session collapse mode.
-- **Gold (GLD)**: modest allocation as the fiscal-endgame hedge (UBI-scale
-  transfers into an existing $1.8T deficit); pairs with the steepener.
+- **Gold (GLD)**: modest ALWAYS-ON allocation as the fiscal-endgame hedge
+  (UBI-scale transfers into an existing $1.8T deficit) and the book's only
+  live tail hedge at inception; pairs with the steepener when it arms.
+- **Taiwan hedge**: the TSM/AVGO/NVDA/ASML/CLS complex shares one geopolitical
+  failure mode. Either run TSM at half weight (chosen default above) or carry
+  rolling 12-month ~20%-OTM TSM puts at ~2-3%/yr against the full semi sleeve.
+  There is no intra-sector diversification against this risk.
+
+### Book-level scenario P&L (rough, % of book NAV)
+
+The headline "13 longs / 6 shorts" overstates balance: at inception the LIVE
+short book is HUBS (delta-one) plus RHI put spreads capped at ~50bps premium —
+CHRW, PLTR, and ALLY are all gated behind entries/dates. Estimated book
+drawdowns (long sleeve sized ~2:1 vs live shorts, GLD ~5%):
+
+| Scenario | Est. book P&L | What happens |
+|---|---|---|
+| Fizzle (10% weight) | **-25 to -40%** | ~9 of 13 longs de-rate 30-60%; shorts squeeze first, help later; GLD flat. The dominant risk. |
+| Taiwan event | **-20 to -35%** | 6 longs hit directly (TSM half-weight + put overlay caps the worst leg); nothing in the book profits. |
+| 2027 credit accident (levered periphery) | **-15 to -25%** | All AI longs de-rate together (2001 pattern); casualty shorts and GLD offset partially. |
+| Baseline thesis path | **+40 to +90%** (probability-weighted engine EVs, thesis-conditional) | Rents accrue to power/tolls; casualties decay on schedule. |
+
+These three loss scenarios are correlated expressions of ONE bet (the thesis,
+via Taiwan-concentrated supply chains, funded by fragile credit). Sizing the
+whole construct against total capital is the real risk decision.
 
 ### Watchlist with hard revival triggers (killed today, right thesis)
 
 | Ticker | Revives when |
 |--------|--------------|
 | GEV | ~$700-800 (low-30s NTM P/E) with order book intact, OR two consecutive Power-segment EBIT beats proving slot repricing reaches the P&L. Alternative now: ENR.DE (several turns cheaper). |
+| 6324.T pair (short HDS vs long components) | Explicit PASS at inception: Japanese borrow mechanics + narrative momentum make even the paired version unattractive until the first humanoid-order disappointment; revisit on any FY3/27 guidance miss. |
+| Robotics basket long | The 2028 robotics leg is deliberately UNEXPRESSED at inception (every component long died in review). Build trigger: a shipping humanoid program naming a non-China reducer/actuator supplier, or Optimus actually crossing ~1,000 units/week — then revisit 2049.TW, KGX.DE, TER. |
 | MU | 30-40% drawdown on a spot-price rollover scare WITHOUT SCA floors cracking — that proves the floor structure and creates the entry. (Q4 FQ guide: $50B rev / 86% GM — peak-cycle numbers.) |
 | 000660.KS | Post-Jul-28 print: in-line KRW 60-62T OP without new lows = seller exhaustion → enter. LTA structures cap upside — size accordingly. |
 | BESI.AS | Mid-€140s-160s (~25x fwd), or Samsung/Hynix re-adopting hybrid bonding for HBM4 (currently SHELVED per Jul-2026 TrendForce — the pitched catalyst was factually dead). Alternative: ASMPT 522.HK at half the multiple with the live TCB sockets. |
@@ -197,7 +233,22 @@ ASML, U-UN.TO, WTKWY* (*model overrides — see §6), RHI, HUBS, CHRW, ALLY
 
 Killed: GEV, MU, 000660.KS, BESI.AS, POWL, LITE, SYM, SHA.DE, 6268.T, MAN,
 6324.T, FCX, EQT, ADP, PAYX, TCS.NS, WDAY, TEAM, FDS, MMC, LSTR, SYF, EQIX,
-6954.T, TLT — each with explicit revival triggers (see watchlist).
+6954.T, TLT. Ten carry explicit revival triggers (watchlist below); FCX, EQT
+and TLT were replaced by structured-macro expressions of the same views;
+MAN, TCS.NS, TEAM, FDS, MMC, LSTR, EQIX, 6954.T, SHA.DE, 6268.T and 6324.T
+are hard passes at any nearby price (mechanism refuted or path unsurvivable) —
+full dispositions in `output/verdicts.json`.
+
+**Deliberate passes by vertical** (silence ≠ oversight): healthcare produced
+no expression that beat its risks (MEDP/IQV cases never cleared the screen —
+trial-volume upside vs in-silico disruption nets unclear); defense has no
+clean thesis vehicle (closest name, PLTR, is a relative short here); China
+listings (Leaderdrive, Shuanghuan, UBTech, Innolight) are where the model says
+much of the robotics pool lands, but A-share/HK access, delisting risk, and
+short-borrow impossibility make them unactionable for this book — this is an
+acknowledged coverage hole, not a view; logistics longs (GXO, RXO) lost to
+SYM/KGX.DE on the same exposure and those died too; memory (MU/Hynix) and
+optics (LITE) are watchlist-gated capacity-scarcity rents, not passes.
 
 The kills that mattered most (would have been expensive mistakes):
 
@@ -264,7 +315,13 @@ The quantitative model killed several candidates before the red team ran:
 5. **Crowding asymmetry**: the longs are consensus-adjacent (semis crowded);
    the shorts are contrarian-timing trades. In a broad risk-off, both legs
    lose initially (longs de-rate faster than casualty shorts fall).
-6. **Model risk**: the bottleneck model's power-binding conclusion rests on
+6. **The robotics leg of the thesis is deliberately unexpressed at
+   inception.** Every component long died in adversarial review (wrong
+   component category, Chinese commoditization, hype multiples); MP is a
+   geopolitical-scarcity play, not a robot-volume play. If robotics surprises
+   EARLY, this book underperforms the thesis — the watchlist build-trigger
+   (named non-China supplier in a shipping program) is the re-entry.
+7. **Model risk**: the bottleneck model's power-binding conclusion rests on
    turbine/transformer/queue lead times holding. A demand air-pocket
    (2027 digestion year) converts "sold out through 2030" into cancellations
    — backlogs are deposits, not GAAP revenue.
@@ -295,6 +352,30 @@ The quantitative model killed several candidates before the red team ran:
 - IT-services pricing on renewals (T&M rate cards), not bookings headlines.
 - Consumer credit: NCO trajectories at SYF/ALLY vs white-collar metro
   unemployment; the shorts activate on the SECOND derivative.
+
+**FX policy for non-USD legs:** hedge the JPY exposure (6501.T) — the book's
+US-rates view (term-premium expansion) is yen-negative via rate differentials,
+so unhedged JPY fights the macro leg; leave CAD (U-UN.TO) unhedged (commodity
+currency moves with the position); EUR names (ASML via ADR, watchlist ENR.DE/
+BESI.AS) are small enough to leave unhedged at starter size; if the Korea
+watchlist entry (000660.KS) triggers, hedge KRW half-weight (won weakens in
+the risk-off scenarios where the entry would trigger). TSM ADR carries NTD
+sensitivity (~0.3pp OM per 1%) — accept it; it is part of the Taiwan factor
+already sized for.
+
+**Implementation notes (options and borrow):** the RHI put-spread market is
+mid-cap wide — work limit orders at mid, accept partial fills, and treat the
+50bps premium cap as binding; Jan-2028 LEAPs for the trigger trades (WDAY,
+ADP, SYF-via-OMF, ALLY) should be priced BEFORE the trigger fires so stale
+quotes don't force chasing; Henry Hub 2027-28 calls and 2028+ copper calls are
+liquid at the exchanges but roll costs matter — size once, don't roll monthly;
+payer swaptions require an ISDA — the retail-accessible proxy is short TLT
+call spreads (defined risk, carry-capped). HUBS borrow: ~12% SI, GC borrow as
+of July 2026 — check the rate before sizing delta-one. Sizing map (indicative,
+% of book NAV): full 4-5%, medium 2-3%, starter ~1%, option-like 0.5-1%,
+GLD ~5%. Rebalance quarterly plus trigger-driven; trim any long that doubles
+its weight; re-run the red-team pass semiannually — the July 2026 verdicts
+have expiration dates (most cite specific prints and levels).
 
 **Kill criteria for the whole construct:**
 - Two consecutive quarters of hyperscaler capex GUIDANCE cuts → the capital

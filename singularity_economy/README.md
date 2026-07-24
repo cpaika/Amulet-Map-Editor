@@ -23,8 +23,8 @@ where equity value migrates:
 - `model.py` — core annual-step simulation (pure stdlib, no dependencies)
 - `scenarios.py` — named scenarios (baseline / fast_takeoff / delayed / friction
   / fizzle) + Monte Carlo
-- `test_model.py` — 22 tests: invariants, 2026 calibration vs actuals,
-  comparative statics
+- `test_model.py` / `test_valuation.py` — 36 tests: invariants, 2026
+  calibration vs actuals, comparative statics, valuation engine
 - `calibration_notes.md` — parameter sources from the research sweep
 - `output/results.json` — full scenario + Monte Carlo output
 
