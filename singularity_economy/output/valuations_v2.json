@@ -1,0 +1,1765 @@
+[
+ {
+  "ticker": "BESI.AS",
+  "name": "BE Semiconductor",
+  "stance": "long",
+  "mcap_b": 20.7,
+  "implied_cagr_at_current_price": 0.151,
+  "expected_upside": 5.303,
+  "worst_scenario_upside": 2.001,
+  "best_scenario_upside": 9.861,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 129.3,
+    "upside": 5.249,
+    "earnings_2030_b": 1.6,
+    "earnings_2033_b": 4.6
+   },
+   "fast_takeoff": {
+    "fair_value_b": 224.8,
+    "upside": 9.861,
+    "earnings_2030_b": 1.6,
+    "earnings_2033_b": 5.8
+   },
+   "delayed": {
+    "fair_value_b": 103.4,
+    "upside": 3.996,
+    "earnings_2030_b": 1.5,
+    "earnings_2033_b": 3.9
+   },
+   "friction": {
+    "fair_value_b": 129.3,
+    "upside": 5.249,
+    "earnings_2030_b": 1.6,
+    "earnings_2033_b": 4.6
+   },
+   "fizzle": {
+    "fair_value_b": 62.1,
+    "upside": 2.001,
+    "earnings_2030_b": 1.5,
+    "earnings_2033_b": 3.6
+   }
+  },
+  "notes": "Hybrid bonding adoption = share gain against stacking intensity"
+ },
+ {
+  "ticker": "NRG",
+  "name": "NRG Energy",
+  "stance": "long",
+  "mcap_b": 30.2,
+  "implied_cagr_at_current_price": 0.054,
+  "expected_upside": 5.13,
+  "worst_scenario_upside": 2.082,
+  "best_scenario_upside": 7.537,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 187.9,
+    "upside": 5.221,
+    "earnings_2030_b": 8.6,
+    "earnings_2033_b": 15.3
+   },
+   "fast_takeoff": {
+    "fair_value_b": 257.8,
+    "upside": 7.537,
+    "earnings_2030_b": 8.7,
+    "earnings_2033_b": 17.5
+   },
+   "delayed": {
+    "fair_value_b": 164.4,
+    "upside": 4.443,
+    "earnings_2030_b": 7.9,
+    "earnings_2033_b": 13.9
+   },
+   "friction": {
+    "fair_value_b": 201.9,
+    "upside": 5.685,
+    "earnings_2030_b": 8.5,
+    "earnings_2033_b": 15.6
+   },
+   "fizzle": {
+    "fair_value_b": 93.1,
+    "upside": 2.082,
+    "earnings_2030_b": 6.6,
+    "earnings_2033_b": 10.1
+   }
+  },
+  "notes": ""
+ },
+ {
+  "ticker": "EQT",
+  "name": "EQT",
+  "stance": "long",
+  "mcap_b": 33.4,
+  "implied_cagr_at_current_price": 0.073,
+  "expected_upside": 3.384,
+  "worst_scenario_upside": 1.311,
+  "best_scenario_upside": 5.009,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 148.6,
+    "upside": 3.45,
+    "earnings_2030_b": 7.9,
+    "earnings_2033_b": 13.7
+   },
+   "fast_takeoff": {
+    "fair_value_b": 200.7,
+    "upside": 5.009,
+    "earnings_2030_b": 7.9,
+    "earnings_2033_b": 15.6
+   },
+   "delayed": {
+    "fair_value_b": 130.8,
+    "upside": 2.916,
+    "earnings_2030_b": 7.3,
+    "earnings_2033_b": 12.5
+   },
+   "friction": {
+    "fair_value_b": 159.1,
+    "upside": 3.764,
+    "earnings_2030_b": 7.8,
+    "earnings_2033_b": 14.0
+   },
+   "fizzle": {
+    "fair_value_b": 77.2,
+    "upside": 1.311,
+    "earnings_2030_b": 6.2,
+    "earnings_2033_b": 9.2
+   }
+  },
+  "notes": ""
+ },
+ {
+  "ticker": "VST",
+  "name": "Vistra",
+  "stance": "long",
+  "mcap_b": 57,
+  "implied_cagr_at_current_price": 0.091,
+  "expected_upside": 3.264,
+  "worst_scenario_upside": 1.137,
+  "best_scenario_upside": 4.947,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 246.6,
+    "upside": 3.326,
+    "earnings_2030_b": 10.9,
+    "earnings_2033_b": 19.1
+   },
+   "fast_takeoff": {
+    "fair_value_b": 339.0,
+    "upside": 4.947,
+    "earnings_2030_b": 10.9,
+    "earnings_2033_b": 21.8
+   },
+   "delayed": {
+    "fair_value_b": 215.8,
+    "upside": 2.787,
+    "earnings_2030_b": 10.0,
+    "earnings_2033_b": 17.3
+   },
+   "friction": {
+    "fair_value_b": 265.1,
+    "upside": 3.651,
+    "earnings_2030_b": 10.8,
+    "earnings_2033_b": 19.4
+   },
+   "fizzle": {
+    "fair_value_b": 121.8,
+    "upside": 1.137,
+    "earnings_2030_b": 8.4,
+    "earnings_2033_b": 12.7
+   }
+  },
+  "notes": "Merchant torque to power scarcity at a discount to CEG"
+ },
+ {
+  "ticker": "AVGO",
+  "name": "Broadcom",
+  "stance": "long",
+  "mcap_b": 1830,
+  "implied_cagr_at_current_price": 0.097,
+  "expected_upside": 3.0,
+  "worst_scenario_upside": 1.255,
+  "best_scenario_upside": 5.093,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 7357.5,
+    "upside": 3.021,
+    "earnings_2030_b": 167.0,
+    "earnings_2033_b": 372.6
+   },
+   "fast_takeoff": {
+    "fair_value_b": 11150.4,
+    "upside": 5.093,
+    "earnings_2030_b": 168.6,
+    "earnings_2033_b": 443.5
+   },
+   "delayed": {
+    "fair_value_b": 6221.4,
+    "upside": 2.4,
+    "earnings_2030_b": 162.9,
+    "earnings_2033_b": 325.0
+   },
+   "friction": {
+    "fair_value_b": 7359.7,
+    "upside": 3.022,
+    "earnings_2030_b": 167.3,
+    "earnings_2033_b": 373.2
+   },
+   "fizzle": {
+    "fair_value_b": 4126.9,
+    "upside": 1.255,
+    "earnings_2030_b": 162.9,
+    "earnings_2033_b": 305.5
+   }
+  },
+  "notes": "Custom-ASIC royalty on hyperscaler in-sourcing"
+ },
+ {
+  "ticker": "NVDA",
+  "name": "NVIDIA",
+  "stance": "long",
+  "mcap_b": 5060,
+  "implied_cagr_at_current_price": 0.082,
+  "expected_upside": 2.845,
+  "worst_scenario_upside": 1.085,
+  "best_scenario_upside": 5.105,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 19471.7,
+    "upside": 2.848,
+    "earnings_2030_b": 506.0,
+    "earnings_2033_b": 1078.0
+   },
+   "fast_takeoff": {
+    "fair_value_b": 30893.1,
+    "upside": 5.105,
+    "earnings_2030_b": 512.6,
+    "earnings_2033_b": 1319.9
+   },
+   "delayed": {
+    "fair_value_b": 16137.3,
+    "upside": 2.189,
+    "earnings_2030_b": 489.4,
+    "earnings_2033_b": 916.6
+   },
+   "friction": {
+    "fair_value_b": 19471.7,
+    "upside": 2.848,
+    "earnings_2030_b": 506.0,
+    "earnings_2033_b": 1078.0
+   },
+   "fizzle": {
+    "fair_value_b": 10550.2,
+    "upside": 1.085,
+    "earnings_2030_b": 489.4,
+    "earnings_2033_b": 850.5
+   }
+  },
+  "notes": "Share loss to ASICs inside a pool growing 2-4x consensus"
+ },
+ {
+  "ticker": "CEG",
+  "name": "Constellation",
+  "stance": "long",
+  "mcap_b": 99.3,
+  "implied_cagr_at_current_price": 0.093,
+  "expected_upside": 2.7,
+  "worst_scenario_upside": 0.851,
+  "best_scenario_upside": 4.158,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 372.5,
+    "upside": 2.751,
+    "earnings_2030_b": 14.2,
+    "earnings_2033_b": 24.1
+   },
+   "fast_takeoff": {
+    "fair_value_b": 512.2,
+    "upside": 4.158,
+    "earnings_2030_b": 14.2,
+    "earnings_2033_b": 27.4
+   },
+   "delayed": {
+    "fair_value_b": 327.1,
+    "upside": 2.294,
+    "earnings_2030_b": 13.0,
+    "earnings_2033_b": 22.0
+   },
+   "friction": {
+    "fair_value_b": 400.6,
+    "upside": 3.035,
+    "earnings_2030_b": 14.0,
+    "earnings_2033_b": 24.6
+   },
+   "fizzle": {
+    "fair_value_b": 183.8,
+    "upside": 0.851,
+    "earnings_2030_b": 11.2,
+    "earnings_2033_b": 16.4
+   }
+  },
+  "notes": "Contracted 20yr PPAs = royalty-acre economics"
+ },
+ {
+  "ticker": "MU",
+  "name": "Micron",
+  "stance": "long",
+  "mcap_b": 1120,
+  "implied_cagr_at_current_price": -0.039,
+  "expected_upside": 2.698,
+  "worst_scenario_upside": 1.734,
+  "best_scenario_upside": 3.574,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 4203.9,
+    "upside": 2.753,
+    "earnings_2030_b": 264.5,
+    "earnings_2033_b": 424.1
+   },
+   "fast_takeoff": {
+    "fair_value_b": 5122.5,
+    "upside": 3.574,
+    "earnings_2030_b": 266.3,
+    "earnings_2033_b": 471.4
+   },
+   "delayed": {
+    "fair_value_b": 3862.2,
+    "upside": 2.448,
+    "earnings_2030_b": 260.0,
+    "earnings_2033_b": 389.7
+   },
+   "friction": {
+    "fair_value_b": 4203.9,
+    "upside": 2.753,
+    "earnings_2030_b": 264.5,
+    "earnings_2033_b": 424.1
+   },
+   "fizzle": {
+    "fair_value_b": 3062.1,
+    "upside": 1.734,
+    "earnings_2030_b": 260.0,
+    "earnings_2033_b": 374.8
+   }
+  },
+  "notes": "Capacity-scarcity rent class -> harvest early; low terminal multiple"
+ },
+ {
+  "ticker": "POWL",
+  "name": "Powell Industries",
+  "stance": "long",
+  "mcap_b": 8.83,
+  "implied_cagr_at_current_price": 0.191,
+  "expected_upside": 2.681,
+  "worst_scenario_upside": 0.454,
+  "best_scenario_upside": 6.183,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 31.3,
+    "upside": 2.549,
+    "earnings_2030_b": 0.4,
+    "earnings_2033_b": 1.4
+   },
+   "fast_takeoff": {
+    "fair_value_b": 63.4,
+    "upside": 6.183,
+    "earnings_2030_b": 0.4,
+    "earnings_2033_b": 2.0
+   },
+   "delayed": {
+    "fair_value_b": 24.1,
+    "upside": 1.734,
+    "earnings_2030_b": 0.3,
+    "earnings_2033_b": 1.1
+   },
+   "friction": {
+    "fair_value_b": 31.3,
+    "upside": 2.549,
+    "earnings_2030_b": 0.4,
+    "earnings_2033_b": 1.4
+   },
+   "fizzle": {
+    "fair_value_b": 12.8,
+    "upside": 0.454,
+    "earnings_2030_b": 0.3,
+    "earnings_2033_b": 0.9
+   }
+  },
+  "notes": ""
+ },
+ {
+  "ticker": "000660.KS",
+  "name": "SK Hynix",
+  "stance": "long",
+  "mcap_b": 923,
+  "implied_cagr_at_current_price": -0.039,
+  "expected_upside": 2.29,
+  "worst_scenario_upside": 1.49,
+  "best_scenario_upside": 3.026,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 3080.0,
+    "upside": 2.337,
+    "earnings_2030_b": 219.7,
+    "earnings_2033_b": 341.9
+   },
+   "fast_takeoff": {
+    "fair_value_b": 3716.1,
+    "upside": 3.026,
+    "earnings_2030_b": 221.2,
+    "earnings_2033_b": 380.0
+   },
+   "delayed": {
+    "fair_value_b": 2838.8,
+    "upside": 2.076,
+    "earnings_2030_b": 215.9,
+    "earnings_2033_b": 314.1
+   },
+   "friction": {
+    "fair_value_b": 3080.0,
+    "upside": 2.337,
+    "earnings_2030_b": 219.7,
+    "earnings_2033_b": 341.9
+   },
+   "fizzle": {
+    "fair_value_b": 2298.1,
+    "upside": 1.49,
+    "earnings_2030_b": 215.9,
+    "earnings_2033_b": 302.1
+   }
+  },
+  "notes": "HBM leader; same cycle caveat as MU"
+ },
+ {
+  "ticker": "TSM",
+  "name": "TSMC",
+  "stance": "long",
+  "mcap_b": 2184,
+  "implied_cagr_at_current_price": 0.072,
+  "expected_upside": 2.248,
+  "worst_scenario_upside": 0.976,
+  "best_scenario_upside": 3.653,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 7168.8,
+    "upside": 2.282,
+    "earnings_2030_b": 219.2,
+    "earnings_2033_b": 427.9
+   },
+   "fast_takeoff": {
+    "fair_value_b": 10161.9,
+    "upside": 3.653,
+    "earnings_2030_b": 221.2,
+    "earnings_2033_b": 499.3
+   },
+   "delayed": {
+    "fair_value_b": 6217.5,
+    "upside": 1.847,
+    "earnings_2030_b": 214.0,
+    "earnings_2033_b": 378.6
+   },
+   "friction": {
+    "fair_value_b": 7169.8,
+    "upside": 2.283,
+    "earnings_2030_b": 219.3,
+    "earnings_2033_b": 428.2
+   },
+   "fizzle": {
+    "fair_value_b": 4315.6,
+    "upside": 0.976,
+    "earnings_2030_b": 214.0,
+    "earnings_2033_b": 358.0
+   }
+  },
+  "notes": "Dual chokepoint (N2 + CoWoS); IP-moat rent class -> durable"
+ },
+ {
+  "ticker": "CLS",
+  "name": "Celestica",
+  "stance": "long",
+  "mcap_b": 38.4,
+  "implied_cagr_at_current_price": 0.149,
+  "expected_upside": 2.222,
+  "worst_scenario_upside": 0.794,
+  "best_scenario_upside": 4.014,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 124.1,
+    "upside": 2.231,
+    "earnings_2030_b": 3.2,
+    "earnings_2033_b": 7.7
+   },
+   "fast_takeoff": {
+    "fair_value_b": 192.5,
+    "upside": 4.014,
+    "earnings_2030_b": 3.3,
+    "earnings_2033_b": 9.3
+   },
+   "delayed": {
+    "fair_value_b": 103.6,
+    "upside": 1.699,
+    "earnings_2030_b": 3.1,
+    "earnings_2033_b": 6.6
+   },
+   "friction": {
+    "fair_value_b": 124.1,
+    "upside": 2.231,
+    "earnings_2030_b": 3.2,
+    "earnings_2033_b": 7.7
+   },
+   "fizzle": {
+    "fair_value_b": 68.9,
+    "upside": 0.794,
+    "earnings_2030_b": 3.1,
+    "earnings_2033_b": 6.1
+   }
+  },
+  "notes": ""
+ },
+ {
+  "ticker": "FCX",
+  "name": "Freeport-McMoRan",
+  "stance": "long",
+  "mcap_b": 91.29,
+  "implied_cagr_at_current_price": 0.105,
+  "expected_upside": 1.608,
+  "worst_scenario_upside": 0.5,
+  "best_scenario_upside": 3.125,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 236.7,
+    "upside": 1.593,
+    "earnings_2030_b": 8.2,
+    "earnings_2033_b": 16.4
+   },
+   "fast_takeoff": {
+    "fair_value_b": 376.5,
+    "upside": 3.125,
+    "earnings_2030_b": 8.2,
+    "earnings_2033_b": 19.7
+   },
+   "delayed": {
+    "fair_value_b": 198.0,
+    "upside": 1.168,
+    "earnings_2030_b": 8.1,
+    "earnings_2033_b": 14.4
+   },
+   "friction": {
+    "fair_value_b": 237.2,
+    "upside": 1.599,
+    "earnings_2030_b": 8.3,
+    "earnings_2033_b": 16.6
+   },
+   "fizzle": {
+    "fair_value_b": 137.0,
+    "upside": 0.5,
+    "earnings_2030_b": 8.1,
+    "earnings_2033_b": 13.7
+   }
+  },
+  "notes": "Copper deficit proxy; beta carries the commodity torque"
+ },
+ {
+  "ticker": "GEV",
+  "name": "GE Vernova",
+  "stance": "long",
+  "mcap_b": 274.6,
+  "implied_cagr_at_current_price": 0.184,
+  "expected_upside": 1.529,
+  "worst_scenario_upside": 0.123,
+  "best_scenario_upside": 3.504,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 682.5,
+    "upside": 1.485,
+    "earnings_2030_b": 9.0,
+    "earnings_2033_b": 28.1
+   },
+   "fast_takeoff": {
+    "fair_value_b": 1236.7,
+    "upside": 3.504,
+    "earnings_2030_b": 9.2,
+    "earnings_2033_b": 37.9
+   },
+   "delayed": {
+    "fair_value_b": 547.9,
+    "upside": 0.995,
+    "earnings_2030_b": 8.4,
+    "earnings_2033_b": 22.4
+   },
+   "friction": {
+    "fair_value_b": 682.5,
+    "upside": 1.485,
+    "earnings_2030_b": 9.0,
+    "earnings_2033_b": 28.1
+   },
+   "fizzle": {
+    "fair_value_b": 308.5,
+    "upside": 0.123,
+    "earnings_2030_b": 8.4,
+    "earnings_2033_b": 19.6
+   }
+  },
+  "notes": "Sold out through 2030; backlog = contracted scarcity"
+ },
+ {
+  "ticker": "LITE",
+  "name": "Lumentum",
+  "stance": "long",
+  "mcap_b": 64.9,
+  "implied_cagr_at_current_price": 0.222,
+  "expected_upside": 1.382,
+  "worst_scenario_upside": 0.25,
+  "best_scenario_upside": 2.877,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 154.2,
+    "upside": 1.377,
+    "earnings_2030_b": 3.3,
+    "earnings_2033_b": 8.5
+   },
+   "fast_takeoff": {
+    "fair_value_b": 251.6,
+    "upside": 2.877,
+    "earnings_2030_b": 3.3,
+    "earnings_2033_b": 10.5
+   },
+   "delayed": {
+    "fair_value_b": 126.3,
+    "upside": 0.947,
+    "earnings_2030_b": 3.2,
+    "earnings_2033_b": 7.2
+   },
+   "friction": {
+    "fair_value_b": 154.2,
+    "upside": 1.377,
+    "earnings_2030_b": 3.3,
+    "earnings_2033_b": 8.5
+   },
+   "fizzle": {
+    "fair_value_b": 81.1,
+    "upside": 0.25,
+    "earnings_2030_b": 3.2,
+    "earnings_2033_b": 6.6
+   }
+  },
+  "notes": "EML sold out past 2027; capacity-scarcity class -> monitor supply response"
+ },
+ {
+  "ticker": "6501.T",
+  "name": "Hitachi",
+  "stance": "long",
+  "mcap_b": 147,
+  "implied_cagr_at_current_price": 0.099,
+  "expected_upside": 1.352,
+  "worst_scenario_upside": 0.28,
+  "best_scenario_upside": 2.706,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 344.6,
+    "upside": 1.344,
+    "earnings_2030_b": 8.9,
+    "earnings_2033_b": 18.8
+   },
+   "fast_takeoff": {
+    "fair_value_b": 544.8,
+    "upside": 2.706,
+    "earnings_2030_b": 9.0,
+    "earnings_2033_b": 23.2
+   },
+   "delayed": {
+    "fair_value_b": 291.4,
+    "upside": 0.982,
+    "earnings_2030_b": 8.6,
+    "earnings_2033_b": 16.1
+   },
+   "friction": {
+    "fair_value_b": 344.8,
+    "upside": 1.346,
+    "earnings_2030_b": 8.9,
+    "earnings_2033_b": 18.8
+   },
+   "fizzle": {
+    "fair_value_b": 188.1,
+    "upside": 0.28,
+    "earnings_2030_b": 8.6,
+    "earnings_2033_b": 14.9
+   }
+  },
+  "notes": "Hitachi Energy transformer bottleneck inside a conglomerate"
+ },
+ {
+  "ticker": "MSFT",
+  "name": "Microsoft",
+  "stance": "long",
+  "mcap_b": 2830,
+  "implied_cagr_at_current_price": 0.063,
+  "expected_upside": 1.236,
+  "worst_scenario_upside": -0.042,
+  "best_scenario_upside": 1.729,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 7458.9,
+    "upside": 1.636,
+    "earnings_2030_b": 442.7,
+    "earnings_2033_b": 647.5
+   },
+   "fast_takeoff": {
+    "fair_value_b": 7721.8,
+    "upside": 1.729,
+    "earnings_2030_b": 547.2,
+    "earnings_2033_b": 681.6
+   },
+   "delayed": {
+    "fair_value_b": 6132.9,
+    "upside": 1.167,
+    "earnings_2030_b": 252.3,
+    "earnings_2033_b": 437.1
+   },
+   "friction": {
+    "fair_value_b": 5032.1,
+    "upside": 0.778,
+    "earnings_2030_b": 263.1,
+    "earnings_2033_b": 359.0
+   },
+   "fizzle": {
+    "fair_value_b": 2710.3,
+    "upside": -0.042,
+    "earnings_2030_b": 224.0,
+    "earnings_2033_b": 251.3
+   }
+  },
+  "notes": "Aggregator: agent distribution offsets seat erosion"
+ },
+ {
+  "ticker": "GOOGL",
+  "name": "Alphabet",
+  "stance": "long",
+  "mcap_b": 3890,
+  "implied_cagr_at_current_price": 0.081,
+  "expected_upside": 0.897,
+  "worst_scenario_upside": -0.024,
+  "best_scenario_upside": 1.465,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 8182.6,
+    "upside": 1.103,
+    "earnings_2030_b": 425.1,
+    "earnings_2033_b": 643.7
+   },
+   "fast_takeoff": {
+    "fair_value_b": 9589.9,
+    "upside": 1.465,
+    "earnings_2030_b": 499.3,
+    "earnings_2033_b": 692.1
+   },
+   "delayed": {
+    "fair_value_b": 6880.5,
+    "upside": 0.769,
+    "earnings_2030_b": 289.8,
+    "earnings_2033_b": 476.7
+   },
+   "friction": {
+    "fair_value_b": 6508.3,
+    "upside": 0.673,
+    "earnings_2030_b": 298.9,
+    "earnings_2033_b": 437.0
+   },
+   "fizzle": {
+    "fair_value_b": 3795.9,
+    "upside": -0.024,
+    "earnings_2030_b": 269.8,
+    "earnings_2033_b": 337.3
+   }
+  },
+  "notes": "TPU full stack + Waymo optionality at market multiple"
+ },
+ {
+  "ticker": "ASML",
+  "name": "ASML",
+  "stance": "long",
+  "mcap_b": 692.5,
+  "implied_cagr_at_current_price": 0.169,
+  "expected_upside": 0.728,
+  "worst_scenario_upside": 0.012,
+  "best_scenario_upside": 1.515,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 1209.1,
+    "upside": 0.746,
+    "earnings_2030_b": 28.6,
+    "earnings_2033_b": 57.3
+   },
+   "fast_takeoff": {
+    "fair_value_b": 1741.9,
+    "upside": 1.515,
+    "earnings_2030_b": 28.9,
+    "earnings_2033_b": 67.1
+   },
+   "delayed": {
+    "fair_value_b": 1042.0,
+    "upside": 0.505,
+    "earnings_2030_b": 27.9,
+    "earnings_2033_b": 50.5
+   },
+   "friction": {
+    "fair_value_b": 1209.1,
+    "upside": 0.746,
+    "earnings_2030_b": 28.6,
+    "earnings_2033_b": 57.3
+   },
+   "fizzle": {
+    "fair_value_b": 701.1,
+    "upside": 0.012,
+    "earnings_2030_b": 27.9,
+    "earnings_2033_b": 47.6
+   }
+  },
+  "notes": "Litho monopoly; IP-moat rent class"
+ },
+ {
+  "ticker": "PLTR",
+  "name": "Palantir",
+  "stance": "short",
+  "mcap_b": 323.3,
+  "implied_cagr_at_current_price": 0.221,
+  "expected_upside": 0.619,
+  "worst_scenario_upside": -0.602,
+  "best_scenario_upside": 1.092,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 650.0,
+    "upside": 1.011,
+    "earnings_2030_b": 31.9,
+    "earnings_2033_b": 50.6
+   },
+   "fast_takeoff": {
+    "fair_value_b": 676.2,
+    "upside": 1.092,
+    "earnings_2030_b": 42.1,
+    "earnings_2033_b": 54.0
+   },
+   "delayed": {
+    "fair_value_b": 504.1,
+    "upside": 0.559,
+    "earnings_2030_b": 13.2,
+    "earnings_2033_b": 29.6
+   },
+   "friction": {
+    "fair_value_b": 370.5,
+    "upside": 0.146,
+    "earnings_2030_b": 14.2,
+    "earnings_2033_b": 21.8
+   },
+   "fizzle": {
+    "fair_value_b": 128.8,
+    "upside": -0.602,
+    "earnings_2030_b": 10.4,
+    "earnings_2033_b": 11.2
+   }
+  },
+  "notes": "139x trailing: growth is real, hurdle is impossible"
+ },
+ {
+  "ticker": "WTKWY",
+  "name": "Wolters Kluwer",
+  "stance": "long",
+  "mcap_b": 15.6,
+  "implied_cagr_at_current_price": 0.013,
+  "expected_upside": 0.187,
+  "worst_scenario_upside": 0.111,
+  "best_scenario_upside": 0.296,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 17.7,
+    "upside": 0.132,
+    "earnings_2030_b": 1.7,
+    "earnings_2033_b": 1.8
+   },
+   "fast_takeoff": {
+    "fair_value_b": 17.3,
+    "upside": 0.111,
+    "earnings_2030_b": 1.5,
+    "earnings_2033_b": 1.7
+   },
+   "delayed": {
+    "fair_value_b": 19.1,
+    "upside": 0.225,
+    "earnings_2030_b": 1.9,
+    "earnings_2033_b": 2.0
+   },
+   "friction": {
+    "fair_value_b": 20.2,
+    "upside": 0.296,
+    "earnings_2030_b": 1.8,
+    "earnings_2033_b": 2.1
+   },
+   "fizzle": {
+    "fair_value_b": 19.3,
+    "upside": 0.235,
+    "earnings_2030_b": 1.9,
+    "earnings_2033_b": 2.3
+   }
+  },
+  "notes": "Regulated-workflow moat inside a decaying pool class"
+ },
+ {
+  "ticker": "WDAY",
+  "name": "Workday",
+  "stance": "short",
+  "mcap_b": 31.6,
+  "implied_cagr_at_current_price": 0.015,
+  "expected_upside": -0.049,
+  "worst_scenario_upside": -0.315,
+  "best_scenario_upside": 0.432,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 23.5,
+    "upside": -0.257,
+    "earnings_2030_b": 2.5,
+    "earnings_2033_b": 1.9
+   },
+   "fast_takeoff": {
+    "fair_value_b": 21.6,
+    "upside": -0.315,
+    "earnings_2030_b": 1.9,
+    "earnings_2033_b": 1.7
+   },
+   "delayed": {
+    "fair_value_b": 32.3,
+    "upside": 0.021,
+    "earnings_2030_b": 3.7,
+    "earnings_2033_b": 3.6
+   },
+   "friction": {
+    "fair_value_b": 39.9,
+    "upside": 0.264,
+    "earnings_2030_b": 3.6,
+    "earnings_2033_b": 4.2
+   },
+   "fizzle": {
+    "fair_value_b": 45.2,
+    "upside": 0.432,
+    "earnings_2030_b": 3.9,
+    "earnings_2033_b": 5.1
+   }
+  },
+  "notes": ""
+ },
+ {
+  "ticker": "MRVL",
+  "name": "Marvell",
+  "stance": "short",
+  "mcap_b": 183.3,
+  "implied_cagr_at_current_price": 0.168,
+  "expected_upside": -0.081,
+  "worst_scenario_upside": -0.456,
+  "best_scenario_upside": 0.36,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 169.6,
+    "upside": -0.075,
+    "earnings_2030_b": 6.0,
+    "earnings_2033_b": 9.8
+   },
+   "fast_takeoff": {
+    "fair_value_b": 249.2,
+    "upside": 0.36,
+    "earnings_2030_b": 6.1,
+    "earnings_2033_b": 11.7
+   },
+   "delayed": {
+    "fair_value_b": 145.0,
+    "upside": -0.209,
+    "earnings_2030_b": 5.9,
+    "earnings_2033_b": 8.5
+   },
+   "friction": {
+    "fair_value_b": 169.6,
+    "upside": -0.075,
+    "earnings_2030_b": 6.0,
+    "earnings_2033_b": 9.8
+   },
+   "fizzle": {
+    "fair_value_b": 99.7,
+    "upside": -0.456,
+    "earnings_2030_b": 5.9,
+    "earnings_2033_b": 8.0
+   }
+  },
+  "notes": "Socket erosion inside the boom; pair vs AVGO long"
+ },
+ {
+  "ticker": "6268.T",
+  "name": "Nabtesco",
+  "stance": "long",
+  "mcap_b": 4,
+  "implied_cagr_at_current_price": 0.119,
+  "expected_upside": -0.142,
+  "worst_scenario_upside": -0.548,
+  "best_scenario_upside": -0.041,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 3.8,
+    "upside": -0.045,
+    "earnings_2030_b": 0.2,
+    "earnings_2033_b": 0.3
+   },
+   "fast_takeoff": {
+    "fair_value_b": 3.8,
+    "upside": -0.043,
+    "earnings_2030_b": 0.2,
+    "earnings_2033_b": 0.3
+   },
+   "delayed": {
+    "fair_value_b": 3.1,
+    "upside": -0.236,
+    "earnings_2030_b": 0.2,
+    "earnings_2033_b": 0.3
+   },
+   "friction": {
+    "fair_value_b": 3.8,
+    "upside": -0.041,
+    "earnings_2030_b": 0.2,
+    "earnings_2033_b": 0.3
+   },
+   "fizzle": {
+    "fair_value_b": 1.8,
+    "upside": -0.548,
+    "earnings_2030_b": 0.2,
+    "earnings_2033_b": 0.2
+   }
+  },
+  "notes": ""
+ },
+ {
+  "ticker": "MMC",
+  "name": "Marsh McLennan",
+  "stance": "short",
+  "mcap_b": 84.2,
+  "implied_cagr_at_current_price": 0.065,
+  "expected_upside": -0.267,
+  "worst_scenario_upside": -0.306,
+  "best_scenario_upside": -0.205,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 59.4,
+    "upside": -0.295,
+    "earnings_2030_b": 5.4,
+    "earnings_2033_b": 5.5
+   },
+   "fast_takeoff": {
+    "fair_value_b": 58.5,
+    "upside": -0.306,
+    "earnings_2030_b": 5.1,
+    "earnings_2033_b": 5.4
+   },
+   "delayed": {
+    "fair_value_b": 63.5,
+    "upside": -0.246,
+    "earnings_2030_b": 6.0,
+    "earnings_2033_b": 6.3
+   },
+   "friction": {
+    "fair_value_b": 66.9,
+    "upside": -0.205,
+    "earnings_2030_b": 6.0,
+    "earnings_2033_b": 6.6
+   },
+   "fizzle": {
+    "fair_value_b": 63.1,
+    "upside": -0.251,
+    "earnings_2030_b": 6.1,
+    "earnings_2033_b": 7.0
+   }
+  },
+  "notes": ""
+ },
+ {
+  "ticker": "EQIX",
+  "name": "Equinix",
+  "stance": "short",
+  "mcap_b": 101.9,
+  "implied_cagr_at_current_price": 0.1,
+  "expected_upside": -0.282,
+  "worst_scenario_upside": -0.437,
+  "best_scenario_upside": -0.172,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 74.2,
+    "upside": -0.272,
+    "earnings_2030_b": 4.8,
+    "earnings_2033_b": 5.8
+   },
+   "fast_takeoff": {
+    "fair_value_b": 84.4,
+    "upside": -0.172,
+    "earnings_2030_b": 4.8,
+    "earnings_2033_b": 6.1
+   },
+   "delayed": {
+    "fair_value_b": 70.5,
+    "upside": -0.308,
+    "earnings_2030_b": 4.8,
+    "earnings_2033_b": 5.6
+   },
+   "friction": {
+    "fair_value_b": 74.3,
+    "upside": -0.271,
+    "earnings_2030_b": 4.9,
+    "earnings_2033_b": 5.8
+   },
+   "fizzle": {
+    "fair_value_b": 57.3,
+    "upside": -0.437,
+    "earnings_2030_b": 4.8,
+    "earnings_2033_b": 5.5
+   }
+  },
+  "notes": "Margin squeeze between equipment suppliers and hyperscale tenants"
+ },
+ {
+  "ticker": "FDS",
+  "name": "FactSet",
+  "stance": "short",
+  "mcap_b": 8.68,
+  "implied_cagr_at_current_price": 0.055,
+  "expected_upside": -0.292,
+  "worst_scenario_upside": -0.398,
+  "best_scenario_upside": -0.144,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 5.5,
+    "upside": -0.369,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 0.6
+   },
+   "fast_takeoff": {
+    "fair_value_b": 5.2,
+    "upside": -0.398,
+    "earnings_2030_b": 0.5,
+    "earnings_2033_b": 0.5
+   },
+   "delayed": {
+    "fair_value_b": 6.5,
+    "upside": -0.253,
+    "earnings_2030_b": 0.8,
+    "earnings_2033_b": 0.8
+   },
+   "friction": {
+    "fair_value_b": 7.2,
+    "upside": -0.17,
+    "earnings_2030_b": 0.8,
+    "earnings_2033_b": 0.8
+   },
+   "fizzle": {
+    "fair_value_b": 7.4,
+    "upside": -0.144,
+    "earnings_2030_b": 0.8,
+    "earnings_2033_b": 0.9
+   }
+  },
+  "notes": "ASV tied to front-office headcount"
+ },
+ {
+  "ticker": "TEAM",
+  "name": "Atlassian",
+  "stance": "short",
+  "mcap_b": 20.3,
+  "implied_cagr_at_current_price": 0.04,
+  "expected_upside": -0.3,
+  "worst_scenario_upside": -0.509,
+  "best_scenario_upside": 0.088,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 10.9,
+    "upside": -0.463,
+    "earnings_2030_b": 1.2,
+    "earnings_2033_b": 0.8
+   },
+   "fast_takeoff": {
+    "fair_value_b": 10.0,
+    "upside": -0.509,
+    "earnings_2030_b": 0.9,
+    "earnings_2033_b": 0.7
+   },
+   "delayed": {
+    "fair_value_b": 15.3,
+    "upside": -0.248,
+    "earnings_2030_b": 1.8,
+    "earnings_2033_b": 1.6
+   },
+   "friction": {
+    "fair_value_b": 19.1,
+    "upside": -0.058,
+    "earnings_2030_b": 1.8,
+    "earnings_2033_b": 2.0
+   },
+   "fizzle": {
+    "fair_value_b": 22.1,
+    "upside": 0.088,
+    "earnings_2030_b": 1.9,
+    "earnings_2033_b": 2.4
+   }
+  },
+  "notes": "Agent-native pipelines collapse the tracked-work loop"
+ },
+ {
+  "ticker": "HUBS",
+  "name": "HubSpot",
+  "stance": "short",
+  "mcap_b": 9.7,
+  "implied_cagr_at_current_price": 0.045,
+  "expected_upside": -0.322,
+  "worst_scenario_upside": -0.524,
+  "best_scenario_upside": 0.049,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 5.1,
+    "upside": -0.479,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 0.4
+   },
+   "fast_takeoff": {
+    "fair_value_b": 4.6,
+    "upside": -0.524,
+    "earnings_2030_b": 0.4,
+    "earnings_2033_b": 0.3
+   },
+   "delayed": {
+    "fair_value_b": 7.1,
+    "upside": -0.27,
+    "earnings_2030_b": 0.9,
+    "earnings_2033_b": 0.8
+   },
+   "friction": {
+    "fair_value_b": 8.8,
+    "upside": -0.091,
+    "earnings_2030_b": 0.9,
+    "earnings_2033_b": 0.9
+   },
+   "fizzle": {
+    "fair_value_b": 10.2,
+    "upside": 0.049,
+    "earnings_2030_b": 0.9,
+    "earnings_2033_b": 1.1
+   }
+  },
+  "notes": ""
+ },
+ {
+  "ticker": "SYM",
+  "name": "Symbotic",
+  "stance": "long",
+  "mcap_b": 24.45,
+  "implied_cagr_at_current_price": 0.223,
+  "expected_upside": -0.381,
+  "worst_scenario_upside": -0.561,
+  "best_scenario_upside": -0.334,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 16.2,
+    "upside": -0.338,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 0.9
+   },
+   "fast_takeoff": {
+    "fair_value_b": 16.3,
+    "upside": -0.334,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 0.9
+   },
+   "delayed": {
+    "fair_value_b": 14.1,
+    "upside": -0.424,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 0.9
+   },
+   "friction": {
+    "fair_value_b": 16.3,
+    "upside": -0.334,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 1.0
+   },
+   "fizzle": {
+    "fair_value_b": 10.7,
+    "upside": -0.561,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 0.9
+   }
+  },
+  "notes": "Contracted backlog converts ahead of humanoid hype"
+ },
+ {
+  "ticker": "SHA.DE",
+  "name": "Schaeffler",
+  "stance": "long",
+  "mcap_b": 8.68,
+  "implied_cagr_at_current_price": 0.1,
+  "expected_upside": -0.382,
+  "worst_scenario_upside": -0.475,
+  "best_scenario_upside": -0.36,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 5.5,
+    "upside": -0.365,
+    "earnings_2030_b": 0.5,
+    "earnings_2033_b": 0.6
+   },
+   "fast_takeoff": {
+    "fair_value_b": 5.5,
+    "upside": -0.364,
+    "earnings_2030_b": 0.5,
+    "earnings_2033_b": 0.6
+   },
+   "delayed": {
+    "fair_value_b": 5.3,
+    "upside": -0.391,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 0.6
+   },
+   "friction": {
+    "fair_value_b": 5.6,
+    "upside": -0.36,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 0.6
+   },
+   "fizzle": {
+    "fair_value_b": 4.6,
+    "upside": -0.475,
+    "earnings_2030_b": 0.5,
+    "earnings_2033_b": 0.6
+   }
+  },
+  "notes": "Deep value + robot components optionality; ICE drag real"
+ },
+ {
+  "ticker": "6324.T",
+  "name": "Harmonic Drive",
+  "stance": "short",
+  "mcap_b": 4.43,
+  "implied_cagr_at_current_price": 0.344,
+  "expected_upside": -0.571,
+  "worst_scenario_upside": -0.914,
+  "best_scenario_upside": -0.483,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 2.3,
+    "upside": -0.484,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   },
+   "fast_takeoff": {
+    "fair_value_b": 2.3,
+    "upside": -0.483,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   },
+   "delayed": {
+    "fair_value_b": 1.5,
+    "upside": -0.663,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   },
+   "friction": {
+    "fair_value_b": 2.3,
+    "upside": -0.483,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   },
+   "fizzle": {
+    "fair_value_b": 0.4,
+    "upside": -0.914,
+    "earnings_2030_b": 0.0,
+    "earnings_2033_b": 0.0
+   }
+  },
+  "notes": "404x trailing; Corning-2000 setup vs Chinese commoditization"
+ },
+ {
+  "ticker": "6954.T",
+  "name": "FANUC",
+  "stance": "short",
+  "mcap_b": 44,
+  "implied_cagr_at_current_price": 0.131,
+  "expected_upside": -0.584,
+  "worst_scenario_upside": -0.671,
+  "best_scenario_upside": -0.566,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 19.0,
+    "upside": -0.568,
+    "earnings_2030_b": 1.3,
+    "earnings_2033_b": 1.4
+   },
+   "fast_takeoff": {
+    "fair_value_b": 19.0,
+    "upside": -0.567,
+    "earnings_2030_b": 1.3,
+    "earnings_2033_b": 1.4
+   },
+   "delayed": {
+    "fair_value_b": 17.9,
+    "upside": -0.592,
+    "earnings_2030_b": 1.3,
+    "earnings_2033_b": 1.4
+   },
+   "friction": {
+    "fair_value_b": 19.1,
+    "upside": -0.566,
+    "earnings_2030_b": 1.3,
+    "earnings_2033_b": 1.4
+   },
+   "fizzle": {
+    "fair_value_b": 14.5,
+    "upside": -0.671,
+    "earnings_2030_b": 1.3,
+    "earnings_2033_b": 1.3
+   }
+  },
+  "notes": "Humanoid halo at 39x with zero humanoid revenue"
+ },
+ {
+  "ticker": "TCS.NS",
+  "name": "Tata Consultancy",
+  "stance": "short",
+  "mcap_b": 97.5,
+  "implied_cagr_at_current_price": 0.072,
+  "expected_upside": -0.588,
+  "worst_scenario_upside": -0.746,
+  "best_scenario_upside": -0.294,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 28.6,
+    "upside": -0.707,
+    "earnings_2030_b": 4.0,
+    "earnings_2033_b": 1.9
+   },
+   "fast_takeoff": {
+    "fair_value_b": 24.7,
+    "upside": -0.746,
+    "earnings_2030_b": 2.6,
+    "earnings_2033_b": 1.5
+   },
+   "delayed": {
+    "fair_value_b": 44.5,
+    "upside": -0.543,
+    "earnings_2030_b": 6.8,
+    "earnings_2033_b": 5.1
+   },
+   "friction": {
+    "fair_value_b": 56.4,
+    "upside": -0.421,
+    "earnings_2030_b": 6.6,
+    "earnings_2033_b": 6.5
+   },
+   "fizzle": {
+    "fair_value_b": 68.8,
+    "upside": -0.294,
+    "earnings_2030_b": 7.1,
+    "earnings_2033_b": 8.3
+   }
+  },
+  "notes": "Premium multiple vs peers with max labor-arbitrage exposure"
+ },
+ {
+  "ticker": "MP",
+  "name": "MP Materials",
+  "stance": "long",
+  "mcap_b": 7.95,
+  "implied_cagr_at_current_price": 0.38,
+  "expected_upside": -0.593,
+  "worst_scenario_upside": -0.854,
+  "best_scenario_upside": -0.527,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 3.8,
+    "upside": -0.528,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.3
+   },
+   "fast_takeoff": {
+    "fair_value_b": 3.8,
+    "upside": -0.527,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.3
+   },
+   "delayed": {
+    "fair_value_b": 2.7,
+    "upside": -0.658,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.2
+   },
+   "friction": {
+    "fair_value_b": 3.8,
+    "upside": -0.527,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.3
+   },
+   "fizzle": {
+    "fair_value_b": 1.2,
+    "upside": -0.854,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   }
+  },
+  "notes": "Geopolitical scarcity (non-China magnets), DoD price floor"
+ },
+ {
+  "ticker": "MAN",
+  "name": "ManpowerGroup",
+  "stance": "short",
+  "mcap_b": 2.43,
+  "implied_cagr_at_current_price": 0.085,
+  "expected_upside": -0.633,
+  "worst_scenario_upside": -0.691,
+  "best_scenario_upside": -0.552,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 0.8,
+    "upside": -0.672,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   },
+   "fast_takeoff": {
+    "fair_value_b": 0.7,
+    "upside": -0.691,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   },
+   "delayed": {
+    "fair_value_b": 0.9,
+    "upside": -0.609,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   },
+   "friction": {
+    "fair_value_b": 1.0,
+    "upside": -0.579,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   },
+   "fizzle": {
+    "fair_value_b": 1.1,
+    "upside": -0.552,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   }
+  },
+  "notes": "Industrial staffing unpriced for 2028+ robotics"
+ },
+ {
+  "ticker": "PAYX",
+  "name": "Paychex",
+  "stance": "short",
+  "mcap_b": 39.4,
+  "implied_cagr_at_current_price": 0.081,
+  "expected_upside": -0.679,
+  "worst_scenario_upside": -0.789,
+  "best_scenario_upside": -0.483,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 9.4,
+    "upside": -0.761,
+    "earnings_2030_b": 1.2,
+    "earnings_2033_b": 0.6
+   },
+   "fast_takeoff": {
+    "fair_value_b": 8.3,
+    "upside": -0.789,
+    "earnings_2030_b": 0.8,
+    "earnings_2033_b": 0.5
+   },
+   "delayed": {
+    "fair_value_b": 13.9,
+    "upside": -0.648,
+    "earnings_2030_b": 1.9,
+    "earnings_2033_b": 1.4
+   },
+   "friction": {
+    "fair_value_b": 17.3,
+    "upside": -0.56,
+    "earnings_2030_b": 1.9,
+    "earnings_2033_b": 1.7
+   },
+   "fizzle": {
+    "fair_value_b": 20.4,
+    "upside": -0.483,
+    "earnings_2030_b": 2.0,
+    "earnings_2033_b": 2.2
+   }
+  },
+  "notes": ""
+ },
+ {
+  "ticker": "ADP",
+  "name": "ADP",
+  "stance": "short",
+  "mcap_b": 97.1,
+  "implied_cagr_at_current_price": 0.086,
+  "expected_upside": -0.687,
+  "worst_scenario_upside": -0.795,
+  "best_scenario_upside": -0.491,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 22.4,
+    "upside": -0.769,
+    "earnings_2030_b": 2.8,
+    "earnings_2033_b": 1.4
+   },
+   "fast_takeoff": {
+    "fair_value_b": 19.9,
+    "upside": -0.795,
+    "earnings_2030_b": 1.9,
+    "earnings_2033_b": 1.1
+   },
+   "delayed": {
+    "fair_value_b": 33.2,
+    "upside": -0.658,
+    "earnings_2030_b": 4.5,
+    "earnings_2033_b": 3.3
+   },
+   "friction": {
+    "fair_value_b": 42.0,
+    "upside": -0.568,
+    "earnings_2030_b": 4.4,
+    "earnings_2033_b": 4.1
+   },
+   "fizzle": {
+    "fair_value_b": 49.4,
+    "upside": -0.491,
+    "earnings_2030_b": 4.8,
+    "earnings_2033_b": 5.1
+   }
+  },
+  "notes": "Pays-per-control elasticity 0.7-1.0 to shrinking employment"
+ },
+ {
+  "ticker": "CHRW",
+  "name": "CH Robinson",
+  "stance": "short",
+  "mcap_b": 24.2,
+  "implied_cagr_at_current_price": 0.172,
+  "expected_upside": -0.768,
+  "worst_scenario_upside": -0.785,
+  "best_scenario_upside": -0.765,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 5.7,
+    "upside": -0.766,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 0.6
+   },
+   "fast_takeoff": {
+    "fair_value_b": 5.7,
+    "upside": -0.766,
+    "earnings_2030_b": 0.6,
+    "earnings_2033_b": 0.6
+   },
+   "delayed": {
+    "fair_value_b": 5.7,
+    "upside": -0.765,
+    "earnings_2030_b": 0.7,
+    "earnings_2033_b": 0.6
+   },
+   "friction": {
+    "fair_value_b": 5.7,
+    "upside": -0.765,
+    "earnings_2030_b": 0.7,
+    "earnings_2033_b": 0.6
+   },
+   "fizzle": {
+    "fair_value_b": 5.2,
+    "upside": -0.785,
+    "earnings_2030_b": 0.7,
+    "earnings_2033_b": 0.6
+   }
+  },
+  "notes": "AI-advantage narrative vs AI commoditizing brokerage itself"
+ },
+ {
+  "ticker": "LSTR",
+  "name": "Landstar",
+  "stance": "short",
+  "mcap_b": 7.06,
+  "implied_cagr_at_current_price": 0.187,
+  "expected_upside": -0.776,
+  "worst_scenario_upside": -0.792,
+  "best_scenario_upside": -0.773,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 1.6,
+    "upside": -0.774,
+    "earnings_2030_b": 0.2,
+    "earnings_2033_b": 0.2
+   },
+   "fast_takeoff": {
+    "fair_value_b": 1.6,
+    "upside": -0.774,
+    "earnings_2030_b": 0.2,
+    "earnings_2033_b": 0.2
+   },
+   "delayed": {
+    "fair_value_b": 1.6,
+    "upside": -0.774,
+    "earnings_2030_b": 0.2,
+    "earnings_2033_b": 0.2
+   },
+   "friction": {
+    "fair_value_b": 1.6,
+    "upside": -0.773,
+    "earnings_2030_b": 0.2,
+    "earnings_2033_b": 0.2
+   },
+   "fizzle": {
+    "fair_value_b": 1.5,
+    "upside": -0.792,
+    "earnings_2030_b": 0.2,
+    "earnings_2033_b": 0.2
+   }
+  },
+  "notes": ""
+ },
+ {
+  "ticker": "RHI",
+  "name": "Robert Half",
+  "stance": "short",
+  "mcap_b": 3.6,
+  "implied_cagr_at_current_price": 0.153,
+  "expected_upside": -0.861,
+  "worst_scenario_upside": -0.925,
+  "best_scenario_upside": -0.741,
+  "per_scenario": {
+   "baseline": {
+    "fair_value_b": 0.3,
+    "upside": -0.906,
+    "earnings_2030_b": 0.0,
+    "earnings_2033_b": 0.0
+   },
+   "fast_takeoff": {
+    "fair_value_b": 0.3,
+    "upside": -0.925,
+    "earnings_2030_b": 0.0,
+    "earnings_2033_b": 0.0
+   },
+   "delayed": {
+    "fair_value_b": 0.6,
+    "upside": -0.84,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.0
+   },
+   "friction": {
+    "fair_value_b": 0.7,
+    "upside": -0.809,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   },
+   "fizzle": {
+    "fair_value_b": 0.9,
+    "upside": -0.741,
+    "earnings_2030_b": 0.1,
+    "earnings_2033_b": 0.1
+   }
+  },
+  "notes": "Perm placement = first casualty; payout > NI"
+ }
+]

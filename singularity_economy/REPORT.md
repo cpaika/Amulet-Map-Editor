@@ -101,6 +101,21 @@ study sharpen the book's foundations:
 - Robot production 2032 median drops further, to ~0.34M units/yr — the
   robotics-leg patience discipline strengthens.
 
+**Cross-model validation of the book** (`scenarios_v2.py`, regression-locked
+in `test_scenarios_v2.py`): running the trade valuations on v2 preserves every
+core conclusion — semi/power longs strongly positive, wage-linked shorts
+deeply negative — and *strengthens* the power-generation legs (electricity
+prices now rise endogenously with scarcity: EQT +338%, VST +326% v2 EVs).
+The one family that flips is robotics-linked longs: MP +314%→−59%,
+Nabtesco +540%→−14%, Symbotic +96%→−38% — v2's endogenous ramp independently
+reproduces the red team's kills via a different mechanism. **Book change: MP
+is demoted from "half now, half on flush" to hold-only — keep the staged
+option position if already entered, do not add; the DoD-floor story needs the
+p90 robot path to clear a 161x multiple.** Harmonic Drive gains a fundamental
+short case under v2 (even the thesis can't carry 145x through the endogenous
+component-pool path), though the squeeze-mechanics kill on the outright short
+stands.
+
 Full leverage-point analysis (Meadows' 12 points with empirical gains and
 three new monitorables): `leverage_points.md`. Build system: `BUILDING.md`
 (Buck2 + cargo, all suites green).
