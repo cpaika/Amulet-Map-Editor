@@ -99,3 +99,17 @@ Where policy/actors could intervene = where trade risk concentrates:
 5. Endogenous results to report: rent-peak year per sector (distribution),
    overshoot magnitude (peak capex vs demand-consistent capex), credit-crunch
    frequency, and how these move the trade book.
+
+## Long-horizon behavior (illustrative, 2045 extension)
+
+Extending the baseline to 2045 (calibration is 2026-2036; beyond that this is
+structure, not forecast): power rents persist ~15 years and normalize around
+2040-42, after which **capital becomes the permanent binding constraint**;
+IP-toll margins hold at ceiling through 2045 (two decades of monopoly rent —
+the ASML/x86 pattern); commodity silicon exhibits a second hog-cycle peak
+(~2038) — the cycle is structural, not a one-off; and the R2 robot bootstrap
+only becomes dominant in the late 2030s (production 17M/yr in 2040, 180M/yr
+in 2045; physical displacement reaches just ~25% by 2045 against 2.4B
+workers). The humanoid labor economy is a 2040s phenomenon even when the
+software singularity happens in 2027 — the strongest statement yet of the
+"components early, labor late" sequencing.
