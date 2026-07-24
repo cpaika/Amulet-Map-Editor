@@ -1,64 +1,67 @@
-# Singularity Economy Model
+# Singularity Economy — Model & Trade Research
 
-A multi-sector, bottleneck-propagating simulation of the world economy 2026–2036
-under the thesis: **software singularity in 2027, general-purpose robotics ramp
-from 2028**.
+Quantitative backbone for an investment research project on the thesis:
+**software singularity 2027, general-purpose robotics ramp from 2028.**
+Built, tested, and adversarially reviewed end-to-end: research sweep →
+model → trade screen → two red-team rounds → systems-dynamics rebuild →
+Rust port → code review → corrections.
 
-Built as the quantitative backbone for an investment research project: the model
-does not try to predict GDP — it tries to answer the four questions that decide
-where equity value migrates:
+**Read first:** `REPORT.md` (the full research report and trade book).
 
-1. **Which physical constraint binds in which years** (chips, power, capital,
-   or demand/adoption friction) — the binding constraint earns scarcity rents.
-2. **How large do the beneficiary revenue/profit pools get** (silicon, power
-   equipment, datacenter infra, electricity, robot components).
-3. **How fast do the casualty pools decay** (IT services/outsourcing, BPO,
-   seat-priced SaaS, professional info services) as AI displaces cognitive labor.
-4. **How robust are these answers across parameter uncertainty** (800-run
-   Monte Carlo over singularity timing, adoption speed, supply-chain ramp rates,
-   learning curves).
+## The two models
 
-## Files
+| | v1 `model.py` | v2 `model_v2.py` + `rust/singularity-econ` |
+|---|---|---|
+| Paradigm | bottleneck accounting with exogenous supply caps | Meadows systems dynamics: stocks, flows, **endogenous feedback loops**, explicit construction delays |
+| Supply growth | assumed ceilings | B1 balancing loops (scarcity rent → investment → delayed capacity → rent decay) |
+| Capex behavior | demand growth assumption | R3 momentum on perceived (lagged) demand → endogenous queues |
+| Credit | absent | B4: debt accumulation → spreads → capital ceiling (binds in ~33% of runs) |
+| Rent duration | asserted from history | **emergent**: commodity silicon decays in a damped hog-cycle (median normalization 2032, endogenous 1.37x glut by 2036) while the IP-toll sector (no supply response) holds peak margins throughout |
+| Speed | ~2.5ms/run (Python) | ~3µs/run (Rust) — 10k-run Monte Carlo in ~30ms |
 
-- `model.py` — core annual-step simulation (pure stdlib, no dependencies)
-- `scenarios.py` — named scenarios (baseline / fast_takeoff / delayed / friction
-  / fizzle) + Monte Carlo
-- `test_model.py` / `test_valuation.py` — 36 tests: invariants, 2026
-  calibration vs actuals, comparative statics, valuation engine
-- `calibration_notes.md` — parameter sources from the research sweep
-- `output/results.json` — full scenario + Monte Carlo output
+Both models drive the same valuation layer (`valuation.py`, `companies.py`);
+`test_scenarios_v2.py` locks the conclusions that must agree across them.
+Design rationale: `meadows_design.md`. Meadows leverage-point analysis with
+empirical sensitivities: `leverage_points.md`. Parameter evidence:
+`calibration_notes.md`. Build/test (Buck2 + cargo): `BUILDING.md`.
 
-## Run
+## Robust findings (survive Monte Carlo, both models, and review)
+
+1. **Power is the constraint of the decade** — binds in ~96–100% of runs
+   every year through 2034; power rents never normalize within the horizon
+   in any sampled parameter draw.
+2. **Rent duration = moat type**: IP tolls hold peak margins through 2036;
+   commodity silicon rents decay by ~2032 (median) into an endogenous glut —
+   harvest capacity-scarcity positions into strength; only IP tolls are
+   decade holds.
+3. **Casualty decay is back-half loaded** (~7% displacement 2028 → ~41–50%
+   2032 median) and is a **timing × integration-friction** variable — AI
+   capability magnitude is irrelevant to it (ρ=0.01).
+4. **Credit crunch in ~33% of runs**, driven by the externally-funded share
+   of capex (ρ=+0.65) — the leading indicator for the levered-periphery
+   accident.
+5. **Robotics is a component story now, a labor story in the 2030s** —
+   median 2032 production ~0.3M units/yr; physical displacement <5% by 2036.
+
+## Process artifacts
+
+- `output/verdicts.json`, `output/round2_verdicts.json` — trade red-team rounds
+- `output/financials.json` — verified mid-2026 per-ticker financials
+- `output/valuations.json` / `valuations_v2.json` — scenario DCFs per model
+- `output/golden_v2.json` — Python↔Rust parity contract
+- `output/mc_v2_rust.json`, `output/sensitivity_v2.json` — 10k/20k-run studies
+- `report_artifact.html` — published report page
+
+## Tests
+
+~80 across five suites (see `BUILDING.md` for the inventory): invariants,
+2026 calibration anchors, comparative statics, **per-loop ablations** (every
+named feedback loop, disabled, must change behavior as theory predicts),
+pipeline conservation, golden parity at 1e-6, property tests over the
+parameter space, and cross-model conclusion locks.
 
 ```bash
-python3 -m unittest test_model   # test suite
-python3 model.py                 # baseline scenario summary
-python3 scenarios.py             # all scenarios + Monte Carlo (JSON)
+buck2 test //... ; cargo test --manifest-path rust/singularity-econ/Cargo.toml
 ```
 
-## Headline robust findings (survive the Monte Carlo, post-calibration)
-
-- **Power is THE constraint of the decade** — binds in 84% of runs in 2026 and
-  60–81% of runs every year through 2033 (turbines sold out through 2030,
-  3–5yr transformer lead times, 5–10yr interconnection queues). Chip capacity
-  gets a secondary window 2027–2030 (~25–33% of runs).
-- **Capital becomes the constraint late**: by 2035–36, ~45–60% of runs are
-  capped by capital willingness (capex hitting % of GDP ceilings), not physics —
-  scarcity rents migrate from equipment owners to capital providers.
-- **The "Cisco moment" (capex growth <15%) lands 2034–2036 under the thesis**
-  (p10 2034) — years of runway before picks-and-shovels multiple compression,
-  IF the singularity happens. In fizzle worlds it arrives ~immediately, which
-  is what scenario weights and the 12% discount rate price.
-- **Casualty decay is back-half loaded**: median cognitive-work displacement
-  ~7% (2028) → ~25% (2030) → ~50% (2032); median IT-services pool -32% by 2033.
-  History says casualty multiples collapse 2–4 years before revenue — under the
-  thesis, mid-2026 is "early," which is when shorts must be placed.
-- **Robotics is an early-2030s labor story but a late-2020s component story**:
-  median 2032 robot production ~0.8M units/yr (p90 2.4M), physical-labor
-  displacement <5% by 2036 — yet component supply chains (reducers, actuators,
-  magnets) must expand years ahead, and hype-priced pure plays (Harmonic Drive
-  at 404x) already trade as if the 2032 p90 is certain.
-- **Transition-recession tail**: worst-year world GDP growth goes negative in
-  ~10% of runs — the consumer-credit short leg hedges this tail.
-
-*This model is a scenario-analysis tool, not investment advice.*
+*Scenario analysis conditional on a stated thesis — not investment advice.*

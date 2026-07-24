@@ -9,6 +9,7 @@ python_library(
         "model.py",
         "model_v2.py",
         "scenarios.py",
+        "scenarios_v2.py",
         "valuation.py",
         "companies.py",
     ],
@@ -30,5 +31,11 @@ python_test(
 python_test(
     name = "test_valuation",
     srcs = ["test_valuation.py"],
+    deps = [":models"],
+)
+
+python_test(
+    name = "test_scenarios_v2",
+    srcs = ["test_scenarios_v2.py"],
     deps = [":models"],
 )

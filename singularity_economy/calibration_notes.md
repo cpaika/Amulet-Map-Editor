@@ -58,3 +58,15 @@ parameter, so every number can be challenged.
 3. Robot HEW 1.4 assumes robots beat one human only via multi-shift, not skill.
 4. Discount rate 12% in valuation layer; fizzle scenario gets 10% probability
    even though the user's thesis says singularity happens.
+
+## v2 additions (2026-07-24, post code-review)
+
+| Param | Value | Rationale |
+|---|---|---|
+| `chip_capacity_2026` | 0.28 pre-delivery | With start-of-year pipeline delivery, post-delivery 2026 capacity ≈ $0.36T ≈ 2026 silicon demand — "sold out" as observed (CoWoS/HBM). |
+| `ai_power_2026` / `power_additions_2026` | 58 GW / 30 GW/yr | Restores the 2026 realized-capex anchor (~$0.49T) with un-decayed first-year power intensity (55 GW/unit held in 2026 per review fix 3). |
+| `chip_base_growth` etc. | order-rate semantics | Growth parameters are ORDER rates entering 2-3 stage pipelines; realized capacity growth lags and is lower at steady state (review finding 5 — documented, not re-tuned). |
+| `price_adjustment` | 0.6 | Contract/LTA price inertia; damps the endogenous hog-cycle to realistic amplitude. |
+| `afford_gain` | 0.4 | B3 closure gain; 0.8 rang violently against the 1-yr information delay. |
+| `debt_amortization` | 0.90 | Prior-stock survival; parameterized per review finding 9. |
+| IP-toll sector | 18% slice, no B1 | Litho/EDA/IP share of silicon flow; monopoly capacity grows at base rate only — implements the design's IP-moat rent-persistence contrast. |
