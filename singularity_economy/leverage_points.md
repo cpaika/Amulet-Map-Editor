@@ -1,7 +1,7 @@
 # Leverage Points: Where This System Can Be Moved
 
 Donella Meadows' twelve leverage points, applied to the AI/robotics economy
-as formalized in `model_v2.py` — now with *empirical* gain estimates from the
+as formalized in `rust/singularity-econ` — now with *empirical* gain estimates from the
 20k-run Spearman sensitivity study (`output/sensitivity_v2.json`). Meadows'
 ordering (12 = weakest, 1 = strongest) holds up strikingly well: the things
 markets argue about daily sit at the weak end; the things that actually move

@@ -17,7 +17,7 @@ regression snapshot that was cross-validated against Python at 1e-6.
 
 ## The two models (v1 retired, v2 = the Rust crate)
 
-| | v1 `model.py` | v2 `model_v2.py` + `rust/singularity-econ` |
+| | v1 (retired Python) | v2 (`rust/singularity-econ`) |
 |---|---|---|
 | Paradigm | bottleneck accounting with exogenous supply caps | Meadows systems dynamics: stocks, flows, **endogenous feedback loops**, explicit construction delays |
 | Supply growth | assumed ceilings | B1 balancing loops (scarcity rent → investment → delayed capacity → rent decay) |

@@ -248,9 +248,7 @@ impl Pipeline {
     pub fn step(&mut self, inflow: f64) -> f64 {
         let mut carry = inflow;
         for slot in self.stages.iter_mut() {
-            let out = *slot;
-            *slot = carry;
-            carry = out;
+            std::mem::swap(slot, &mut carry);
         }
         carry
     }
@@ -609,7 +607,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 p.physical_wage_bill / p.physical_workers_m * 1e3;
             let payback_years =
                 robot_cost / (avg_phys_wage_k * p.robot_hew).max(1e-9);
-            let econ_pull = (2.0 / payback_years.max(0.25)).min(3.0).max(0.0);
+            let econ_pull = (2.0 / payback_years.max(0.25)).clamp(0.0, 3.0);
             let t_rob = (year - p.robotics_year) as f64;
             let deploy_ramp = logistic(0.9 * (t_rob - 4.0));
             let fleet_target = p.physical_workers_m * p.physical_addressable

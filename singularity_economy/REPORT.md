@@ -28,7 +28,7 @@ The model is deliberately not a GDP forecaster. It is a bottleneck-accounting
 engine: each year, desired AI expansion collides with four constraints —
 **chips, power, capital, adoption friction** — and the binding constraint caps
 growth and earns scarcity rents. Company earnings are then driven by mapped
-profit pools (`valuation.py`, `companies.py`), valued at a punitive 12%
+profit pools (`rust/singularity-econ/src/valuation.rs`, `companies.rs`), valued at a punitive 12%
 discount rate across five scenarios (baseline / fast-takeoff / delayed /
 friction / fizzle).
 
@@ -74,7 +74,7 @@ Findings that survive the 800-run Monte Carlo over wide parameter priors:
 ## 1b. Model v2 addendum (Meadows systems-dynamics rebuild)
 
 After the book shipped, the model was rebuilt as a formal systems-dynamics
-artifact (`model_v2.py` + Rust port `rust/singularity-econ`, golden-parity
+artifact (`rust/singularity-econ`, snapshot-regression
 tested; design in `meadows_design.md`): supply growth, capex behavior, credit
 conditions, and adoption friction are now **endogenous feedback loops with
 explicit construction delays**, not assumed caps. Every named loop passes an
@@ -109,8 +109,8 @@ study sharpen the book's foundations:
 - Robot production 2032 median drops further, to ~0.34M units/yr — the
   robotics-leg patience discipline strengthens.
 
-**Cross-model validation of the book** (`scenarios_v2.py`, regression-locked
-in `test_scenarios_v2.py`): running the trade valuations on v2 preserves every
+**Cross-model validation of the book** (regression-locked in the crate's
+`tests/book.rs` conclusion locks): running the trade valuations on v2 preserves every
 core conclusion — semi/power longs strongly positive, wage-linked shorts
 deeply negative — and *strengthens* the power-generation legs (electricity
 prices now rise endogenously with scarcity: EQT +338%, VST +326% v2 EVs).

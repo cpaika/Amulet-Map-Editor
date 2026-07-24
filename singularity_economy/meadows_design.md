@@ -6,7 +6,8 @@ duration is an assumption, not a result. Donella Meadows' discipline
 (*Thinking in Systems*; *Leverage Points: Places to Intervene in a System*,
 1999; the World3 overshoot archetype from *The Limits to Growth*) demands the
 opposite: **behavior must emerge from stock-flow structure, feedback loops,
-and delays.** v2 (`model_v2.py`) rebuilds the core that way. v1 is kept for
+and delays.** v2 (now `rust/singularity-econ`, originally prototyped in
+Python) rebuilds the core that way. v1 is retired for
 comparison; v2 must reproduce v1's robust findings *and* generate endogenously
 what v1 assumed.
 
