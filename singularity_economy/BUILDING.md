@@ -66,13 +66,16 @@ cargo test --manifest-path rust/singularity-econ/Cargo.toml   # parity must pass
 A parity failure after a Python change means the Rust port needs the same
 change — the two must move together, goldens are the contract.
 
+Run everything: `./check.sh`
+
 ## Test inventory
 
 | Suite | Runner | What it proves |
 |---|---|---|
 | `test_model.py` (24) | buck2 / unittest | v1 invariants, 2026 calibration, comparative statics |
-| `test_model_v2.py` (19) | buck2 / unittest | pipeline conservation/delays, v2 invariants, **loop ablations** (each named feedback loop, disabled, changes behavior as theory predicts), rent-duration-vs-gain scaling, credit stress |
+| `test_model_v2.py` (22) | buck2 / unittest | pipeline conservation/delays, v2 invariants, **loop ablations** (each named feedback loop, disabled, changes behavior as theory predicts), rent-duration-vs-gain scaling, credit stress |
 | `test_valuation.py` (12) | buck2 / unittest | reverse-DCF roundtrip, pool mapping, scenario ordering |
+| `test_scenarios_v2.py` (6) | buck2 / unittest | cross-model conclusion locks (v1 vs v2 agreement on the trade book) |
 | `rust unit` (2) | buck2 / cargo | pipeline conservation, baseline sanity |
-| `tests/parity.rs` (4) | cargo | Rust == Python on golden vectors (baseline, B1-off, credit-stress, fast-takeoff) at 1e-6 |
+| `tests/parity.rs` (6) | cargo | Rust == Python on golden vectors (baseline, B1-off, credit-stress, fast-takeoff, capital-bound, power-tight) at 1e-6 |
 | `tests/props.rs` (3×256 cases) | cargo | invariants over the whole parameter space; supply-response monotonicity |

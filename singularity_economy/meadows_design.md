@@ -64,6 +64,48 @@ funded share accumulates sector debt → debt/revenue drives spreads → capital
 ceiling tightens. The levered-periphery accident is now a model outcome with
 a probability, not a narrative risk.
 
+## Loop diagram
+
+```mermaid
+flowchart LR
+    subgraph demand [Demand side]
+        ADOPT[Adoption level]
+        DISP[Cognitive displacement]
+        PG[Perceived demand growth<br/>1yr smoothing]
+        DES[Desired capex]
+    end
+    subgraph supply [Supply side]
+        CHIP[Chip capacity<br/>2yr pipeline]
+        IP[IP-toll capacity<br/>no supply response]
+        PWR[Energized power<br/>3yr pipeline]
+        COMP[Component capacity<br/>2yr pipeline]
+    end
+    subgraph state [Core stocks]
+        CS[Compute stock]
+        FLEET[Robot fleet]
+        DEBT[Sector debt]
+        GDP[World GDP]
+    end
+    ADOPT -->|R3 momentum| PG --> DES
+    DES -->|B3 affordability throttles| DES
+    DES -->|min of caps| CS
+    CHIP -->|cap| CS
+    PWR -->|cap| CS
+    DEBT -->|B4 spreads cap capital| CS
+    CS -->|capability| ADOPT
+    ADOPT --> DISP
+    DISP -->|B2 backlash slows| ADOPT
+    DISP -->|transition drag| GDP
+    CS -->|R1 recursive AI| CS
+    DES -->|scarcity margins| CHIP
+    DES -->|scarcity margins| PWR
+    DES -.->|same demand, no response| IP
+    FLEET -->|R2 bootstrap| COMP
+    COMP --> FLEET
+    CS -->|externally funded share| DEBT
+    GDP -->|capital ceiling| CS
+```
+
 ## Delays (the structure that makes timing tradeable)
 
 Material delays are explicit multi-stage pipelines (power 3 stages ≈ 3yr,
