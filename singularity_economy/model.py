@@ -337,6 +337,8 @@ def simulate(p: Params) -> list[YearState]:
             "prof_info": casualty(p.prof_info_pool, p.prof_info_beta, 0.05),
             "human_cognitive_wages": human_cog_m * avg_cog_wage,
             "human_physical_wages": phys_workers_m * avg_phys_wage,
+            # pseudo-pool: lets the valuation layer map GDP-linked businesses
+            "gdp_index": gdp,
         }
 
         # margins: the binding constraint earns scarcity rents
@@ -351,7 +353,7 @@ def simulate(p: Params) -> list[YearState]:
             return p.nonbottleneck_margin
 
         profits = {k: v * margin_for(k) for k, v in pools.items()
-                   if not k.startswith("human_")}
+                   if not k.startswith("human_") and k != "gdp_index"}
 
         # ---------------- macro feedback ----------------
         # AI/robot output lifts GDP (productivity), but freshly displaced labor

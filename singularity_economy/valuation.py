@@ -50,6 +50,16 @@ SCENARIO_PROBS = {
 }
 
 
+# Pools with a meaningful, stable 2026 revenue base — the ONLY pools that may
+# be mapped by growth *ratio*. Emerging pools (ai_services, robots,
+# robot_components, robot_services, electricity) start near zero, so ratio
+# mapping explodes; companies exposed to them must use `new_pool_capture`
+# (share-of-new-pool economics) instead.
+RATIO_POOLS = {"silicon", "dc_infra", "power_equipment", "it_services", "bpo",
+               "seat_saas", "prof_info", "human_cognitive_wages",
+               "human_physical_wages", "gdp_index"}
+
+
 @dataclass
 class Company:
     ticker: str
@@ -62,6 +72,16 @@ class Company:
     terminal_multiple: float = 15.0
     stance: str = "watch"
     notes: str = ""
+    # emerging-pool economics: pool -> (share_of_pool, net_margin).
+    # adds share * margin * pool($T) * 1000 to earnings ($B), phased in.
+    new_pool_capture: dict = None
+
+    def __post_init__(self):
+        bad = set(self.pools) - RATIO_POOLS
+        if bad:
+            raise ValueError(
+                f"{self.ticker}: pools {bad} start near zero in 2026 — use "
+                f"new_pool_capture for emerging pools, ratio mapping explodes")
 
 
 def earnings_path(c: Company, states) -> list[float]:
@@ -74,6 +94,11 @@ def earnings_path(c: Company, states) -> list[float]:
             growth += w * (s.pools[pool] / p0)
         growth = max(growth, 0.0) ** c.pool_beta
         e = c.ntm_earnings_b * growth * ((1.0 + c.share_drift) ** i)
+        if c.new_pool_capture:
+            # share is phased in over ~4 years (winning position takes time)
+            phase = min(i / 4.0, 1.0)
+            for pool, (share, margin) in c.new_pool_capture.items():
+                e += phase * share * margin * s.pools[pool] * 1000.0
         path.append(e)
     return path[:HORIZON]
 
