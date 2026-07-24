@@ -332,6 +332,34 @@ GM &gt;28%), WDAY puts (cRPO &lt;10%), SYF→OMF puts (DPD inflection + payment 
     sized for a 30% narrative rally against you.</div>
 </div>
 
+<h2><span class="no">06b</span>Model v2: the Meadows rebuild (12-hour iteration)</h2>
+<hr class="rule">
+<p>The model was rebuilt as a formal systems-dynamics artifact (Donella Meadows: stocks, flows, named
+feedback loops, explicit construction delays), ported to Rust with golden parity at 1e-6, onboarded onto
+Buck2, and stress-tested with 10–20k-run Monte Carlo and Spearman sensitivity studies. Supply growth,
+capex behavior, credit conditions, and adoption friction are now <em>endogenous loops</em>, each passing
+an ablation test. What changed:</p>
+<ul>
+  <li><strong>Power rents never normalize within the horizon in any sampled world</strong> — the power legs
+      got stronger (EQT/VST/NRG expected values rise as electricity prices now emerge from scarcity).</li>
+  <li><strong>Silicon rent duration is regime-dependent</strong> — the IP-moat vs commodity-capacity
+      distinction now emerges from loop gain + delay instead of being assumed.</li>
+  <li><strong>Credit crunch in ~25% of runs</strong>, driven almost entirely by the externally-funded share
+      of capex (ρ=+0.52): the circular-financing risk now has a probability and a leading indicator.</li>
+  <li><strong>Cross-coupling discovery: power scarcity shields silicon rents</strong> (ρ=+0.23) — permitting
+      or interconnection reform would rotate rents from power stocks to silicon stocks. New monitorable.</li>
+  <li><strong>Displacement is timing × integration friction</strong> (singularity year ρ=−0.62, adoption
+      half-life −0.61; capability magnitude ρ=0.01) — casualty shorts are bets on <em>when</em>.</li>
+  <li><strong>Every robotics-linked long flips negative on v2</strong> (MP +314%→−59%, Nabtesco +540%→−14%,
+      Symbotic +96%→−38%) — independently confirming the red team's kills through a different mechanism.
+      <strong>Book change: MP demoted to hold-only; do not add.</strong></li>
+</ul>
+<p>Cross-model regression tests now lock the agreements: any future model change that breaks a core book
+conclusion fails CI. Full artifacts: <span style="font-family:var(--mono)">meadows_design.md</span>,
+<span style="font-family:var(--mono)">leverage_points.md</span>,
+<span style="font-family:var(--mono)">rust/singularity-econ</span>,
+<span style="font-family:var(--mono)">BUILDING.md</span> (Buck2 + cargo).</p>
+
 <h2><span class="no">07</span>Book-level risks &amp; scenario P&amp;L</h2>
 <hr class="rule">
 <p>Honest accounting: "13 longs / 6 shorts" overstates balance. At inception the live short book is HUBS
