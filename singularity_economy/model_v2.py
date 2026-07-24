@@ -238,6 +238,7 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
     sector_debt = 0.0
     perceived_growth = p.demand_growth_base
     last_capex = p.ai_capex_2026 * 0.8
+    last_desired = p.ai_capex_2026
     prev_disp = 0.0
     prev_disp_macro = 0.0
     gw_per_unit = p.gw_per_compute_unit
@@ -327,8 +328,13 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
             (demand_signal_growth - perceived_growth)
         herd = L.r3_capex_momentum * p.momentum_gain * max(perceived_growth, 0.0)
         # B3 closure (review fix 1): bottleneck prices raise the effective
-        # cost of AI capacity and throttle desired capex growth.
-        desired_capex = last_capex * (1.0 + (perceived_growth + herd) / afford)
+        # cost of AI capacity and throttle desired capex growth. Desire is
+        # based on the larger of realized capex and a fraction of last
+        # year's desire, so a one-year supply collapse is not an absorbing
+        # zero state (round-2 review fix 2).
+        desire_base = max(last_capex, 0.3 * last_desired)
+        desired_capex = desire_base * (1.0 + (perceived_growth + herd) / afford)
+        last_desired = desired_capex
 
         # ------------- B4: credit conditions -------------
         ai_revenue_proxy = max((out[-1].pools["ai_services"] if out else 0.02)
@@ -368,12 +374,14 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
                 "capital": capital_cap, "demand": desired_capex}
         ai_capex = min(caps.values())
         binding = min(caps, key=lambda k: caps[k])
-        queue_ratio = desired_capex / max(min(chips_cap, power_cap, capital_cap),
-                                          1e-9)
+        queue_ratio = min(desired_capex
+                          / max(min(chips_cap, power_cap, capital_cap), 1e-9),
+                          50.0)
         # capacity overshoot per design: delivered silicon capacity vs the
         # demand actually flowing through it (>1 = glut, the "Cisco moment")
-        capacity_glut = chip_capacity / max(desired_capex
-                                            * p.silicon_share_of_capex, 1e-9)
+        capacity_glut = min(chip_capacity
+                            / max(desired_capex * p.silicon_share_of_capex, 1e-9),
+                            50.0)
 
         # debt accumulates on externally funded capex
         sector_debt = sector_debt * p.debt_amortization \
@@ -392,7 +400,10 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
         # realized/capacity would hide the very scarcity that sets prices.
         chip_utilization = min(desired_capex * p.silicon_share_of_capex
                                / max(chip_capacity, 1e-9), 1.35)
-        ip_utilization = min(desired_capex * p.silicon_share_of_capex
+        # IP demand is the same 18% slice of silicon flow its capacity serves —
+        # persistence must come from the absent supply response, not from
+        # comparing full flow to a fractional capacity (round-2 review fix).
+        ip_utilization = min(desired_capex * p.silicon_share_of_capex * 0.18
                              / max(ip_capacity, 1e-9), 1.35)
         # demand = surviving pre-update stock + FULL desired additions (queued
         # demand); supply = energized capacity after this year's additions.

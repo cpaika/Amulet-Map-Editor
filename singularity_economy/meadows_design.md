@@ -113,3 +113,14 @@ in 2045; physical displacement reaches just ~25% by 2045 against 2.4B
 workers). The humanoid labor economy is a 2040s phenomenon even when the
 software singularity happens in 2027 — the strongest statement yet of the
 "components early, labor late" sequencing.
+
+## Design note (round-2 review): demand never contracts
+
+`desired_capex` growth is floored at ~+14%/yr by construction (the perceived
+signal only accumulates nonnegative terms), so a demand BUST cannot occur —
+gluts arise only from supply overshoot, and collapse scenarios only through
+the credit channel. This is a deliberate choice consistent with the thesis
+frame (the singularity worlds are demand-rich); it means `capacity_glut`
+measures supply-side overshoot specifically, and fizzle-driven demand
+recessions are outside this model's expressive range (they live in the v1
+scenario weights and the valuation layer's fizzle case).

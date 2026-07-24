@@ -103,6 +103,24 @@ fn parity_stress_credit() {
 }
 
 #[test]
+fn parity_capital_bound() {
+    // exercises Binding::Capital and Binding::Chips branches (round-2 fix 3)
+    let p = Params { power_efficiency_gain: 0.5, ..Params::default() };
+    check_case("capital_bound", &p);
+}
+
+#[test]
+fn parity_power_tight() {
+    // exercises the power-utilization cap and starved-recovery path
+    let p = Params {
+        ai_power_2026: 20.0,
+        power_additions_2026: 8.0,
+        ..Params::default()
+    };
+    check_case("power_tight", &p);
+}
+
+#[test]
 fn parity_fast() {
     let p = Params {
         singularity_boost: 3.0,

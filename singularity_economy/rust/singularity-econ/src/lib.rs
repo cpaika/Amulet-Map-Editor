@@ -391,6 +391,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut sector_debt = 0.0_f64;
     let mut perceived_growth = p.demand_growth_base;
     let mut last_capex = p.ai_capex_2026 * 0.8;
+    let mut last_desired = p.ai_capex_2026;
     let mut prev_disp = 0.0_f64;
     let mut prev_disp_macro = 0.0_f64;
     let mut prev_adopt = 0.08_f64;
@@ -484,7 +485,10 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             * (demand_signal_growth - perceived_growth);
         let herd = l.r3_capex_momentum * p.momentum_gain * perceived_growth.max(0.0);
         // B3 closure: bottleneck prices throttle desired capex growth.
-        let desired_capex = last_capex * (1.0 + (perceived_growth + herd) / afford);
+        // Desire base avoids the absorbing zero-capex state (round-2 fix 2).
+        let desire_base = last_capex.max(0.3 * last_desired);
+        let desired_capex = desire_base * (1.0 + (perceived_growth + herd) / afford);
+        last_desired = desired_capex;
 
         // ---- B4: credit ----
         let ai_revenue_proxy = (out.last().map_or(0.02, |s| s.pools.ai_services)
@@ -534,10 +538,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 ai_capex = v;
             }
         }
-        let queue_ratio = desired_capex
-            / chips_cap.min(power_cap).min(capital_cap).max(1e-9);
-        let capacity_glut = chip_capacity
-            / (desired_capex * p.silicon_share_of_capex).max(1e-9);
+        let queue_ratio = (desired_capex
+            / chips_cap.min(power_cap).min(capital_cap).max(1e-9))
+            .min(50.0);
+        let capacity_glut = (chip_capacity
+            / (desired_capex * p.silicon_share_of_capex).max(1e-9))
+            .min(50.0);
 
         sector_debt = sector_debt * p.debt_amortization
             + (ai_capex * (1.0 - p.internal_funding_share)).max(0.0);
@@ -552,7 +558,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let chip_utilization = (desired_capex * p.silicon_share_of_capex
             / chip_capacity.max(1e-9))
             .min(1.35);
-        let ip_utilization = (desired_capex * p.silicon_share_of_capex
+        // IP demand is the same 18% slice of silicon flow its capacity
+        // serves (round-2 review fix).
+        let ip_utilization = (desired_capex * p.silicon_share_of_capex * 0.18
             / ip_capacity.max(1e-9))
             .min(1.35);
         let power_demand_gw = pre_stock * (1.0 - p.compute_deprec) * gw_per_unit
