@@ -124,7 +124,8 @@ fn monte_carlo(n: usize, seed: u64) {
     let mut silicon_norm_year: Vec<f64> = Vec::new();
     let mut power_norm_year: Vec<f64> = Vec::new();
     let mut credit_crunch = 0usize;
-    let mut overshoot_peak: Vec<f64> = Vec::new();
+    let mut queue_peak: Vec<f64> = Vec::new();
+    let mut glut_2036: Vec<f64> = Vec::new();
     let mut disp_2032: Vec<f64> = Vec::new();
     let mut robot_2032: Vec<f64> = Vec::new();
     let mut min_gdp_growth: Vec<f64> = Vec::new();
@@ -149,8 +150,9 @@ fn monte_carlo(n: usize, seed: u64) {
         if states.iter().any(|s| s.credit_multiplier < 0.98) {
             credit_crunch += 1;
         }
-        overshoot_peak.push(states.iter().map(|s| s.overshoot_ratio)
+        queue_peak.push(states.iter().map(|s| s.queue_ratio)
             .fold(f64::MIN, f64::max));
+        glut_2036.push(states.last().map_or(0.0, |s| s.capacity_glut));
         for s in &states {
             if s.year == 2032 {
                 disp_2032.push(s.cog_displacement);
@@ -163,7 +165,8 @@ fn monte_carlo(n: usize, seed: u64) {
         min_gdp_growth.push(ming);
     }
 
-    for v in [&mut silicon_norm_year, &mut power_norm_year, &mut overshoot_peak,
+    for v in [&mut silicon_norm_year, &mut power_norm_year, &mut queue_peak,
+              &mut glut_2036,
               &mut disp_2032, &mut robot_2032, &mut min_gdp_growth] {
         v.sort_by(|a, b| a.partial_cmp(b).unwrap());
     }
@@ -185,7 +188,8 @@ fn monte_carlo(n: usize, seed: u64) {
         "silicon_rent_normalization_year": dist(&silicon_norm_year),
         "power_rent_normalization_year": dist(&power_norm_year),
         "credit_crunch_frequency": credit_crunch as f64 / n as f64,
-        "overshoot_peak": dist(&overshoot_peak),
+        "queue_peak": dist(&queue_peak),
+        "capacity_glut_2036": dist(&glut_2036),
         "cog_displacement_2032": dist(&disp_2032),
         "robot_prod_2032_m": dist(&robot_2032),
         "min_gdp_growth": dist(&min_gdp_growth),

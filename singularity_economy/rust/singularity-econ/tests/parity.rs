@@ -17,14 +17,19 @@ struct GoldenYear {
     silicon_margin: f64,
     power_margin: f64,
     component_margin: f64,
+    ip_toll_margin: f64,
+    queue_ratio: f64,
+    capacity_glut: f64,
     cog_displacement: f64,
     robot_fleet_m: f64,
     robot_cost_k: f64,
     sector_debt: f64,
     credit_multiplier: f64,
-    overshoot_ratio: f64,
     gdp: f64,
     algo_eff: f64,
+    profit_silicon: f64,
+    profit_ip_tolls: f64,
+    profit_electricity: f64,
 }
 
 fn golden() -> std::collections::HashMap<String, Vec<GoldenYear>> {
@@ -55,12 +60,17 @@ fn check_case(name: &str, p: &Params) {
         close(s.silicon_margin, g.silicon_margin, "silicon_margin", g.year);
         close(s.power_margin, g.power_margin, "power_margin", g.year);
         close(s.component_margin, g.component_margin, "component_margin", g.year);
+        close(s.ip_toll_margin, g.ip_toll_margin, "ip_toll_margin", g.year);
+        close(s.queue_ratio, g.queue_ratio, "queue_ratio", g.year);
+        close(s.capacity_glut, g.capacity_glut, "capacity_glut", g.year);
+        close(s.profits.silicon, g.profit_silicon, "profit_silicon", g.year);
+        close(s.profits.ip_tolls, g.profit_ip_tolls, "profit_ip_tolls", g.year);
+        close(s.profits.electricity, g.profit_electricity, "profit_electricity", g.year);
         close(s.cog_displacement, g.cog_displacement, "cog_displacement", g.year);
         close(s.robot_fleet_m, g.robot_fleet_m, "robot_fleet_m", g.year);
         close(s.robot_cost_k, g.robot_cost_k, "robot_cost_k", g.year);
         close(s.sector_debt, g.sector_debt, "sector_debt", g.year);
         close(s.credit_multiplier, g.credit_multiplier, "credit_multiplier", g.year);
-        close(s.overshoot_ratio, g.overshoot_ratio, "overshoot_ratio", g.year);
         close(s.gdp, g.gdp, "gdp", g.year);
         close(s.algo_eff, g.algo_eff, "algo_eff", g.year);
     }

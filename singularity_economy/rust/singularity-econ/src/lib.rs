@@ -123,6 +123,8 @@ pub struct Params {
     pub internal_funding_share: f64,
     pub credit_gain: f64,
     pub debt_revenue_tolerance: f64,
+    pub debt_amortization: f64,
+    pub price_adjustment: f64,
     pub normal_margin: f64,
     pub rent_margin_slope: f64,
     pub margin_ceiling: f64,
@@ -162,14 +164,14 @@ impl Default for Params {
             ai_capex_2026: 0.65,
             compute_deprec: 0.25,
             silicon_share_of_capex: 0.55,
-            chip_capacity_2026: 0.36,
+            chip_capacity_2026: 0.28,
             chip_base_growth: 0.30,
             chip_supply_gain: 1.6,
             chip_growth_ceiling: 0.85,
             chip_pipeline_stages: 2,
             hw_cost_decline: 0.15,
-            ai_power_2026: 55.0,
-            power_additions_2026: 24.0,
+            ai_power_2026: 58.0,
+            power_additions_2026: 30.0,
             power_base_growth: 0.08,
             power_supply_gain: 0.55,
             power_growth_ceiling: 0.40,
@@ -187,7 +189,7 @@ impl Default for Params {
             adoption_halflife: 1.6,
             max_displacement_rate: 0.22,
             backlash_gain: 2.0,
-            afford_gain: 0.8,
+            afford_gain: 0.4,
             cognitive_demand_elasticity: 1.35,
             ai_task_price_rel: 0.04,
             addressable_cognitive: 0.85,
@@ -209,6 +211,8 @@ impl Default for Params {
             internal_funding_share: 0.65,
             credit_gain: 1.2,
             debt_revenue_tolerance: 1.5,
+            debt_amortization: 0.90,
+            price_adjustment: 0.6,
             normal_margin: 0.22,
             rent_margin_slope: 0.35,
             margin_ceiling: 0.62,
@@ -279,6 +283,7 @@ pub enum Binding {
 pub struct Pools {
     pub ai_services: f64,
     pub silicon: f64,
+    pub ip_tolls: f64,
     pub dc_infra: f64,
     pub power_equipment: f64,
     pub electricity: f64,
@@ -292,6 +297,24 @@ pub struct Pools {
     pub human_cognitive_wages: f64,
     pub human_physical_wages: f64,
     pub gdp_index: f64,
+}
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Profits {
+    pub ai_services: f64,
+    pub silicon: f64,
+    pub ip_tolls: f64,
+    pub dc_infra: f64,
+    pub power_equipment: f64,
+    pub electricity: f64,
+    pub robots: f64,
+    pub robot_components: f64,
+    pub robot_services: f64,
+    pub it_services: f64,
+    pub bpo: f64,
+    pub seat_saas: f64,
+    pub prof_info: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -313,6 +336,7 @@ pub struct YearState {
     pub cog_displacement: f64,
     pub cognitive_task_index: f64,
     pub adoption_friction: f64,
+    pub adoption_level: f64,
     pub robot_prod_m: f64,
     pub robot_fleet_m: f64,
     pub robot_cost_k: f64,
@@ -321,9 +345,12 @@ pub struct YearState {
     pub sector_debt: f64,
     pub credit_multiplier: f64,
     pub perceived_growth: f64,
-    pub overshoot_ratio: f64,
+    pub queue_ratio: f64,
+    pub capacity_glut: f64,
+    pub ip_toll_margin: f64,
     pub gdp: f64,
     pub pools: Pools,
+    pub profits: Profits,
 }
 
 // ---------------------------------------------------------------------------
@@ -348,11 +375,11 @@ fn power_orders(p: &Params, power_margin: f64, perceived_growth: f64,
 pub fn simulate(p: &Params) -> Vec<YearState> {
     let l = &p.loops;
 
-    // stocks
     let mut compute_stock = 1.0_f64;
     let mut algo_eff = 1.0_f64;
     let mut ai_power = p.ai_power_2026;
     let mut chip_capacity = p.chip_capacity_2026;
+    let mut ip_capacity = chip_capacity * 0.18;
     let mut component_capacity = 0.0_f64;
     let mut robot_fleet = 0.0_f64;
     let mut cum_robots = 0.02_f64;
@@ -366,14 +393,18 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut last_capex = p.ai_capex_2026 * 0.8;
     let mut prev_disp = 0.0_f64;
     let mut prev_disp_macro = 0.0_f64;
+    let mut prev_adopt = 0.08_f64;
     let mut gw_per_unit = p.gw_per_compute_unit;
 
     let mut power_pipe = Pipeline::new(p.power_pipeline_stages, p.power_additions_2026);
     let mut chip_pipe = Pipeline::new(p.chip_pipeline_stages,
                                       chip_capacity * p.chip_base_growth);
+    let mut ip_pipe = Pipeline::new(p.chip_pipeline_stages,
+                                    ip_capacity * p.chip_base_growth);
     let mut comp_pipe = Pipeline::new(p.component_pipeline_stages, 0.0);
 
     let mut silicon_margin = p.normal_margin + 0.10;
+    let mut ip_toll_margin = p.normal_margin + 0.15;
     let mut power_margin = p.normal_margin + 0.08;
     let mut component_margin = p.normal_margin;
 
@@ -415,11 +446,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         };
         let afford = 1.0 + l.b3_affordability * p.afford_gain * btl_price;
 
+        let pre_ramp = (0.08 * 1.6_f64.powi(year - p.start_year)).min(0.28);
         let adopt = if t_sing < 0 {
-            (0.08 * 1.6_f64.powi(year - p.start_year)).min(0.28)
+            pre_ramp
         } else {
             let k = 3.0_f64.ln() / (p.adoption_halflife * friction);
-            logistic(k * (t_sing as f64 - p.adoption_halflife * friction)).max(0.10)
+            logistic(k * (t_sing as f64 - p.adoption_halflife * friction))
+                .max(pre_ramp)
+                .max(0.10)
         };
 
         let ai_hew_raw = p.ai_hew_2026_m * compute_stock * algo_eff;
@@ -443,14 +477,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // ---- R3: capex desire from perceived demand ----
         let mut demand_signal_growth = p.demand_growth_base;
         if t_sing >= 0 {
-            let prev_adopt_level = out.last().map_or(0.0, |s| s.cog_displacement);
-            demand_signal_growth +=
-                1.6 * (adopt - prev_adopt_level).max(0.0) + 0.5 * adopt;
+            demand_signal_growth += 1.6 * (adopt - prev_adopt).max(0.0) + 0.5 * adopt;
         }
+        prev_adopt = adopt;
         perceived_growth += p.perception_smoothing
             * (demand_signal_growth - perceived_growth);
         let herd = l.r3_capex_momentum * p.momentum_gain * perceived_growth.max(0.0);
-        let desired_capex = last_capex * (1.0 + perceived_growth + herd);
+        // B3 closure: bottleneck prices throttle desired capex growth.
+        let desired_capex = last_capex * (1.0 + (perceived_growth + herd) / afford);
 
         // ---- B4: credit ----
         let ai_revenue_proxy = (out.last().map_or(0.02, |s| s.pools.ai_services)
@@ -465,8 +499,21 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let hw_cost_index = (1.0 - p.hw_cost_decline).powi(year - p.start_year);
         let cost_per_unit = (p.ai_capex_2026 / 0.80) * hw_cost_index;
 
+        // deliver chip + ip capacity at the START of the year (same-year
+        // convention as power); orders use last year's margins.
+        let excess_margin = (silicon_margin - p.normal_margin).max(0.0);
+        let chip_growth = (p.chip_base_growth
+            + l.b1_supply_response * p.chip_supply_gain * excess_margin)
+            .min(p.chip_growth_ceiling);
+        let chip_delivery = chip_pipe.step(chip_capacity * chip_growth);
+        chip_capacity += chip_delivery;
+        let ip_delivery = ip_pipe.step(ip_capacity * p.chip_base_growth);
+        ip_capacity += ip_delivery;
+
         let chips_cap = chip_capacity / p.silicon_share_of_capex;
-        gw_per_unit *= 1.0 - p.power_efficiency_gain;
+        if year > p.start_year {
+            gw_per_unit *= 1.0 - p.power_efficiency_gain;
+        }
         let orders = power_orders(p, power_margin, perceived_growth, &power_pipe);
         let power_additions = power_pipe.step(orders);
         let power_headroom =
@@ -480,8 +527,6 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             (Binding::Capital, capital_cap),
             (Binding::Demand, desired_capex),
         ];
-        // min by value; tie-break order matches Python dict iteration
-        // (chips, power, capital, demand) with strict '<'
         let (mut binding, mut ai_capex) = (Binding::Chips, chips_cap);
         for &(b, v) in &caps[1..] {
             if v < ai_capex {
@@ -489,24 +534,31 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 ai_capex = v;
             }
         }
-        let overshoot_ratio = desired_capex / chips_cap.min(power_cap).max(1e-9);
+        let queue_ratio = desired_capex
+            / chips_cap.min(power_cap).min(capital_cap).max(1e-9);
+        let capacity_glut = chip_capacity
+            / (desired_capex * p.silicon_share_of_capex).max(1e-9);
 
-        sector_debt += (ai_capex * (1.0 - p.internal_funding_share)).max(0.0);
-        sector_debt *= 0.90;
+        sector_debt = sector_debt * p.debt_amortization
+            + (ai_capex * (1.0 - p.internal_funding_share)).max(0.0);
 
+        let pre_stock = compute_stock;
         let units_added = ai_capex / cost_per_unit;
         compute_stock = compute_stock * (1.0 - p.compute_deprec) + units_added;
-        ai_power = (ai_power + power_additions).max(compute_stock * gw_per_unit);
-        let used_power = compute_stock * gw_per_unit;
+        ai_power += power_additions;
+        let used_power = (compute_stock * gw_per_unit).min(ai_power);
 
         // ---- utilizations, prices, margins ----
         let chip_utilization = (desired_capex * p.silicon_share_of_capex
             / chip_capacity.max(1e-9))
             .min(1.35);
-        let power_demand_gw = (desired_capex / cost_per_unit) * gw_per_unit
-            + compute_stock * gw_per_unit * p.compute_deprec;
-        let power_utilization = ((compute_stock * gw_per_unit + power_demand_gw * 0.5)
-            / (ai_power + power_additions).max(1e-9))
+        let ip_utilization = (desired_capex * p.silicon_share_of_capex
+            / ip_capacity.max(1e-9))
+            .min(1.35);
+        let power_demand_gw = pre_stock * (1.0 - p.compute_deprec) * gw_per_unit
+            + (desired_capex / cost_per_unit) * gw_per_unit;
+        let power_utilization = (power_demand_gw
+            / (ai_power).max(1e-9))
             .min(1.35);
 
         let margin_from = |u: f64, gain_class: f64| -> f64 {
@@ -516,20 +568,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 .min(p.margin_ceiling)
         };
 
-        silicon_margin = margin_from(chip_utilization, 0.9);
-        power_margin = margin_from(power_utilization, 1.0);
+        let pa = p.price_adjustment;
+        silicon_margin += pa * (margin_from(chip_utilization, 0.9) - silicon_margin);
+        ip_toll_margin += pa * (margin_from(ip_utilization, 0.9) - ip_toll_margin);
+        power_margin += pa * (margin_from(power_utilization, 1.0) - power_margin);
         let electricity_price = p.electricity_price_normal
             * (1.0 + 1.2 * (((power_utilization - p.target_utilization).max(0.0))
                 / (1.0 - p.target_utilization))
                 .min(2.0));
-
-        // ---- B1: chip capacity supply response ----
-        let excess_margin = (silicon_margin - p.normal_margin).max(0.0);
-        let chip_growth = (p.chip_base_growth
-            + l.b1_supply_response * p.chip_supply_gain * excess_margin)
-            .min(p.chip_growth_ceiling);
-        let delivered = chip_pipe.step(chip_capacity * chip_growth);
-        chip_capacity += delivered;
 
         // ---- robotics ----
         let mut robot_prod = 0.0;
@@ -561,7 +607,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 .max(p.robot_prod_2028_m * 0.5);
             robot_prod = robot_demand.min(component_capacity);
             let comp_utilization = robot_demand / component_capacity.max(1e-9);
-            component_margin = margin_from(comp_utilization.min(1.35), 0.8);
+            component_margin += p.price_adjustment
+                * (margin_from(comp_utilization.min(1.35), 0.8) - component_margin);
 
             cum_robots += robot_prod;
             let doublings = (cum_robots / 0.06).max(1.0).log2();
@@ -587,7 +634,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let ai_services = displaced_value * 0.45
             + (cognitive_task_index - 1.0) * p.cognitive_wage_bill * 0.06;
 
-        let years_in = (year - p.start_year) as i32;
+        let years_in = year - p.start_year;
         let casualty = |pool0: f64, beta: f64, drift: f64| -> f64 {
             let organic = pool0 * (1.0 + drift).powi(years_in);
             organic * (1.0 - beta * disp).max(0.05)
@@ -596,9 +643,10 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let pools = Pools {
             ai_services,
             silicon: ai_capex * p.silicon_share_of_capex,
+            ip_tolls: ai_capex * 0.10,
             dc_infra: ai_capex * (1.0 - p.silicon_share_of_capex),
             power_equipment: p.power_equip_cost_per_gw * power_additions,
-            electricity: ai_power * 8760.0 * electricity_price / 1e6,
+            electricity: used_power * 8760.0 * electricity_price / 1e6,
             robots: robot_prod * robot_cost / 1e3,
             robot_components: robot_prod * robot_cost / 1e3 * 0.55,
             robot_services: pd * p.physical_workers_m * avg_phys_wage * 0.35,
@@ -609,6 +657,24 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             human_cognitive_wages: human_cog_m * avg_cog_wage,
             human_physical_wages: phys_workers_m * avg_phys_wage,
             gdp_index: gdp,
+        };
+        let electricity_margin = (0.30
+            + 0.5 * (electricity_price / p.electricity_price_normal - 1.0))
+            .min(0.6);
+        let profits = Profits {
+            ai_services: pools.ai_services * p.ai_services_margin,
+            silicon: pools.silicon * silicon_margin,
+            ip_tolls: pools.ip_tolls * ip_toll_margin,
+            dc_infra: pools.dc_infra * p.normal_margin,
+            power_equipment: pools.power_equipment * power_margin,
+            electricity: pools.electricity * electricity_margin,
+            robots: pools.robots * p.normal_margin,
+            robot_components: pools.robot_components * component_margin,
+            robot_services: pools.robot_services * p.normal_margin,
+            it_services: pools.it_services * p.normal_margin,
+            bpo: pools.bpo * p.normal_margin,
+            seat_saas: pools.seat_saas * p.normal_margin,
+            prof_info: pools.prof_info * p.normal_margin,
         };
 
         // ---- macro ----
@@ -638,6 +704,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             cog_displacement: disp,
             cognitive_task_index,
             adoption_friction: friction,
+            adoption_level: adopt,
             robot_prod_m: robot_prod,
             robot_fleet_m: robot_fleet,
             robot_cost_k: robot_cost,
@@ -646,9 +713,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             sector_debt,
             credit_multiplier: credit_mult,
             perceived_growth,
-            overshoot_ratio,
+            queue_ratio,
+            capacity_glut,
+            ip_toll_margin,
             gdp,
             pools,
+            profits,
         });
     }
 

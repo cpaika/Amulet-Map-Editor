@@ -91,8 +91,9 @@ class TestEndogenousRentDynamics(unittest.TestCase):
         states = run()
         m = {s.year: s.silicon_margin for s in states}
         p = ParamsV2()
-        self.assertGreater(m[2027], p.normal_margin + 0.15)  # rents exist early
-        self.assertLess(m[2033], m[2027] - 0.15)             # and decay hard
+        early_peak = max(m[y] for y in (2026, 2027, 2028))
+        self.assertGreater(early_peak, p.normal_margin + 0.15)  # rents exist early
+        self.assertLess(m[2033], early_peak - 0.15)             # and decay hard
 
     def test_power_rents_persist(self):
         """Low supply gain (permitting) -> power rents outlive silicon rents."""
@@ -128,11 +129,15 @@ class TestLoopAblation(unittest.TestCase):
         self.assertGreaterEqual(off[y].cog_displacement,
                                 on[y].cog_displacement - 1e-9)
 
-    def test_b3_off_more_task_expansion(self):
+    def test_b3_off_more_task_expansion_and_capex(self):
+        """B3 must CLOSE: without it, bottleneck prices no longer throttle
+        desired capex, so cumulative capex must be strictly higher."""
         on = run()
         off = run(Loops(b3_affordability=0.0))
         self.assertGreaterEqual(off[-1].cognitive_task_index,
                                 on[-1].cognitive_task_index - 1e-9)
+        self.assertGreater(sum(s.ai_capex for s in off),
+                           sum(s.ai_capex for s in on))
 
     def test_r1_off_less_capability(self):
         on = run()
@@ -144,11 +149,11 @@ class TestLoopAblation(unittest.TestCase):
         off = run(Loops(r2_robot_bootstrap=0.0))
         self.assertLessEqual(off[-1].robot_fleet_m, on[-1].robot_fleet_m + 1e-9)
 
-    def test_r3_off_less_overshoot(self):
+    def test_r3_off_shallower_queues(self):
         on = run()
         off = run(Loops(r3_capex_momentum=0.0))
-        self.assertLess(max(s.overshoot_ratio for s in off),
-                        max(s.overshoot_ratio for s in on) + 1e-9)
+        self.assertLess(max(s.queue_ratio for s in off),
+                        max(s.queue_ratio for s in on) + 1e-9)
 
     def test_b4_binds_under_stress(self):
         """Credit must bite when capex runs hot against weak AI revenue:
@@ -164,11 +169,30 @@ class TestLoopAblation(unittest.TestCase):
 
 
 class TestOvershoot(unittest.TestCase):
-    def test_overshoot_emerges_with_momentum_and_delay(self):
+    def test_queues_emerge_with_momentum_and_delay(self):
         """R3 + pipeline delays must produce desired capex exceeding
         deliverable capacity during the boom (queue formation)."""
         states = run()
-        self.assertGreater(max(s.overshoot_ratio for s in states), 1.2)
+        self.assertGreater(max(s.queue_ratio for s in states), 1.2)
+
+    def test_silicon_glut_emerges_but_power_never_gluts(self):
+        """The endogenous Cisco moment: silicon capacity overshoots demand
+        within the horizon; power scarcity persists."""
+        states = run()
+        self.assertGreater(max(s.capacity_glut for s in states[5:]), 1.3)
+        self.assertGreater(states[-1].power_margin, 0.30)
+
+    def test_ip_rents_persist_while_silicon_rents_decay(self):
+        """The design's headline contrast, now implemented: same demand,
+        no supply response -> durable rents."""
+        states = run()
+        self.assertGreater(states[-1].ip_toll_margin,
+                           states[-1].silicon_margin + 0.2)
+
+    def test_adoption_never_falls_with_late_singularity(self):
+        states = run(singularity_year=2031)
+        levels = [s.adoption_level for s in states]
+        self.assertEqual(levels, sorted(levels))
 
     def test_delayed_singularity_delays_everything(self):
         base = run()

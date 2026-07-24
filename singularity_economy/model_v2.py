@@ -70,7 +70,8 @@ class ParamsV2:
     ai_capex_2026: float = 0.65          # $T desired capex 2026
     compute_deprec: float = 0.25
     silicon_share_of_capex: float = 0.55
-    chip_capacity_2026: float = 0.36     # $T/yr silicon output capacity (0.65*0.55)
+    chip_capacity_2026: float = 0.28     # $T/yr pre-2026-delivery silicon capacity
+                                         # (post-delivery ~0.36 = sold out vs 2026 demand)
     chip_base_growth: float = 0.30       # organic capacity growth at normal margins
     chip_supply_gain: float = 1.6        # B1 gain: extra growth per unit of excess margin
     chip_growth_ceiling: float = 0.85    # physical max yoy capacity growth
@@ -78,8 +79,8 @@ class ParamsV2:
     hw_cost_decline: float = 0.15        # $/unit-of-compute improvement per year
 
     # --- power ---
-    ai_power_2026: float = 55.0
-    power_additions_2026: float = 24.0   # GW/yr entering service 2026
+    ai_power_2026: float = 58.0
+    power_additions_2026: float = 30.0   # GW/yr entering service 2026
     power_base_growth: float = 0.08      # organic growth of the addition rate
     power_supply_gain: float = 0.55      # B1 gain (permitting/turbines cap response)
     power_growth_ceiling: float = 0.40
@@ -99,7 +100,7 @@ class ParamsV2:
     adoption_halflife: float = 1.6
     max_displacement_rate: float = 0.22
     backlash_gain: float = 2.0           # B2: friction per unit of recent displacement
-    afford_gain: float = 0.8             # B3: demand slowdown per unit bottleneck price
+    afford_gain: float = 0.4             # B3: demand slowdown per unit bottleneck price
     cognitive_demand_elasticity: float = 1.35
     ai_task_price_rel: float = 0.04
     addressable_cognitive: float = 0.85
@@ -125,6 +126,10 @@ class ParamsV2:
     internal_funding_share: float = 0.65      # share of capex funded from cash flow
     credit_gain: float = 1.2                  # B4: capital-cap tightening per leverage unit
     debt_revenue_tolerance: float = 1.5       # leverage level where spreads bite
+    debt_amortization: float = 0.90           # prior-stock survival rate per year
+    price_adjustment: float = 0.6             # yearly speed of margin adjustment
+                                              # toward the scarcity target
+                                              # (contracts/LTAs smooth prices)
     normal_margin: float = 0.22
     rent_margin_slope: float = 0.35           # margin rise per unit queue-excess
     margin_ceiling: float = 0.62              # best-in-history sustained EBIT margin
@@ -193,6 +198,7 @@ class YearV2:
     cog_displacement: float
     cognitive_task_index: float
     adoption_friction: float
+    adoption_level: float
     robot_prod_m: float
     robot_fleet_m: float
     robot_cost_k: float
@@ -201,7 +207,9 @@ class YearV2:
     sector_debt: float
     credit_multiplier: float
     perceived_growth: float
-    overshoot_ratio: float          # capex vs demand-consistent capex
+    queue_ratio: float              # desired capex vs deliverable (scarcity depth)
+    capacity_glut: float            # silicon capacity vs demand (>1 = glut)
+    ip_toll_margin: float
     gdp: float
     pools: dict
     profits: dict
@@ -238,10 +246,14 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
     power_pipe = Pipeline(p.power_pipeline_stages, p.power_additions_2026)
     chip_pipe = Pipeline(p.chip_pipeline_stages,
                          chip_capacity * p.chip_base_growth)
+    ip_capacity = chip_capacity * 0.18   # litho/EDA/IP slice of silicon flow
+    ip_pipe = Pipeline(p.chip_pipeline_stages, ip_capacity * p.chip_base_growth)
     comp_pipe = Pipeline(p.component_pipeline_stages, 0.0)
+    prev_adopt = 0.08
 
     # margins start at normal
     silicon_margin = p.normal_margin + 0.10
+    ip_toll_margin = p.normal_margin + 0.15
     power_margin = p.normal_margin + 0.08
     component_margin = p.normal_margin
 
@@ -280,11 +292,13 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
         else:
             btl_price = 0.4
         afford = 1.0 + L.b3_affordability * p.afford_gain * btl_price
+        pre_ramp = min(0.08 * (1.6 ** (year - p.start_year)), 0.28)
         if t_sing < 0:
-            adopt = min(0.08 * (1.6 ** (year - p.start_year)), 0.28)
+            adopt = pre_ramp
         else:
             k = math.log(3.0) / (p.adoption_halflife * friction)
-            adopt = max(logistic(k * (t_sing - p.adoption_halflife * friction)), 0.10)
+            adopt = max(logistic(k * (t_sing - p.adoption_halflife * friction)),
+                        pre_ramp, 0.10)
 
         ai_hew_raw = p.ai_hew_2026_m * compute_stock * algo_eff
         price_ratio = (p.ai_task_price_rel * afford) if t_sing >= 0 else 0.25
@@ -306,13 +320,15 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
         # ------------- R3: capex desire from perceived demand -------------
         demand_signal_growth = p.demand_growth_base
         if t_sing >= 0:
-            prev_adopt_level = out[-1].cog_displacement if out else 0.0
-            demand_signal_growth += 1.6 * max(adopt - prev_adopt_level, 0.0) \
+            demand_signal_growth += 1.6 * max(adopt - prev_adopt, 0.0) \
                 + 0.5 * adopt
+        prev_adopt = adopt
         perceived_growth += p.perception_smoothing * \
             (demand_signal_growth - perceived_growth)
         herd = L.r3_capex_momentum * p.momentum_gain * max(perceived_growth, 0.0)
-        desired_capex = last_capex * (1.0 + perceived_growth + herd)
+        # B3 closure (review fix 1): bottleneck prices raise the effective
+        # cost of AI capacity and throttle desired capex growth.
+        desired_capex = last_capex * (1.0 + (perceived_growth + herd) / afford)
 
         # ------------- B4: credit conditions -------------
         ai_revenue_proxy = max((out[-1].pools["ai_services"] if out else 0.02)
@@ -325,8 +341,21 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
         hw_cost_index = (1.0 - p.hw_cost_decline) ** (year - p.start_year)
         cost_per_unit = (p.ai_capex_2026 / 0.80) * hw_cost_index
 
+        # Fix 6 (review): deliver chip capacity at the START of the year so
+        # chips and power use the same same-year-delivery convention.
+        excess_margin = max(silicon_margin - p.normal_margin, 0.0)
+        chip_growth = min(p.chip_base_growth
+                          + L.b1_supply_response * p.chip_supply_gain * excess_margin,
+                          p.chip_growth_ceiling)
+        chip_capacity += chip_pipe.step(chip_capacity * chip_growth)
+        # IP-moat toll capacity (Fix 12): same demand, NO supply response —
+        # the monopoly's capacity grows at base rate only. Rent persistence
+        # vs the silicon track is the design's headline contrast.
+        ip_capacity += ip_pipe.step(ip_capacity * p.chip_base_growth)
+
         chips_cap = chip_capacity / p.silicon_share_of_capex
-        gw_per_unit *= (1.0 - p.power_efficiency_gain)
+        if year > p.start_year:   # Fix 3: decay starts after the anchor year
+            gw_per_unit *= (1.0 - p.power_efficiency_gain)
         power_additions = power_pipe.step(_power_orders(p, L, power_margin,
                                                         perceived_growth,
                                                         power_pipe))
@@ -339,17 +368,23 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
                 "capital": capital_cap, "demand": desired_capex}
         ai_capex = min(caps.values())
         binding = min(caps, key=lambda k: caps[k])
-        overshoot_ratio = desired_capex / max(min(chips_cap, power_cap), 1e-9)
+        queue_ratio = desired_capex / max(min(chips_cap, power_cap, capital_cap),
+                                          1e-9)
+        # capacity overshoot per design: delivered silicon capacity vs the
+        # demand actually flowing through it (>1 = glut, the "Cisco moment")
+        capacity_glut = chip_capacity / max(desired_capex
+                                            * p.silicon_share_of_capex, 1e-9)
 
         # debt accumulates on externally funded capex
-        sector_debt += max(ai_capex * (1.0 - p.internal_funding_share), 0.0)
-        sector_debt *= 0.90  # amortization/equity cures
+        sector_debt = sector_debt * p.debt_amortization \
+            + max(ai_capex * (1.0 - p.internal_funding_share), 0.0)
 
         # compute stock update
+        pre_stock = compute_stock
         units_added = ai_capex / cost_per_unit
         compute_stock = compute_stock * (1.0 - p.compute_deprec) + units_added
-        ai_power = max(ai_power + power_additions, compute_stock * gw_per_unit)
-        used_power = compute_stock * gw_per_unit
+        ai_power = ai_power + power_additions
+        used_power = min(compute_stock * gw_per_unit, ai_power)
 
         # ------------- utilizations, prices, margins -------------
         # Scarcity is a queue phenomenon: measure desired demand against
@@ -357,10 +392,13 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
         # realized/capacity would hide the very scarcity that sets prices.
         chip_utilization = min(desired_capex * p.silicon_share_of_capex
                                / max(chip_capacity, 1e-9), 1.35)
-        power_demand_gw = (desired_capex / cost_per_unit) * gw_per_unit \
-            + compute_stock * gw_per_unit * p.compute_deprec
-        power_utilization = min((compute_stock * gw_per_unit + power_demand_gw * 0.5)
-                                / max(ai_power + power_additions, 1e-9), 1.35)
+        ip_utilization = min(desired_capex * p.silicon_share_of_capex
+                             / max(ip_capacity, 1e-9), 1.35)
+        # demand = surviving pre-update stock + FULL desired additions (queued
+        # demand); supply = energized capacity after this year's additions.
+        power_demand_gw = pre_stock * (1.0 - p.compute_deprec) * gw_per_unit \
+            + (desired_capex / cost_per_unit) * gw_per_unit
+        power_utilization = min(power_demand_gw / max(ai_power, 1e-9), 1.35)
 
         def margin_from(u: float, gain_class: float) -> float:
             excess = max(u - p.target_utilization, 0.0) / (1.0 - p.target_utilization)
@@ -368,19 +406,13 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
                        + p.rent_margin_slope * min(excess, 2.0) * gain_class,
                        p.margin_ceiling)
 
-        silicon_margin = margin_from(chip_utilization, 0.9)
-        power_margin = margin_from(power_utilization, 1.0)
+        pa = p.price_adjustment
+        silicon_margin += pa * (margin_from(chip_utilization, 0.9) - silicon_margin)
+        ip_toll_margin += pa * (margin_from(ip_utilization, 0.9) - ip_toll_margin)
+        power_margin += pa * (margin_from(power_utilization, 1.0) - power_margin)
         electricity_price = p.electricity_price_normal * \
             (1.0 + 1.2 * min(max(power_utilization - p.target_utilization, 0.0)
                              / (1.0 - p.target_utilization), 2.0))
-
-        # ------------- B1: chip capacity supply response -------------
-        excess_margin = max(silicon_margin - p.normal_margin, 0.0)
-        chip_growth = min(p.chip_base_growth
-                          + L.b1_supply_response * p.chip_supply_gain * excess_margin,
-                          p.chip_growth_ceiling)
-        delivered = chip_pipe.step(chip_capacity * chip_growth)
-        chip_capacity += delivered
 
         # ------------- robotics: components pipeline + R2 bootstrap -------------
         robot_prod = 0.0
@@ -410,7 +442,8 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
                                p.robot_prod_2028_m * 0.5)
             robot_prod = min(robot_demand, component_capacity)
             comp_utilization = robot_demand / max(component_capacity, 1e-9)
-            component_margin = margin_from(min(comp_utilization, 1.35), 0.8)
+            component_margin += p.price_adjustment * \
+                (margin_from(min(comp_utilization, 1.35), 0.8) - component_margin)
 
             cum_robots += robot_prod
             doublings = math.log2(max(cum_robots / 0.06, 1.0))
@@ -439,9 +472,10 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
         pools = {
             "ai_services": ai_services,
             "silicon": ai_capex * p.silicon_share_of_capex,
+            "ip_tolls": ai_capex * 0.10,
             "dc_infra": ai_capex * (1.0 - p.silicon_share_of_capex),
             "power_equipment": p.power_equip_cost_per_gw * power_additions,
-            "electricity": ai_power * 8760 * electricity_price / 1e6,
+            "electricity": used_power * 8760 * electricity_price / 1e6,
             "robots": robot_prod * robot_cost / 1e3,
             "robot_components": robot_prod * robot_cost / 1e3 * 0.55,
             "robot_services": pd * p.physical_workers_m * avg_phys_wage * 0.35,
@@ -453,7 +487,8 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
             "human_physical_wages": phys_workers_m * avg_phys_wage,
             "gdp_index": gdp,
         }
-        margins = {"silicon": silicon_margin, "power_equipment": power_margin,
+        margins = {"silicon": silicon_margin, "ip_tolls": ip_toll_margin,
+                   "power_equipment": power_margin,
                    "robot_components": component_margin,
                    "electricity": min(0.30 + 0.5 * (electricity_price
                                                     / p.electricity_price_normal - 1.0),
@@ -482,11 +517,12 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
             power_margin=power_margin, component_margin=component_margin,
             electricity_price=electricity_price, ai_hew_m=ai_hew,
             cog_displacement=disp, cognitive_task_index=cognitive_task_index,
-            adoption_friction=friction, robot_prod_m=robot_prod,
+            adoption_friction=friction, adoption_level=adopt, robot_prod_m=robot_prod,
             robot_fleet_m=robot_fleet, robot_cost_k=robot_cost,
             component_capacity_m=component_capacity, phys_displacement=pd,
             sector_debt=sector_debt, credit_multiplier=credit_mult,
-            perceived_growth=perceived_growth, overshoot_ratio=overshoot_ratio,
+            perceived_growth=perceived_growth, queue_ratio=queue_ratio, capacity_glut=capacity_glut,
+            ip_toll_margin=ip_toll_margin,
             gdp=gdp, pools=pools, profits=profits,
         ))
 
@@ -526,7 +562,9 @@ def summarize_v2(states: list[YearV2]) -> dict:
         "silicon_margin_path": path(lambda s: s.silicon_margin),
         "power_margin_path": path(lambda s: s.power_margin),
         "component_margin_path": path(lambda s: s.component_margin),
-        "overshoot_ratio_path": path(lambda s: s.overshoot_ratio),
+        "queue_ratio_path": path(lambda s: s.queue_ratio),
+        "capacity_glut_path": path(lambda s: s.capacity_glut),
+        "ip_toll_margin_path": path(lambda s: s.ip_toll_margin),
         "credit_multiplier_path": path(lambda s: s.credit_multiplier),
         "gdp_path": path(lambda s: s.gdp),
         "rent_peaks": {

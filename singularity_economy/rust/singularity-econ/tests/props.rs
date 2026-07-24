@@ -45,7 +45,7 @@ proptest! {
             // no NaNs or infinities anywhere important
             for v in [s.ai_capex, s.compute_stock, s.gdp, s.sector_debt,
                       s.robot_fleet_m, s.robot_cost_k, s.silicon_margin,
-                      s.power_margin, s.component_margin, s.overshoot_ratio] {
+                      s.power_margin, s.component_margin, s.queue_ratio] {
                 prop_assert!(v.is_finite(), "non-finite at {}", s.year);
             }
             // non-negativity

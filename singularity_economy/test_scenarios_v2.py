@@ -28,8 +28,11 @@ class TestCrossModelRobustness(unittest.TestCase):
             self.assertGreater(self.rows[t]["expected_upside"], 0.5, t)
 
     def test_power_complex_positive(self):
-        for t in ("VST", "NRG", "CEG", "GEV"):
+        # CEG's threshold is lower: electricity bills used power (not
+        # capacity) post-review, and CEG is the contracted (lower-torque) leg.
+        for t in ("VST", "NRG", "GEV"):
             self.assertGreater(self.rows[t]["expected_upside"], 0.5, t)
+        self.assertGreater(self.rows["CEG"]["expected_upside"], 0.3, "CEG")
 
     def test_wage_linked_shorts_negative(self):
         for t in ("RHI", "ADP", "PAYX", "MAN", "CHRW", "LSTR", "TCS.NS"):
