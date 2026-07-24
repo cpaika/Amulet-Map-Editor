@@ -264,9 +264,13 @@ def simulate_v2(p: ParamsV2) -> list[YearV2]:
             algo_eff *= 1.0 + (g - 1.0) * headroom
 
         # ------------- demand side: adoption with B2 + B3 -------------
-        recent_disp_rate = max(prev_disp - (out[-1].cog_displacement
-                                            if len(out) > 1 else 0.0), 0.0) \
-            if out else 0.0
+        if len(out) >= 2:
+            recent_disp_rate = max(out[-1].cog_displacement
+                                   - out[-2].cog_displacement, 0.0)
+        elif out:
+            recent_disp_rate = out[-1].cog_displacement
+        else:
+            recent_disp_rate = 0.0
         friction = 1.0 + L.b2_backlash * p.backlash_gain * recent_disp_rate
         # bottleneck price index (from last year's utilizations)
         if out:
