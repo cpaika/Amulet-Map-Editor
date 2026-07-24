@@ -192,8 +192,12 @@ pub fn evaluate(
             upside: fair / c.mcap_b - 1.0,
         });
     }
+    assert!(!per.is_empty(), "evaluate() needs at least one scenario");
     let expected = SCENARIO_PROBS.iter().map(|(n, p)| {
-        per.iter().find(|v| v.scenario == *n).map_or(0.0, |v| v.upside * p)
+        per.iter()
+            .find(|v| v.scenario == *n)
+            .unwrap_or_else(|| panic!("scenario {n} missing from states"))
+            .upside * p
     }).sum();
     let worst = per.iter().map(|v| v.upside).fold(f64::MAX, f64::min);
     let best = per.iter().map(|v| v.upside).fold(f64::MIN, f64::max);

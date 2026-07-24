@@ -17,8 +17,9 @@ fn main() {
     match args.get(1).map(String::as_str) {
         Some("run") | None => run_baseline(),
         Some("golden") => {
-            golden(args.get(2).map(String::as_str)
-                .unwrap_or("../../output/golden_v2.json"));
+            let default = concat!(env!("CARGO_MANIFEST_DIR"),
+                                  "/../../output/golden_v2.json");
+            golden(args.get(2).map(String::as_str).unwrap_or(default));
         }
         Some("book") => {
             book(args.get(2).map(String::as_str));
@@ -108,12 +109,14 @@ fn golden(path: &str) {
 
 fn book(financials_path: Option<&str>) {
     let mut comps = universe();
-    if let Some(path) = financials_path {
-        if let Ok(json) = std::fs::read_to_string(path) {
-            load_financials(&mut comps, &json);
-        } else {
-            eprintln!("warning: could not read {path}; using built-in financials");
+    let default = concat!(env!("CARGO_MANIFEST_DIR"), "/../../output/financials.json");
+    let path = financials_path.unwrap_or(default);
+    match std::fs::read_to_string(path) {
+        Ok(json) => load_financials(&mut comps, &json),
+        Err(e) if financials_path.is_some() => {
+            panic!("could not read financials {path}: {e}");
         }
+        Err(_) => eprintln!("note: {path} not found; using built-in (synced) financials"),
     }
     let states = scenario_states();
     let rows = evaluate_all(&comps, &states);
