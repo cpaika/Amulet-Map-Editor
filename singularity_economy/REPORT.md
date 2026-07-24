@@ -132,11 +132,11 @@ rules and invalidation triggers come from those reviews.
 
 | # | Ticker | Trade | Why it survives everything | Entry / invalidation |
 |---|--------|-------|---------------------------|---------------------|
-| 1 | **TSM** | Long TSMC | The convergence pick: named by the red team as the better expression of the ASML, MU, AND SK Hynix theses. Owns both 2026 chokepoints (N2 wafers, CoWoS packaging), 4 years of committed price hikes, 67.7% GM, net cash $69B — at 19.5x fwd with ~27% consensus EPS CAGR. IP-moat rent class (persists decades, per history). | Enter now — but per the red-team verdict, size at HALF a normal anchor weight, or full weight only when paired with 12-month ~20%-OTM puts (~2-3%/yr cost). Invalidation: CoWoS gap closing with pricing-power rollback. |
-| 2 | **GOOGL** | Long Alphabet | Reframed by red team: "best-capitalized compute owner at market-plus price." TPU full stack (4.3M units/yr), DeepMind, Waymo; self-funds capex from search cash flow. | Add on capex-tantrum dips (~$317 zone). Invalidation: Cloud backlog growth stalling; paid-click erosion without AI-revenue offset. |
-| 3 | **MSFT** | Long Microsoft | The punished aggregator: -25% over 1yr to 20.6x fwd on capex/seat fears while owning enterprise agent distribution + OpenAI economics. Asymmetric skew at this multiple. | Half now, half after Jul-29 print. Invalidation: Azure cc growth <38%. |
-| 4 | **AVGO** | Long Broadcom | Custom-ASIC royalty on hyperscaler in-sourcing: $73B AI backlog, >$100B FY27 AI revenue line of sight, 75%+ GM, leverage now 1.0x. The inference mix-shift winner. | Enter now; most expensive of the semi longs (24.4x) — size below TSM. Invalidation: a named second-gen ASIC program re-compete loss. |
-| 5 | **CEG** | Long Constellation | Contracted 20-yr nuclear PPAs (MSFT Crane, Meta Clinton, new Walmart) = the "royalty acre" of the buildout; entry got CHEAPER than thesis assumed (24x fwd after July dip vs 26-32x). | Add toward $255-260. Invalidation: Crane restart slipping past 2027; PJM cap regime extended AND tightened (rent clipping). |
+| 1 | **TSM** | Long TSMC | The convergence pick: named by the red team as the better expression of the ASML, MU, AND SK Hynix theses. Owns both 2026 chokepoints (N2 wafers, CoWoS packaging), 4 years of committed price hikes, 67.7% GM, net cash $69B — at 19.5x fwd with ~27% consensus EPS CAGR. IP-moat rent class (persists decades, per history). | Round 2: half-weight AND rolling ~20%-OTM put overlay (not either/or); prefer the 2330.TW local line — the ADR still embeds ~14% of meltable premium (26%→13.7% in five months). Haircut EPS quality: Section 232 tariff costs, US-fab margin dilution (3-4pts), NTD risk (~0.4pt OM per 1%); size on FCF yield (FCF -17.5% yoy at record earnings), not P/E. Invalidation: CoWoS gap closing with pricing-power rollback. |
+| 2 | **GOOGL** | Long Alphabet | DEMOTED to medium by round 2: the "self-funded" pillar is dead — June 2026 ~$80-85B equity raise, buybacks at $0 (first time since 2017), FCF margin 21%→9.2%. Assets intact (TPU, DeepMind, Waymo, Cloud +82%); Berkshire anchored the raise. But Anthropic is now >40% of the $462B Cloud backlog while Google invests up to $40B into Anthropic — circular financing at the fund's own #2 long. | Dips are now also equity-supply events — no automatic adds. Invalidation: a second equity raise without buyback resumption; any Anthropic markdown or IPO delay (that event risk IS the backlog's credit quality). Restore to core when buybacks resume or Anthropic is a rated public counterparty. |
+| 3 | **MSFT** | Long Microsoft | DEMOTED to medium by round 2: OpenAI is 45% of the $625B commercial RPO and its spend is vendor-financed — the Azure kill trigger was contaminated (watching a contractual floor, not demand). The April-2026 amendment capped the OpenAI revenue share and terminates IP/API exclusivity on verified AGI — under this fund's own thesis, capped upside with retained per-seat downside. Distribution + the 27% OpenAI stake keep it a long. | Half now, half post-print. NEW invalidation metric: ex-OpenAI commercial RPO growth <20% (currently 26%, decelerating) — not headline Azure. |
+| 4 | **AVGO** | Long Broadcom | CUT to half-size by round 2: on the marginal AI dollar Broadcom is becoming a vendor-financier, not a royalty collector — ~$30B of SPV lease guarantees, an $18B OpenAI phase-1 financing snag, and the make-or-break Microsoft ~40% offtake NOT signed. Disclosed AI GM ~65%, not 75%, falling on rack mix. The backlog is real; its credit quality is not uniform. | Haircut the OpenAI-linked 30-50% of backlog until MSFT signs the offtake or OpenAI closes phase-1 financing on its own paper — those are the re-upsize triggers. Kill: SPV guarantees growing faster than AI revenue; a second-gen re-compete loss. |
+| 5 | **CEG** | Long Constellation | CUT to half-size by round 2: the modeled company no longer exists — Calpine closed Jan 7, 2026 (fleet ~55GW, roughly half competitive gas; +16% share count). The "cheap 24x" is paid partly on spark-spread gas earnings that deserve 10-14x, and the Illinois collar refunds merchant upside on ~6.6GW (~$1.9B already credited back). The nuclear-PPA thesis itself is intact (Crane on track, Walmart added). | Suspend adds until the DOJ/FERC 4.4GW divestiture clears and the Calpine sponsors' lockup passes. Underwrite zero merchant upside on the collared Illinois units. Kill: Crane slips past 2027. |
 
 ### Second-line longs (medium)
 
@@ -160,8 +160,8 @@ rules and invalidation triggers come from those reviews.
 
 | # | Ticker | Trade | Structure | Trigger / invalidation |
 |---|--------|-------|-----------|----------------------|
-| 1 | **RHI** | Short Robert Half | **Put spreads ONLY** (12-18mo, ≤50bps premium at risk): 24% SI + 8.7% dividend = >15%/yr carry on stock borrow. The fundamental case is the strongest of all shorts (perm placement = first AI casualty; payout > net income; still ~23x). | Enter spreads on post-earnings IV crush or squeeze rallies >$42. |
-| 2 | **HUBS** | Short HubSpot | Moderate size, delta-one acceptable. Best SaaS short: demand cracks visible NOW (softer pipeline, longer cycles) + independent kill-shot (AI search destroying the inbound/SEO engine it sells). | Respect the floor: $1.4B net cash, M&A interest (Alphabet approach) — cover into capitulation, don't press below ~$8.5B EV. |
+| 1 | **RHI** | Short Robert Half | DOWNGRADED by round 2 — the mechanics round 1 "solved" were only prepaid: at ~25% SI, put-call parity embeds the borrow + 6.2% dividend into the synthetic forward (12-18mo forwards ~10-15% below spot), so long-dated spreads pay only on falls beyond an already-discounted strip. The thesis payload also shrank: perm placement is ~9% of revenue and growing again; Protiviti (35% of revenue) monetizes the AI-transformation wave. | Premium budget cut to 25bps. 4-7mo put-spread ladders around earnings dates, strikes off the synthetic forward; fund premium with defined-risk call spreads above spot (captures the embedded discount instead of paying it). |
+| 2 | **HUBS** | Short HubSpot | DOWNGRADED to small by round 2, on kill-watch: on 2026-04-14 HubSpot inverted to outcome-based agent pricing ($0.50/resolved conversation; credits +67% q/q; NRR guided UP on credits) — the thesis's substitution now runs through HubSpot's own billing meter. Q1 beat every line. The short survives only if credit revenue can't outrun seat decay. | No delta-one through the early-Aug print (8.7% SI + active $1B buyback). Small put spreads, or re-enter post-print. Full kill if Q2 shows credits re-accelerating with NRR >104. |
 | 3 | **CHRW** | Short CH Robinson | Delta-one after Jul-29 print only — 4 straight beats, do not stand in front. AI-margin story is a cost-out sugar high while AI commoditizes brokerage itself. | Enter on post-beat strength $210-225, or on first AGP-per-load stabilization with falling volumes. |
 | 4 | **MRVL / AVGO** | Pair: short Marvell vs long Broadcom | Half size. Socket erosion (Trainium3 lost to Alchip, Maia at risk to AVGO) vs the share gainer. | Enter short leg on relief toward $225-230. Kill if MRVL names a new hyperscale socket win. |
 | 5 | **PLTR** | Short Palantir (relative) | Small, put spreads only, AFTER Aug-3 print — run explicitly against the MSFT/GOOGL long sleeve as a relative bet (per §6): agents commoditize the integration layer faster than the aggregators. Growth is accelerating (+85%), so never naked. | 3-6mo put spreads on failed post-print rally. |
@@ -274,6 +274,26 @@ The kills that mattered most (would have been expensive mistakes):
    the FCF guide raise is substantially prepayments (deposits on 2031 slots),
    not margin — the P&L hasn't yet proven the slot repricing.
 
+## 5b. Second-round review: the survivors re-attacked
+
+After the book was assembled, seven fresh adversaries re-attacked the live
+positions with instructions to find only what BOTH the pitch and round one
+missed. Result: **zero kills, seven downgrades** — every core position kept
+its direction but lost size or gained structure (adjustments embedded in §4).
+Full verdicts: `output/round2_verdicts.json`.
+
+The systemic finding that matters more than any single trade: **the OpenAI/
+Anthropic circular-financing nexus is one correlated factor across three core
+longs.** OpenAI is 45% of MSFT's commercial RPO and the disputed anchor of
+AVGO's backlog; Anthropic is >40% of GOOGL's Cloud backlog while Google
+finances it with up to $40B. The report's §3 "overshoot tells" (vendor
+financing, circular revenue) were applied to NVDA and neoclouds — but they are
+live inside the hyperscaler core longs too. The frontier-lab IPO window
+(Anthropic Oct 2026, OpenAI 2027) is therefore not just "event risk" — it is
+the credit quality of the book's largest backlogs. De-gross on any lab
+markdown, funding snag, or IPO delay; that trigger sits above every
+single-name rule.
+
 ## 6. Model-level kills (pre-red-team) and disagreements
 
 The quantitative model killed several candidates before the red team ran:
@@ -315,13 +335,19 @@ The quantitative model killed several candidates before the red team ran:
 5. **Crowding asymmetry**: the longs are consensus-adjacent (semis crowded);
    the shorts are contrarian-timing trades. In a broad risk-off, both legs
    lose initially (longs de-rate faster than casualty shorts fall).
-6. **The robotics leg of the thesis is deliberately unexpressed at
+6. **Circular-financing concentration (round-2 finding):** MSFT, AVGO, and
+   GOOGL — three of five core longs — carry the same hidden counterparty
+   factor (OpenAI/Anthropic vendor-financed commitments). A lab funding
+   accident propagates through 40-45% of the backlogs justifying their
+   multiples. This factor, not Taiwan, is the book's most correlated
+   non-obvious exposure.
+7. **The robotics leg of the thesis is deliberately unexpressed at
    inception.** Every component long died in adversarial review (wrong
    component category, Chinese commoditization, hype multiples); MP is a
    geopolitical-scarcity play, not a robot-volume play. If robotics surprises
    EARLY, this book underperforms the thesis — the watchlist build-trigger
    (named non-China supplier in a shipping program) is the re-entry.
-7. **Model risk**: the bottleneck model's power-binding conclusion rests on
+8. **Model risk**: the bottleneck model's power-binding conclusion rests on
    turbine/transformer/queue lead times holding. A demand air-pocket
    (2027 digestion year) converts "sold out through 2030" into cancellations
    — backlogs are deposits, not GAAP revenue.
