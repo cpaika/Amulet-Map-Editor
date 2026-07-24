@@ -71,6 +71,40 @@ Findings that survive the 800-run Monte Carlo over wide parameter priors:
    shorts; treat the recession tail as accepted risk until the credit
    triggers arm.
 
+## 1b. Model v2 addendum (Meadows systems-dynamics rebuild)
+
+After the book shipped, the model was rebuilt as a formal systems-dynamics
+artifact (`model_v2.py` + Rust port `rust/singularity-econ`, golden-parity
+tested; design in `meadows_design.md`): supply growth, capex behavior, credit
+conditions, and adoption friction are now **endogenous feedback loops with
+explicit construction delays**, not assumed caps. Every named loop passes an
+ablation test. 10k-run Monte Carlo (30ms in Rust) and a 20k-run sensitivity
+study sharpen the book's foundations:
+
+- **Power rents never normalize within the horizon in any sampled world** —
+  stronger than v1's claim. Power binds ~96–100% of runs through 2034.
+- **Silicon rent duration is regime-dependent** (p10 normalizes 2031, median
+  2036): it emerges from the supply-response gain — the formal version of the
+  IP-moat vs commodity-capacity distinction the book was built on.
+- **Credit crunch occurs in ~25% of runs**, driven almost entirely by the
+  externally-funded share of capex (Spearman ρ=+0.52) — the circular-financing
+  risk (§5b) now has a model probability and a leading indicator.
+- **Peak desired/deliverable queue ratio ~2.3x** — sold-out-through-2030
+  order books are the model's natural state, not an anomaly.
+- **Cross-coupling discovery: power scarcity shields silicon rents**
+  (power-supply ceiling ρ=+0.23 on chip-rent duration). Permitting/queue
+  reform would rotate rents from power stocks to silicon stocks — a
+  monitorable regime switch added to §8.
+- **Displacement is timing × integration friction** (singularity year ρ=−0.62,
+  adoption half-life −0.61; capability magnitude ρ=0.01): casualty shorts are
+  bets on *when*, which is why every one of them carries a data trigger.
+- Robot production 2032 median drops further, to ~0.34M units/yr — the
+  robotics-leg patience discipline strengthens.
+
+Full leverage-point analysis (Meadows' 12 points with empirical gains and
+three new monitorables): `leverage_points.md`. Build system: `BUILDING.md`
+(Buck2 + cargo, all suites green).
+
 ## 2. What the market already prices (July 2026)
 
 The market is mid-correction, not euphoric — this materially improves the
