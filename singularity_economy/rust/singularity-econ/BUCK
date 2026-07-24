@@ -1,11 +1,11 @@
-# Buck2 targets for the model core. Third-party-free by design: the "serde"
-# cargo feature is off here, so this builds with rustc alone. The
-# dependency-full paths (CLI, parity vs Python goldens, proptest) run under
-# cargo -- see ../../BUILDING.md.
+# Buck2 targets. Third-party-free by design: the "serde" cargo feature is
+# off here, so everything builds with rustc alone. The dependency-full paths
+# (CLI, snapshot regression vs goldens, proptest) run under cargo — see
+# ../../BUILDING.md.
 
 rust_library(
     name = "core",
-    srcs = glob(["src/lib.rs"]),
+    srcs = glob(["src/lib.rs", "src/valuation.rs", "src/scenarios.rs", "src/companies.rs"]),
     crate = "singularity_econ",
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -14,8 +14,24 @@ rust_library(
 
 rust_test(
     name = "core_test",
-    srcs = glob(["src/lib.rs"]),
+    srcs = glob(["src/lib.rs", "src/valuation.rs", "src/scenarios.rs", "src/companies.rs"]),
     crate = "singularity_econ_test",
     crate_root = "src/lib.rs",
     edition = "2021",
+)
+
+rust_test(
+    name = "behavior",
+    srcs = ["tests/behavior.rs"],
+    crate_root = "tests/behavior.rs",
+    edition = "2021",
+    deps = [":core"],
+)
+
+rust_test(
+    name = "book",
+    srcs = ["tests/book.rs"],
+    crate_root = "tests/book.rs",
+    edition = "2021",
+    deps = [":core"],
 )

@@ -8,7 +8,14 @@ Rust port → code review → corrections.
 
 **Read first:** `REPORT.md` (the full research report and trade book).
 
-## The two models
+**Implementation:** pure Rust (`rust/singularity-econ`) — model core,
+valuation engine, company universe, scenarios, and all 47 tests. The
+original Python (v1 bottleneck model and the v2 reference implementation)
+was retired after the Rust port reached golden parity; git history
+preserves both, and `output/golden_v2.json` remains as the frozen
+regression snapshot that was cross-validated against Python at 1e-6.
+
+## The two models (v1 retired, v2 = the Rust crate)
 
 | | v1 `model.py` | v2 `model_v2.py` + `rust/singularity-econ` |
 |---|---|---|
@@ -19,8 +26,8 @@ Rust port → code review → corrections.
 | Rent duration | asserted from history | **emergent**: commodity silicon decays in a damped hog-cycle (median normalization 2032, endogenous 1.37x glut by 2036) while the IP-toll sector (no supply response) holds peak margins throughout |
 | Speed | ~2.5ms/run (Python) | ~3µs/run (Rust) — 10k-run Monte Carlo in ~30ms |
 
-Both models drive the same valuation layer (`valuation.py`, `companies.py`);
-`test_scenarios_v2.py` locks the conclusions that must agree across them.
+The valuation layer (`src/valuation.rs`, `src/companies.rs`) runs on the
+v2 scenarios; `tests/book.rs` locks the trade-book conclusions.
 Design rationale: `meadows_design.md`. Meadows leverage-point analysis with
 empirical sensitivities: `leverage_points.md`. Parameter evidence:
 `calibration_notes.md`. Build/test (Buck2 + cargo): `BUILDING.md`.
@@ -47,21 +54,21 @@ empirical sensitivities: `leverage_points.md`. Parameter evidence:
 
 - `output/verdicts.json`, `output/round2_verdicts.json` — trade red-team rounds
 - `output/financials.json` — verified mid-2026 per-ticker financials
-- `output/valuations.json` / `valuations_v2.json` — scenario DCFs per model
-- `output/golden_v2.json` — Python↔Rust parity contract
+- `output/valuations.json` / `valuations_v2.json` — historical scenario DCFs (live table: `singularity-econ book output/financials.json`)
+- `output/golden_v2.json` — frozen regression snapshot (regenerate: `singularity-econ golden`)
 - `output/mc_v2_rust.json`, `output/sensitivity_v2.json` — 10k/20k-run studies
 - `report_artifact.html` — published report page
 
 ## Tests
 
-~80 across five suites (see `BUILDING.md` for the inventory): invariants,
+47 across five Rust suites (see `BUILDING.md` for the inventory): invariants,
 2026 calibration anchors, comparative statics, **per-loop ablations** (every
 named feedback loop, disabled, must change behavior as theory predicts),
 pipeline conservation, golden parity at 1e-6, property tests over the
 parameter space, and cross-model conclusion locks.
 
 ```bash
-buck2 test //... ; cargo test --manifest-path rust/singularity-econ/Cargo.toml
+./check.sh   # buck2 + cargo, everything
 ```
 
 *Scenario analysis conditional on a stated thesis — not investment advice.*

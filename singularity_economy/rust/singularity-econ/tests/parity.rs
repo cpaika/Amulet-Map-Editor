@@ -1,9 +1,9 @@
-//! Golden-parity tests: the Rust port must reproduce the Python reference
-//! implementation (model_v2.py) on the exported golden vectors.
-//!
-//! Tolerance is 1e-6 relative: formulas are identical IEEE-754 double
-//! arithmetic, but libm transcendentals (exp/ln/powf) may differ in the
-//! final ulps between CPython and Rust.
+//! Regression-snapshot tests. The Rust implementation is the specification;
+//! `output/golden_v2.json` is a frozen snapshot of its behavior (originally
+//! cross-validated against the retired Python reference at 1e-6). A failure
+//! means the model's BEHAVIOR changed: if intentional, regenerate via
+//! `singularity-econ golden` and let the snapshot diff document the change
+//! in review; if not, you found a bug.
 
 use serde::Deserialize;
 use singularity_econ::{simulate, Loops, Params};
@@ -34,7 +34,7 @@ struct GoldenYear {
 
 fn golden() -> std::collections::HashMap<String, Vec<GoldenYear>> {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../output/golden_v2.json");
-    let data = std::fs::read_to_string(path).expect("golden_v2.json missing — run: python3 -c 'regenerate goldens' in singularity_economy/");
+    let data = std::fs::read_to_string(path).expect("golden_v2.json missing — regenerate: singularity-econ golden");
     serde_json::from_str(&data).unwrap()
 }
 

@@ -6,6 +6,9 @@
 use rand::distributions::{Distribution, Uniform};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
+use singularity_econ::companies::{load_financials, universe};
+use singularity_econ::scenarios::scenario_states;
+use singularity_econ::valuation::{evaluate_all, Stance};
 use singularity_econ::{simulate, Params};
 use std::collections::BTreeMap;
 
@@ -13,6 +16,13 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     match args.get(1).map(String::as_str) {
         Some("run") | None => run_baseline(),
+        Some("golden") => {
+            golden(args.get(2).map(String::as_str)
+                .unwrap_or("../../output/golden_v2.json"));
+        }
+        Some("book") => {
+            book(args.get(2).map(String::as_str));
+        }
         Some("sa") => {
             let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(20_000);
             let seed: u64 = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(11);
@@ -24,7 +34,7 @@ fn main() {
             monte_carlo(n, seed);
         }
         Some(cmd) => {
-            eprintln!("unknown command: {cmd} (use: run | mc <n> <seed>)");
+            eprintln!("unknown command: {cmd} (use: run | book [financials.json] | golden [path] | mc <n> <seed> | sa <n> <seed>)");
             std::process::exit(2);
         }
     }
@@ -42,6 +52,85 @@ fn run_baseline() {
         })
     }).collect();
     println!("{}", serde_json::to_string_pretty(&summary).unwrap());
+}
+
+/// Regenerate the regression snapshot. Run ONLY on intentional behavior
+/// changes; a diff in this file in review = the model changed.
+fn golden(path: &str) {
+    let cases: Vec<(&str, Params)> = vec![
+        ("baseline", Params::default()),
+        ("b1_off", Params {
+            loops: singularity_econ::Loops {
+                b1_supply_response: 0.0,
+                ..singularity_econ::Loops::default()
+            },
+            ..Params::default()
+        }),
+        ("stress_credit", Params {
+            internal_funding_share: 0.25, momentum_gain: 1.2,
+            singularity_year: 2031, debt_revenue_tolerance: 0.8,
+            ..Params::default()
+        }),
+        ("fast", Params {
+            singularity_boost: 3.0, chip_supply_gain: 3.0, momentum_gain: 1.0,
+            ..Params::default()
+        }),
+        ("capital_bound", Params {
+            power_efficiency_gain: 0.5, ..Params::default()
+        }),
+        ("power_tight", Params {
+            ai_power_2026: 20.0, power_additions_2026: 8.0, ..Params::default()
+        }),
+    ];
+    let mut out = serde_json::Map::new();
+    for (name, p) in cases {
+        let rows: Vec<_> = simulate(&p).iter().map(|s| serde_json::json!({
+            "year": s.year,
+            "binding": format!("{:?}", s.binding).to_lowercase(),
+            "ai_capex": s.ai_capex, "compute_stock": s.compute_stock,
+            "silicon_margin": s.silicon_margin, "power_margin": s.power_margin,
+            "component_margin": s.component_margin,
+            "ip_toll_margin": s.ip_toll_margin,
+            "queue_ratio": s.queue_ratio, "capacity_glut": s.capacity_glut,
+            "cog_displacement": s.cog_displacement,
+            "robot_fleet_m": s.robot_fleet_m, "robot_cost_k": s.robot_cost_k,
+            "sector_debt": s.sector_debt, "credit_multiplier": s.credit_multiplier,
+            "gdp": s.gdp, "algo_eff": s.algo_eff,
+            "profit_silicon": s.profits.silicon,
+            "profit_ip_tolls": s.profits.ip_tolls,
+            "profit_electricity": s.profits.electricity,
+        })).collect();
+        out.insert(name.to_string(), serde_json::Value::Array(rows));
+    }
+    std::fs::write(path, serde_json::to_string_pretty(&out).unwrap()).unwrap();
+    eprintln!("snapshot written to {path}");
+}
+
+fn book(financials_path: Option<&str>) {
+    let mut comps = universe();
+    if let Some(path) = financials_path {
+        if let Ok(json) = std::fs::read_to_string(path) {
+            load_financials(&mut comps, &json);
+        } else {
+            eprintln!("warning: could not read {path}; using built-in financials");
+        }
+    }
+    let states = scenario_states();
+    let rows = evaluate_all(&comps, &states);
+    println!("{:<10} {:<6} {:>12} {:>8} {:>8} {:>8}",
+             "ticker", "side", "impliedCAGR", "E[up]", "worst", "best");
+    for r in &rows {
+        let side = match r.stance {
+            Stance::Long => "long",
+            Stance::Short => "short",
+            Stance::Watch => "watch",
+        };
+        println!("{:<10} {:<6} {:>11.1}% {:>7.1}% {:>7.1}% {:>7.1}%",
+                 r.ticker, side, r.implied_cagr * 100.0,
+                 r.expected_upside * 100.0,
+                 r.worst_scenario_upside * 100.0,
+                 r.best_scenario_upside * 100.0);
+    }
 }
 
 struct Draw {

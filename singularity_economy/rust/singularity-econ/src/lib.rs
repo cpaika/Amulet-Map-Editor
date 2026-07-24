@@ -12,6 +12,10 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+pub mod companies;
+pub mod scenarios;
+pub mod valuation;
+
 // ---------------------------------------------------------------------------
 // Parameters
 // ---------------------------------------------------------------------------

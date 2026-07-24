@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# One-command verification of the whole project: buck2 targets, cargo suites
-# (golden parity + proptest), and the cross-model conclusion locks.
+# One-command verification: buck2 (dependency-free core + behavior + book
+# suites) and cargo (snapshot regression + proptest + full features).
 set -euo pipefail
 cd "$(dirname "$0")"
 echo "== buck2 =="
-buck2 test //rust/singularity-econ:core_test //:test_model //:test_model_v2 \
-           //:test_valuation //:test_scenarios_v2
-echo "== cargo (parity + properties) =="
+buck2 test //rust/singularity-econ:core_test //rust/singularity-econ:behavior \
+           //rust/singularity-econ:book
+echo "== cargo (snapshots + properties) =="
 cargo test --manifest-path rust/singularity-econ/Cargo.toml --quiet
 echo "== ALL GREEN =="
