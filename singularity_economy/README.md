@@ -36,20 +36,29 @@ python3 model.py                 # baseline scenario summary
 python3 scenarios.py             # all scenarios + Monte Carlo (JSON)
 ```
 
-## Headline robust findings (survive the Monte Carlo)
+## Headline robust findings (survive the Monte Carlo, post-calibration)
 
-- **Power is the most persistent bottleneck** — binds in ~63% of runs in 2026
-  and 30–40% of runs every year through the mid-2030s. Chip capacity binds
-  mostly 2028–2030 and then catches up.
-- **Scarcity rents migrate and then compress**: after ~2031 the binding
-  constraint is increasingly *demand/adoption friction*, not physical supply —
-  the classic setup for a picks-and-shovels margin peak (cf. 2000 telecom capex).
-- **Casualty decay is back-half loaded**: median cognitive-work displacement is
-  ~7% (2028) → ~25% (2030) → ~50% (2032). Shorts on human-cognitive-arbitrage
-  businesses are directionally robust but early entry costs carry.
+- **Power is THE constraint of the decade** — binds in 84% of runs in 2026 and
+  60–81% of runs every year through 2033 (turbines sold out through 2030,
+  3–5yr transformer lead times, 5–10yr interconnection queues). Chip capacity
+  gets a secondary window 2027–2030 (~25–33% of runs).
+- **Capital becomes the constraint late**: by 2035–36, ~45–60% of runs are
+  capped by capital willingness (capex hitting % of GDP ceilings), not physics —
+  scarcity rents migrate from equipment owners to capital providers.
+- **The "Cisco moment" (capex growth <15%) lands 2034–2036 under the thesis**
+  (p10 2034) — years of runway before picks-and-shovels multiple compression,
+  IF the singularity happens. In fizzle worlds it arrives ~immediately, which
+  is what scenario weights and the 12% discount rate price.
+- **Casualty decay is back-half loaded**: median cognitive-work displacement
+  ~7% (2028) → ~25% (2030) → ~50% (2032); median IT-services pool -32% by 2033.
+  History says casualty multiples collapse 2–4 years before revenue — under the
+  thesis, mid-2026 is "early," which is when shorts must be placed.
 - **Robotics is an early-2030s labor story but a late-2020s component story**:
-  median 2032 robot production is under 1M units/yr, physical-labor displacement
-  <5% by 2036 even in aggressive ramps — yet component supply chains (reducers,
-  actuators, magnets) must expand years ahead of the ramp.
+  median 2032 robot production ~0.8M units/yr (p90 2.4M), physical-labor
+  displacement <5% by 2036 — yet component supply chains (reducers, actuators,
+  magnets) must expand years ahead, and hype-priced pure plays (Harmonic Drive
+  at 404x) already trade as if the 2032 p90 is certain.
+- **Transition-recession tail**: worst-year world GDP growth goes negative in
+  ~10% of runs — the consumer-credit short leg hedges this tail.
 
 *This model is a scenario-analysis tool, not investment advice.*

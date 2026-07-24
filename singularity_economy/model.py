@@ -59,12 +59,12 @@ class Params:
 
     # --- casualty revenue pools (2026, $T) ---
     it_services_pool: float = 1.55      # IT services / outsourcing global revenue
-    bpo_pool: float = 0.32              # BPO / contact centers
+    bpo_pool: float = 0.36              # BPO / contact centers
     seat_saas_pool: float = 0.35        # seat-priced SaaS
     prof_info_pool: float = 0.45        # legal/tax/financial info & data services
 
     # --- compute supply chain ---
-    ai_capex_2026: float = 0.42                 # $T/yr AI datacenter capex (2026)
+    ai_capex_2026: float = 0.65                 # $T/yr AI datacenter capex (2026)
     compute_deprec: float = 0.25                # annual depreciation of compute stock
     chip_capacity_growth_max: float = 0.55      # max yoy growth in accelerator output
     algo_eff_growth_pre: float = 2.5            # pre-singularity algo+arch efficiency x/yr
@@ -74,8 +74,8 @@ class Params:
 
     # --- power supply chain (GW dedicated to AI) ---
     ai_power_2026: float = 55.0                 # GW consumed by AI in 2026
-    power_additions_2026: float = 28.0          # GW/yr addition rate in 2026
-    power_additions_growth_max: float = 0.32    # turbine/transformer-limited ramp of additions
+    power_additions_2026: float = 24.0          # GW/yr addition rate in 2026
+    power_additions_growth_max: float = 0.28    # turbine/transformer-limited ramp of additions
     power_lead_years: int = 2                   # order-to-energization lag beyond current pipeline
     gw_per_compute_unit: float = 55.0           # GW per unit of compute stock at 2026 efficiency
     power_efficiency_gain: float = 0.12         # yearly perf/W gain (reduces GW per compute)
@@ -93,7 +93,7 @@ class Params:
     robot_prod_2028_m: float = 0.12             # M units/yr in first ramp year
     robot_prod_growth_max: float = 1.10         # max yoy production growth (component-limited)
     component_capacity_growth: float = 0.90     # actuator/reducer/magnet supply growth cap
-    robot_cost_2028_k: float = 65.0             # $k per robot in 2028
+    robot_cost_2028_k: float = 50.0             # $k per robot in 2028
     robot_learning_rate: float = 0.22           # cost decline per doubling of cumulative units
     robot_hew: float = 1.4                      # physical human-equivalents per robot (multi-shift)
     robot_attrition: float = 0.08               # fleet attrition/yr
@@ -233,7 +233,7 @@ def simulate(p: Params) -> list[YearState]:
         # bounded by economic value of AI services
         gap_units = max(demand_hew - ai_hew_raw, 0.0) / max(p.ai_hew_2026_m * algo_eff, 1e-9)
         unit_cost = chip_output / max(compute_stock * p.chip_capacity_growth_max, 1e-9)
-        desired_capex = p.ai_capex_2026 * (1.15 ** (year - p.start_year))
+        desired_capex = p.ai_capex_2026 * (1.32 ** (year - p.start_year))
         if t_sing >= 0:
             desired_capex *= (1.0 + 2.2 * adopt)   # singularity demand shock
         desired_capex += gap_units * 0.0  # gap informs desire via adopt shock above

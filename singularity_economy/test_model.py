@@ -86,14 +86,15 @@ class TestCalibration(unittest.TestCase):
         self.s2026 = simulate(Params())[0]
 
     def test_2026_ai_capex_near_actual(self):
-        # 2026 AI datacenter capex consensus ~ $0.35-0.50T
-        self.assertGreater(self.s2026.ai_capex, 0.30)
-        self.assertLess(self.s2026.ai_capex, 0.55)
+        # 2026 AI datacenter capex: hyperscalers+neoclouds $600-750B
+        # (research sweep, July 2026: big-4 ~$725B planned, ~75% AI-tied)
+        self.assertGreater(self.s2026.ai_capex, 0.50)
+        self.assertLess(self.s2026.ai_capex, 0.80)
 
     def test_2026_ai_power_plausible(self):
-        # AI power consumption 2026 estimates ~ 50-90 GW
-        self.assertGreater(self.s2026.ai_power_gw, 40)
-        self.assertLess(self.s2026.ai_power_gw, 100)
+        # US DC power 75.8 GW (all DC); AI-specific globally ~50-90 GW
+        self.assertGreater(self.s2026.ai_power_gw, 45)
+        self.assertLess(self.s2026.ai_power_gw, 110)
 
     def test_2026_displacement_small(self):
         # visible-but-small labor impact in 2026
