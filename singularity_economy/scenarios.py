@@ -106,6 +106,8 @@ def _draw(rng: random.Random) -> Params:
         saas_beta=rng.uniform(0.45, 1.0),
         prof_info_beta=rng.uniform(0.2, 0.6),
         power_efficiency_gain=rng.uniform(0.08, 0.18),
+        transition_drag=rng.uniform(0.2, 1.3),
+        productivity_passthrough=rng.uniform(0.2, 0.5),
     )
 
 
@@ -118,10 +120,27 @@ def monte_carlo(n: int = 800, seed: int = 7) -> dict:
     disp_samples = {y: [] for y in years}
     capex_samples = {y: [] for y in years}
     robot_prod_2032 = []
+    capex_decel_years = []      # first year capex growth < 15% ("Cisco moment")
+    silicon_profit_peak_growth_years = []
+    min_gdp_growth = []
 
     for _ in range(n):
         p = _draw(rng)
         states = simulate(p)
+        # capex growth deceleration year: historically when picks-and-shovels
+        # multiples compress even though revenue keeps growing
+        decel = None
+        for i in range(1, len(states)):
+            g = states[i].ai_capex / max(states[i - 1].ai_capex, 1e-9) - 1.0
+            if states[i].year >= 2028 and g < 0.15 and decel is None:
+                decel = states[i].year
+        capex_decel_years.append(decel or years[-1] + 1)
+        si_growth = [(states[i].year,
+                      states[i].profits["silicon"] / max(states[i - 1].profits["silicon"], 1e-9) - 1.0)
+                     for i in range(1, len(states))]
+        silicon_profit_peak_growth_years.append(max(si_growth, key=lambda x: x[1])[0])
+        gdp_g = [states[i].gdp / states[i - 1].gdp - 1.0 for i in range(1, len(states))]
+        min_gdp_growth.append(min(gdp_g))
         for s in states:
             binding_counts[s.year][s.binding] = binding_counts[s.year].get(s.binding, 0) + 1
             disp_samples[s.year].append(s.cog_displacement)
@@ -155,6 +174,25 @@ def monte_carlo(n: int = 800, seed: int = 7) -> dict:
             "p90": round(pct(robot_prod_2032, 0.90), 2),
         },
         "pool_dists_$T": {k: dist(v) for k, v in pool_samples.items()},
+        "capex_deceleration_year": {
+            "p10": pct(capex_decel_years, 0.10),
+            "p50": pct(capex_decel_years, 0.50),
+            "p90": pct(capex_decel_years, 0.90),
+            "note": "first year AI capex growth <15% — historical analog for when "
+                    "picks-and-shovels multiples compress (value beyond horizon = "
+                    f"{Params().end_year + 1})",
+        },
+        "silicon_profit_peak_growth_year": {
+            "p10": pct(silicon_profit_peak_growth_years, 0.10),
+            "p50": pct(silicon_profit_peak_growth_years, 0.50),
+            "p90": pct(silicon_profit_peak_growth_years, 0.90),
+        },
+        "min_gdp_growth_dist": {
+            "p10": round(pct(min_gdp_growth, 0.10), 4),
+            "p50": round(pct(min_gdp_growth, 0.50), 4),
+            "p90": round(pct(min_gdp_growth, 0.90), 4),
+            "note": "worst single-year world GDP growth per run — transition-recession risk",
+        },
     }
 
 

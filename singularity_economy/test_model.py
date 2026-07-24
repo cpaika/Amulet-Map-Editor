@@ -44,8 +44,22 @@ class TestInvariants(unittest.TestCase):
 
     def test_capex_respects_capital_cap(self):
         p = Params()
+        prev_gdp = p.world_gdp
         for s in self.states:
-            self.assertLessEqual(s.ai_capex, p.world_gdp * p.capex_gdp_cap + 1e-9)
+            self.assertLessEqual(s.ai_capex, prev_gdp * p.capex_gdp_cap + 1e-9)
+            prev_gdp = s.gdp
+
+    def test_gdp_stays_positive_and_reasonable(self):
+        for s in self.states:
+            self.assertGreater(s.gdp, 50.0)
+            self.assertLess(s.gdp, 400.0)
+
+    def test_transition_drag_can_slow_gdp(self):
+        calm = simulate(Params(transition_drag=0.0))
+        drag = simulate(Params(transition_drag=1.0, max_displacement_rate=0.30))
+        g_calm = min(calm[i].gdp / calm[i - 1].gdp for i in range(1, len(calm)))
+        g_drag = min(drag[i].gdp / drag[i - 1].gdp for i in range(1, len(drag)))
+        self.assertLess(g_drag, g_calm)
 
     def test_binding_constraint_is_reported(self):
         for s in self.states:

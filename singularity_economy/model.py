@@ -107,6 +107,12 @@ class Params:
     nonbottleneck_margin: float = 0.22          # EBIT margin when not binding
     ai_services_margin: float = 0.35            # margin on AI-delivered cognitive services
 
+    # --- macro feedback ---
+    base_gdp_growth: float = 0.03           # trend real growth
+    productivity_passthrough: float = 0.35  # share of AI output gains hitting GDP
+    transition_drag: float = 0.5            # GDP drag per unit of *new* displacement
+                                            # (displaced income not yet recycled)
+
     # --- casualty dynamics ---
     it_services_beta: float = 0.9    # sensitivity of IT-services revenue to displacement
     bpo_beta: float = 1.25           # BPO dies fastest (most commodity cognitive work)
@@ -146,6 +152,8 @@ class YearState:
     pools: dict
     # profit pools ($T/yr)
     profits: dict
+    # macro
+    gdp: float = 0.0
 
 
 def logistic(x: float) -> float:
@@ -171,6 +179,8 @@ def simulate(p: Params) -> list[YearState]:
     phys_workers_m = p.physical_workers_m
 
     gw_per_unit = p.gw_per_compute_unit
+    gdp = p.world_gdp
+    prev_disp_for_macro = 0.0
 
     out: list[YearState] = []
 
@@ -243,7 +253,7 @@ def simulate(p: Params) -> list[YearState]:
         power_cap = (power_headroom / gw_per_unit) * cost_per_unit
 
         # constraint 3: capital (share of GDP willing to fund AI capex)
-        capital_cap = p.world_gdp * p.capex_gdp_cap
+        capital_cap = gdp * p.capex_gdp_cap
 
         caps = {"chips": chips_cap, "power": power_cap, "capital": capital_cap,
                 "demand": desired_capex}
@@ -343,6 +353,20 @@ def simulate(p: Params) -> list[YearState]:
         profits = {k: v * margin_for(k) for k, v in pools.items()
                    if not k.startswith("human_")}
 
+        # ---------------- macro feedback ----------------
+        # AI/robot output lifts GDP (productivity), but freshly displaced labor
+        # income is a transition drag until recycled (fiscal transfers, new
+        # jobs, capital income). Net effect can be negative in peak-displacement
+        # years — the "transition recession" risk.
+        new_disp = max(disp - prev_disp_for_macro, 0.0)
+        prev_disp_for_macro = disp
+        ai_output_share = (ai_services_rev + robot_services_value) / gdp
+        gdp_growth = (p.base_gdp_growth
+                      + p.productivity_passthrough * ai_output_share * 0.5
+                      - p.transition_drag * new_disp
+                      * (p.cognitive_wage_bill / gdp))
+        gdp *= (1.0 + gdp_growth)
+
         out.append(YearState(
             year=year, compute_stock=compute_stock, algo_eff=algo_eff,
             ai_capex=ai_capex, binding=binding, scarcity=scarcity,
@@ -351,7 +375,7 @@ def simulate(p: Params) -> list[YearState]:
             cog_displacement=disp, cognitive_task_index=cognitive_task_index,
             robot_prod_m=robot_prod, robot_fleet_m=robot_fleet,
             robot_cost_k=robot_cost, phys_displacement=pd,
-            pools=pools, profits=profits,
+            pools=pools, profits=profits, gdp=gdp,
         ))
 
     return out
@@ -373,6 +397,9 @@ def summarize(states: list[YearState]) -> dict:
         "robot_production_path_m": {s.year: round(s.robot_prod_m, 2) for s in states},
         "robot_cost_path_k": {s.year: round(s.robot_cost_k, 1) for s in states},
         "ai_power_gw_path": {s.year: round(s.ai_power_gw, 1) for s in states},
+        "gdp_path": {s.year: round(s.gdp, 1) for s in states},
+        "gdp_growth_path": {states[i].year: round(states[i].gdp / states[i - 1].gdp - 1.0, 4)
+                            for i in range(1, len(states))},
         "pools": {k: pool_path(k) for k in states[0].pools},
         "profits": {k: profit_path(k) for k in states[0].profits},
         "terminal": {
