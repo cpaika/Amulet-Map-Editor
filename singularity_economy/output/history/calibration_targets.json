@@ -1,0 +1,110 @@
+[
+ {
+  "key": "UK Railway Mania",
+  "rent_yrs": 6,
+  "bust_lag": 1,
+  "overshoot": "Miles authorized vs demand-consistent: ~2,000 route-miles open in 1843; Parliament authorized ~9,500-9,800 miles in 1844-50 (96% in 1844-47: 2,816 miles in 1845; 272 Acts / 4,540 miles in 1846 vs 4,03",
+  "glut": "Returns on capital roughly halved and never recovered to pre-boom levels: sector ROE fell from 5.07% (1844) to 2.37% (1849); dividends on paid-up capital from 7.2% (Jul 1847) to ~1.9-2.9% (1849-50), i",
+  "financing": "Essentially all external equity from a newly broadened retail/middle-class investor base (clergy, widows, tradesmen \u2014 plus MPs: ~157 members of Parliament held railway interests), via partly-paid shar",
+  "survivors": "KEPT RENTS: (1) Contractors selling capex itself \u2014 Brassey, Peto (cost-plus, took payment partly in shares/bonds post-bust, i.e., became financiers when capital dried up); Brassey died rich in 1870. (2) Consolidated trunk operators with network/route"
+ },
+ {
+  "key": "US railroads 1865-1895",
+  "rent_yrs": 8,
+  "bust_lag": 6,
+  "overshoot": "Mileage grew 35,000 (1865) \u2192 52,900 (1870) \u2192 ~70,000 (1873) \u2192 93,200 (1880) \u2192 163,600 (1890) \u2192 ~176,000 (1893). Cycle 1: 29,589 miles added 1868-73 (annual build records every year 1869-72, peak 7,439",
+  "glut": "Rates fell 60-70% (2.2 cents/ton-mile 1870 \u2192 0.94 by 1890, 0.73 by 1900) and never recovered; one-third of national mileage in bankruptcy 1893-97; western land-grant roads ran through unsettled territ",
+  "financing": "Overwhelmingly EXTERNAL and DEBT-led for new construction: mortgage bonds typically 50-60%+ of capitalization, sold ahead of any revenue; par capitalization watered to roughly 2x real invested cost. G",
+  "survivors": "KEPT RENTS (moat = franchise corridor + traffic density + low fixed charges, i.e., toll positions): Pennsylvania RR and New York Central (irreplaceable eastern trunk corridors, continuous dividends), Great Northern (lowest-cost route, no land-grant d"
+ },
+ {
+  "key": "US electrification boom",
+  "rent_yrs": 10,
+  "bust_lag": 2.5,
+  "overshoot": "Capacity doubled 1920-1930 (+100%) built to a ~7-8%/yr demand-growth extrapolation (generation grew 20x 1902-1930, ~11%/yr). Actual demand: total generation ~116-117 bn kWh 1929 -> ~99 bn kWh 1932 (-1",
+  "glut": "Reserve margins ~40%+ vs ~15% normal at 1932-33 trough; utility capacity factor fell from ~32% to ~25-26%; capex (utility construction) down ~70-80% peak-to-trough (economy-wide construction -78% 1929",
+  "financing": "Overwhelmingly EXTERNAL and layered: operating utilities ~50-60% mortgage bonds + preferred sold heavily to retail; above them, 2-5 layers of holding companies each adding debt/preferred against the e",
+  "survivors": "KEPT RENTS: (1) GE/Westinghouse \u2014 IP/patent-pool duopoly on turbines, generators, lamps; sold shovels to both boom and New Deal; GE profitable every Depression year; duopoly persisted 50+ more years. (2) Regulated operating utilities \u2014 legal franchis"
+ },
+ {
+  "key": "US Radio boom-bust",
+  "rent_yrs": 3,
+  "bust_lag": 3,
+  "overshoot": "Firm-count overshoot: 600-1,200 firms assembled/sold receivers in the mid-1920s vs 18 manufacturers/assemblers still in business by 1934 \u2014 a 33-65x overshoot in entrants vs sustainable structure (~97-",
+  "glut": "Industry set revenue -75% peak-to-1931 ($843M->$212M), roughly -80% to 1932-33 trough; units only -23% (1929->1931) \u2014 the glut expressed itself through price, not volume. Firm count -97-98% (600+->18 ",
+  "financing": "Real-economy capex was mostly equity/internal: RCA self-financed from set profits and paid no dividend 1919-1937; the 1925-29 set-maker wave floated stock in the bull market (Kolster, Grigsby-Grunow, ",
+  "survivors": "KEPT RENTS (toll/IP/franchise): RCA \u2014 patent-pool toll of 7.5% (later 5%) on every licensed competitor's revenue, ~2,000 patents, plus NBC broadcast franchise; earned royalties through the Depression, survived -98% stock drawdown, rents only clipped "
+ },
+ {
+  "key": "US automobile industry boom-shakeout-bus",
+  "rent_yrs": 13,
+  "bust_lag": 3,
+  "overshoot": "1929 industry capacity ~6.5-8M units/yr vs peak sales of 5.3M cars (5.6M incl. trucks) = capacity ~1.3-1.5x peak demand at the top. But peak demand itself was credit-inflated and pull-forward: sustain",
+  "glut": "Production -76% peak-to-trough (5.3M 1929 \u2192 1.3M 1932) in 3 years; capacity utilization ~20% at trough; industry pricing wars, 44 makers (1929) \u2192 ~12 (1939); recovery to prior peak took 20 years (1949",
+  "financing": "Manufacturers: overwhelmingly internal cash + float. Dealers paid cash/sight-draft on delivery and suppliers extended trade credit, so growth was self-financing (Ford expanded 1908-1927 with essential",
+  "survivors": "KEPT RENTS (moat/IP/toll): GM \u2014 segmentation + annual model change (planned obsolescence as engineered demand), captive credit toll (GMAC skimmed the financing spread on ~3/4 of its sales), franchised dealer lock-in, Fisher Body integration; profitab"
+ },
+ {
+  "key": "WWII US industrial mobilization and demo",
+  "rent_yrs": 2,
+  "bust_lag": 3,
+  "overshoot": "Massive but state-absorbed. Total new manufacturing facilities 1940-45: ~$25B (vs total 1939 US manufacturing structures+equipment stock ~$40B), ~2/3 government-financed; DPC alone $9.2B / 2,300 plant",
+  "glut": "$90B (cost basis) of surplus war property at V-J Day; War Assets Administration sold ~$34B of it 1946-49 at roughly 15-20 cents on the dollar overall. ~68,000 aircraft scrapped/smelted for ingot; ~300",
+  "financing": "Almost no private credit in the boom: government financed ~2/3 of all new plant directly (DPC $9.2B GOCO leases + military construction), separating asset risk (state) from operating risk (contractor)",
+  "survivors": "KEPT RENTS: (a) IP/technology holders \u2014 Boeing (jet/swept-wing know-how from war R&D), petroleum/chemical majors (catalytic cracking, butadiene, styrene process knowledge kept after plants sold), electronics/radar firms (RCA, Raytheon -> postwar TV/m"
+ },
+ {
+  "key": "Semiconductor DRAM/memory boom-bust cycl",
+  "rent_yrs": 2,
+  "bust_lag": 1.5,
+  "overshoot": "1995-96 peak: ~50 new fab construction plans announced in 1995-96 alone; semiconductor capex exceeded 30% of industry production value; DRAM-maker capex/revenue hit 50-80% (Korean chaebol near or abov",
+  "glut": "Prices repeatedly fell BELOW cash cost for 2-4 quarters at troughs: 256K DRAM $8.95 (Jan 1985) to $2.95 (Sep 1985), 64K to ~$0.30-0.75; per-megabit price >$3 (1995) to <$0.16 (1998), ~95% in 3 years (",
+  "financing": "Regime-dependent, and it determined who died, not when the boom ended. US firms (1970s-80s): internal cash flow + equity \u2014 hard budget constraints forced fast exits (Intel, Mostek, National, AMD, Moto",
+  "survivors": "Kept durable rents: (1) firms that EXITED capacity into IP \u2014 Intel (x86), TI (analog/DSP); (2) Samsung via perpetual process-node lead (20-30% cost/bit advantage = only intra-commodity moat) plus balance-sheet depth to invest counter-cyclically; (3) "
+ },
+ {
+  "key": "US/Global telecom & fiber-optic buildout",
+  "rent_yrs": 4,
+  "bust_lag": 1.5,
+  "overshoot": "US telecom carrier capex roughly doubled from ~$60B (1996) to ~$110-120B peak (2000), then fell ~60-70% to ~$40B by 2003. Total sector spend 1996-2001: >$500B US (much estimated $2T globally incl. wir",
+  "glut": "At trough (2002): ~2.6-5% of fiber strands lit, 95-97% dark. Transatlantic/long-haul lease prices fell >90% in 2-3 years (STM-1 transatlantic IRU ~$3M+ in 1999 -> low hundreds of $K by 2002-04), then ",
+  "financing": "Overwhelmingly external, debt-heavy \u2014 the opposite of today's hyperscaler-cash-funded pattern. >$500B of US telecom bonds issued 1996-2001; >$1T total debt+equity raised by broadband/telecom sector si",
+  "survivors": "KEPT RENTS (IP/moat/toll): Cisco \u2014 router/switch architecture + enterprise lock-in; multiple compressed 90% but franchise and 60%+ gross margins survived. Incumbent last-mile owners (Verizon/SBC/BellSouth) \u2014 the local-access physical toll was never o"
+ },
+ {
+  "key": "Solar polysilicon boom-bust",
+  "rent_yrs": 7,
+  "bust_lag": 1.5,
+  "overshoot": "Capacity multiplied ~10x across the cycle (Bernreuter: 'between the shortage and oversupply periods, production capacity was multiplied by a factor of nearly 10' \u2014 from ~30-40k MT global output mid-20",
+  "glut": "Price -97% peak-to-trough ($475 Mar 2008 -> $15.35-15.90 Dec 2012); -88% in first 15 months ($475 -> $55 by Jul 2009); 2011 alone -62% ($79 Mar -> <$30 Q4). Trough price below cash cost of ~70% of nam",
+  "financing": "Dual structure. (a) Incumbents (Hemlock, Wacker, OCI): expansions largely pre-funded by CUSTOMER PREPAYMENTS under 6-10 year take-or-pay contracts signed 2006-2008 at fixed high prices, plus internal ",
+  "survivors": "KEPT RENTS (partially, via moat): Wacker (process know-how, purity, semiconductor-grade mix, diversified balance sheet) \u2014 compressed but positive margins, became #1; Hemlock survived via parent (Dow Corning) but lost leadership by clinging to contrac"
+ },
+ {
+  "key": "US shale oil & gas boom-bust (tight oil ",
+  "rent_yrs": 4,
+  "bust_lag": 0.4,
+  "overshoot": "Rigs: peak 1,931 total US rigs (1,609 oil rigs, Oct 2014) vs ~500-650 rigs sufficient by 2017 to hold/grow output after productivity gains \u2014 ~3x physical-capacity overshoot. Capex: global E&P capex pe",
+  "glut": "2015-16: ~1.7-2.0 mb/d oversupply (~2% of demand); OECD inventories ~380-420 Mbbl above 5-yr average; WTI $107 (Jun 2014) to $26.19 (Feb 11, 2016) = -76%; rigs -79% (1,931 to 404 May 2016). Frac fleet",
+  "financing": "Overwhelmingly external. Cumulative negative free cash flow: a 30-producer cross-section outspent cash flow by $158B (2010-2019); industry-wide estimates $250-300B+; FCF negative EVERY year 2010-2019.",
+  "survivors": "KEPT RENTS (toll/royalty/scarce-input owners): mineral & royalty owners (TPL, Viper, Black Stone) \u2014 perpetual 12.5-25% revenue share, zero capex, zero opex exposure; Tier-1 acreage E&Ps (EOG, Pioneer, Diamondback) \u2014 geology as moat; take-or-pay midst"
+ },
+ {
+  "key": "GPU/crypto/AI compute cycle",
+  "rent_yrs": 1.6,
+  "bust_lag": 1,
+  "overshoot": "Commodity-capacity layer overshot 1.5-2.0x demand-consistent capacity in both crypto busts. (a) 2022 Bitcoin: network hashrate kept growing ~+40% through 2022 (to ~250 EH/s Dec 2022) while BTC fell 65",
+  "glut": "Price undershoot at commodity layer after each bust: used RTX 3080s fell from ~2.0-2.6x MSRP street price (peak premium +157% on RTX 3060 Ti class, cards listed at $1,199-$3,000 vs $699 MSRP) to BELOW",
+  "financing": "Bifurcated, and this is the key structural finding. CORE (NVDA, TSMC, hyperscalers, Samsung/Hynix): almost entirely internal cash flow \u2014 NVDA prepaid ~$9B multi-year supply commitments from its own ba",
+  "survivors": "KEPT DURABLE RENTS (IP/moat/toll): NVDA \u2014 CUDA software lock-in; GM returned above prior peak after BOTH busts (43.5% trough -> 78.4% peak in 7 quarters); stock -56% (Oct-Dec 2018) and -66% (Nov 2021-Oct 2022) but recovered to new highs within ~2 yea"
+ },
+ {
+  "key": "Japan bubble economy",
+  "rent_yrs": 4.5,
+  "bust_lag": 1,
+  "overshoot": "Private non-residential fixed investment rose from ~14% of GDP (1986) to ~19-20% of GDP at peak (FY1990-91) \u2014 an overshoot ratio of ~1.35-1.4x versus the demand-consistent pre/post-boom norm of ~14-15",
+  "glut": "Capacity: Tankan capacity DI swung from ~-25 (shortage) to +28 (excess); excess capital stock \u00a560-90T (12-18% of GDP); manufacturing capacity utilization fell ~15-20% 1991-94; excess capacity not clea",
+  "financing": "Predominantly EXTERNAL and collateral-levered, in two channels. (1) Bank debt against land collateral: bank lending +9-10%/yr, real-estate-linked sectors to ~25% of loan books; rising land prices expa",
+  "survivors": "KEPT DURABLE RENTS (IP/moat/toll): (a) process-IP manufacturers \u2014 Toyota, Honda (production-system moat, brand; recovered to new highs by mid-late 1990s); (b) upstream toll positions \u2014 Fanuc (CNC/robotics, 40%+ margins), Keyence, Murata/TDK (componen"
+ }
+]
