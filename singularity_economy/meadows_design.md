@@ -143,6 +143,37 @@ Where policy/actors could intervene = where trade risk concentrates:
    overshoot magnitude (peak capex vs demand-consistent capex), credit-crunch
    frequency, and how these move the trade book.
 
+## Long-horizon behavior (2050 run — verified stable, structure not forecast)
+
+The model now runs cleanly to 2050 (`examples/long_horizon.rs`; no
+non-negativity, boundedness, or finiteness violations). Nothing is
+clamped to a 2036 horizon — the long-dated subsystems self-activate, and
+the extended run is where several of them finally bind:
+
+- **Power rents normalize ~2040** (margin 0.60 in 2036 -> 0.22 by 2040)
+  as the 3-yr power pipeline finally overtakes a displacement rate that
+  has stopped rising — then **capital becomes the permanent binding
+  constraint**, exactly the World3 hand-off.
+- **IP tolls hold 0.62 until ~2046, then decay** — and the trigger is
+  endogenous coupling, not decay-by-assumption: orbital compute crosses
+  its Wright-cost gate (~0.1 GW-equiv 2045 -> 12.9 by 2050) and a second
+  launch supplier breaks the monopoly wedge, which is the first supply
+  response the IP monopolist cannot strategically absorb. The model
+  generates the two-decade monopoly (ASML/x86 pattern) AND its eventual
+  end from structure.
+- **Robot bootstrap (R2) goes vertical 2038-2050**: fleet 13M (2036) ->
+  102M (2040) -> 1.7B (2050). Physical displacement is the 2040s story
+  even with a 2027 singularity — the "components early, labor late"
+  sequencing holds across the full horizon.
+- **Land autonomization index plateaus ~0.40** (2045) — the trend is
+  real and persistent but never reaches the ~1.0 production-for-
+  production regime threshold in-model; the thermostat's meltdown ratio
+  sits at 0.00 from 2035 on (politics caught up and stayed caught up).
+- **The sovereign debt snowball becomes THE question**: debt/GDP reaches
+  ~4.2x and the long rate ~6.9% by 2050. Post-2040 the binding scenario
+  risk is fiscal sustainability, not AI capability — the model says the
+  2040s crisis is a bond-market crisis, not a robot crisis.
+
 ## Long-horizon behavior (illustrative, 2045 extension)
 
 Extending the baseline to 2045 (calibration is 2026-2036; beyond that this is
