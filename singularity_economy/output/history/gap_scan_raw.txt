@@ -1,0 +1,653 @@
+{
+  "summary": "Scan the singularity-economy model for structurally missing subsystems, rank the gaps, and spawn research threads on the top ones",
+  "agentCount": 13,
+  "logs": [],
+  "result": {
+    "ranking": {
+      "top4": [
+        {
+          "name": "Missing B11 — Endogenous long rate / bond-market pricing of the transfer ramp",
+          "score": 9.5,
+          "rationale": "Highest combined score: (a=9) it can flip 'capital binds late (2034+)' into a late-2020s binding constraint, forces scenario-conditional discount rates (baseline with 14pp-of-GDP fiscal expansion should NOT be discounted at the same 12% as fizzle — this compresses power/toll EVs exactly where they win), and converts the steepener/gold sleeve from judgment to model output; (b=9) rates are slow-moving state — ideal for an annual-step model, one new stock and three couplings; (c=10) the 2025-26 tape (30y UST >5%, JGB 30y record, $121B hyperscaler issuance, ~$300B projected 2026 AI IG supply, Dallas Fed crowding warnings) is literally this channel firing; (d=10) verified: no interest rate exists anywhere in the state — gov_debt_gdp has a hand-coded equilibrium (society.rs:385-388) and DISCOUNT_RATE=0.12 is a constant (valuation.rs:12). This is also the gap where the model contradicts itself: it proves the thesis is fiscally contingent, then values every cash flow as if the bond market never notices.",
+          "couples_to": "B4 credit loop (capital_cap = gdp x 5.5% x credit_mult becomes rate-sensitive, lib.rs:689-759); society.rs fiscal block (gov_debt_gdp evolution, debt-service feedback into transfer_cap_eff, replaces crowding_gain hack at society.rs:290); valuation.rs (per-scenario discount rate and terminal multiples); demography 2032-33 entitlement-fight event gets a transmission mechanism.",
+          "build_difficulty": "Medium — 2-4 days. One new stock (term premium / long rate) driven by net duration supply (AI IG issuance + transfer-ramp deficits + foreign-bid drift term); three output couplings. Main risk is calibrating the bp-per-%-GDP-of-duration elasticity; secondary risk is that per-scenario discounting invalidates all existing EV tables, forcing a full book re-run (that is the point, but it is scope).",
+          "research_brief": "Estimate the elasticity of the US 10y and 30y term premium to net duration supply, for direct use as the gain parameter of a new balancing loop in an annual-step systems model. Tasks: (1) Compile 2019-2026 annual net duration supply in 10y-equivalents: Treasury coupon issuance net of Fed/QT, plus corporate IG supply with hyperscaler/AI issuance broken out ($121B 2025, ~$300B projected 2026, ~$360B 10y-equivalents per the Street); (2) regress ACM/Kim-Wright term premium changes on duration supply, citing the 2025-26 literature (Dallas Fed Feb-2026 note, Apollo, Barclays) and pre-2020 QE-era studies (bp per 1% GDP of 10y-equivalents — give a central estimate and a range); (3) size the model's baseline duration path: transfers ramping to 15% of GDP by 2031 at 60% initial debt finance plus AI IG supply — what long-rate path does the elasticity imply 2027-2033? (4) Estimate the pass-through split: how much lands in private credit spreads vs the risk-free curve (this sets how the loop divides between capital_cap tightening and discount-rate rises); (5) Recommend a discount-rate rule per scenario: DR = base + beta x (modeled long rate - 4.5%), with beta justified from equity-duration literature. Deliver: parameter table with priors (central/p10/p90) for term_premium_gain, spread_passthrough, dr_beta, plus the three strongest arguments this elasticity could be near-zero (foreign bid, Fed re-QE, financial repression) as MC prior mass at the low end."
+        },
+        {
+          "name": "Compute-efficiency discontinuity is structurally inexpressible (smooth R1 + hard-floored capex demand)",
+          "score": 9.25,
+          "rationale": "(a=10) The single highest flip potential in the list: 'power binds in ~95% of runs and never normalizes in ANY draw' is the anchor of the book's largest sleeve (VST/NRG/CEG/6501.T/gas/uranium), and this gap shows the claim is partly a statement about the model's expressive range — a 10-100x efficiency jump with partial (not unitary) Jevons elasticity has probability ZERO across 10k MC paths by construction. Worse, it is a thesis-SUCCESS bear case none of the six scenarios contains (shorts pay, power longs die), and §8's kill criteria would misread an efficiency-driven capex cut as fizzle and run the WRONG playbook. (b=8) Very tractable: a jump process on algo_eff in the MC priors plus converting the hard-coded 12%/yr efficiency drift (lib.rs:711) into a sampled Jevons-elasticity parameter — the one structural cost is relaxing the desired_capex floor for efficiency-shock draws. (c=9) The channel already fired at full scale inside the calibration window: Jan 27 2025, VST -28%, CEG -21%, NVDA -$600B, on an efficiency ANNOUNCEMENT — and Epoch measures the underlying rate accelerating (median 50x/yr, 200x/yr post-2024). (d=10) Pure Jevons is currently an identity, not a parameter — definitively not captured.",
+          "couples_to": "R1 algo_eff schedule (lib.rs:540-552) — add jump draws; the compute-to-power demand mapping (gw_per_unit with fixed 12%/yr drift, lib.rs:711) — replace with efficiency-linked demand at sampled Jevons elasticity; the desired_capex floor and B3's capped price signal (meadows_design.md invariants); MC prior block in main.rs.",
+          "build_difficulty": "Low-Medium — 1-3 days of code, but it deliberately breaks a design invariant ('demand never contracts'), so expect a recalibration pass: after adding jumps, re-fit the no-jump paths to still reproduce the 12 backtest episodes. The subtle part is the elasticity prior: demand response to a 50x efficiency gain between 20x (partial saturation, power longs die) and 50x+ (full Jevons, power longs fine) is THE parameter, and it should be wide.",
+          "research_brief": "Build the empirical prior for the Jevons elasticity of AI compute demand with respect to inference efficiency, and a jump-process calibration for efficiency discontinuities. Tasks: (1) From Epoch AI price-trend data and token-volume disclosures (OpenRouter rankings, Google/Microsoft token counts, API pricing histories 2023-2026), estimate realized elasticity: when price-per-capability fell Nx, did token demand rise by more or less than Nx? Segment by capability tier (frontier vs GPT-4-class commodity) — the elasticity is plausibly >1 for commodity tiers and <1 for frontier; (2) reconstruct the DeepSeek R1 episode as a natural experiment: what did the market IMPLY about the elasticity on Jan 27 2025 (power complex -21 to -28%) and how much reversed within 6 months as Jevons arguments won — what does the reversal say about the market's updated elasticity estimate? (3) Calibrate a jump process: frequency and size distribution of >10x step-changes in training or inference efficiency 2020-2026 (MoE, distillation, quantization, speculative decoding, R1-style RL), and whether jump arrival rate correlates with the capability stock; (4) Specify the power-demand consequence: for elasticity draws of 0.3/0.6/1.0/1.5, what happens to the GW demand path and which existing scenario each resembles; (5) Deliver: prior distributions for jevons_elasticity (by tier), jump_rate, jump_size, plus a proposed §8 monitorable that distinguishes efficiency-driven capex cuts from fizzle-driven ones (the two demand opposite power-sleeve playbooks)."
+        },
+        {
+          "name": "R9 — Reflexive financing loop: market credence stock endogenizing external funding (merged gaps #1 and #20)",
+          "score": 8.75,
+          "rationale": "(a=9) The model's own sensitivity analysis says externally-funded capex share is the strongest credit-crunch driver (Spearman rho=+0.65) — and it is a CONSTANT (verified: lib.rs:270, sampled 0.4-0.8 in main.rs:196 but fixed within each path). Endogenizing it to a credence stock changes crunch probability, pulls the Cisco-moment p10 forward from 2034, converts the book's #1 de-gross trigger (lab IPO markdown) from a footnote into a modeled state with a threshold, and adds the marks-led fizzle-transmission channel (valuation hit -> funding -> capex -> counterparty revenue) that arrives before any physical glut. (b=7) The honest weakness: reflexive collapse runs in quarters and the model steps in years — mitigated by making the credence stock asymmetric (slow accretion, step-down on drawn information events) so a within-year collapse lands as a large annual impulse; this is cruder than reality but strictly better than absence. (c=10) 2025-26 is the evidence: $121B hyperscaler bonds, >$200B private-credit AI loans from zero, >$120B in SPVs, Oracle CDS tripling on belief not cash flow, the NVDA-OpenAI walk-back as a live reverse-loop event. (d=9) B4 can only produce a crunch via slowly-accumulating debt ratios; the sign-flipping expectations loop has no state to live in.",
+          "couples_to": "B4 credit loop directly — internal_funding_share and credit_mult (lib.rs:689-759) become functions of the credence stock; valuation.rs gains its first feedback INTO the simulation (marks -> funding capacity); the geopolitics spread channel (shock events also shock credence); desired_capex (a credence collapse is the model's first demand-side contraction channel); interacts with the B11 build (rate spikes and credence breaks correlate).",
+          "build_difficulty": "Medium-High — 3-5 days plus the heaviest recalibration burden of the four picks. New stock (credence) with asymmetric up/down dynamics, event-coupled step-downs (wire to existing MC shock draws: DeepSeek-class efficiency jumps from pick #2, failed-IPO draws, geopolitics shocks), and gain into internal_funding_share and spreads. Risk: double-counting with the existing leverage-based crunch — must re-fit so total crunch frequency stays anchored to the 57% baseline before measuring the timing shift.",
+          "research_brief": "Calibrate a market-credence stock for the AI trade: how belief translates into external funding availability, and how fast it collapses. Tasks: (1) Build the 2023-2026 external-funding time series for the AI sector by channel — IG bonds, SPV/ABS (Blue Owl/Abilene), private credit, vendor financing/warrants (NVDA-OpenAI, AMD warrants), equity raises (GOOGL Jun-2026) — and compute the externally-funded share of sector capex by year, versus the model's static 0.65 internal share; (2) event-study the funding response to belief shocks: DeepSeek Jan-2025, the NVDA-OpenAI walk-back sequence (Nov-25 -> Mar-26), Oracle CDS repricing — for each, measure spread change, issuance-window closure duration, and any realized capex guidance change, to estimate the gain and the lag from credence to capex; (3) from the dot-com analog (1999-2002 telecom vendor financing) estimate the reverse-loop amplification: when marks fell X%, external funding fell Y% and capex fell Z% — with the annual timestep in mind, express as annual impulse-response coefficients; (4) specify the step-down triggers to wire to existing MC machinery: P(discounted lab IPO), P(major vendor-financing cancellation), and their credence impact sizes; (5) Deliver: prior table for credence_gain_up, credence_step_down_dist, funding_share_sensitivity, capex_sensitivity, plus a proposed model-derived de-gross threshold (credence level below which the book's correlated MSFT/AVGO/GOOGL exposure should be cut) to replace the current judgment-only rule."
+        },
+        {
+          "name": "Undifferentiated power stock: no fast-tranche/firm-tranche composition and no behind-the-meter bypass",
+          "score": 8.5,
+          "rationale": "(a=9) Directly bounds the same anchor conclusion as the efficiency pick but from the supply side — and the two together give the 'power rents never normalize' claim its first real stress test from both directions. If the fast tranche (solar+BESS+rental gas, 12-24mo cycles) plus the bypass flow pulls rent normalization into the p50 horizon, the power sleeve converts from decade-hold to harvest-into-strength, AND the single power_margin splits into diverging merchant-genco vs firm-equipment rents — the model currently cannot distinguish VST from 6501.T, which are opposite sides of this split. (b=9) The cheapest build of the four relative to impact: it is exactly the commodity-vs-leading-edge split the model already implements for chips, applied to its most important sector — the pattern, the code idiom, and the calibration method all exist. (c=9) xAI built ~1GW in ~6 months off-grid; ERCOT added 22.5GW since Jan-2024 with 77% of a 233GW queue being solar+battery — the fast tranche is demonstrably shipping GW on 1-2yr cycles while the model's only pipeline has a 3-stage multi-year delay. (d=7) The only pick with partial implicit coverage: MC samples power_supply_gain 0.2-1.2 (main.rs:180), so high-gain draws crudely emulate more supply — but no draw can shorten the fixed pipeline DELAY, and Meadows says the rent lives in the delay, so the composition split is genuinely new structure.",
+          "couples_to": "Power B1 loop (lib.rs:461, power_supply_gain/ceiling and the 3-stage pipeline) — becomes two tranches with separate gains, delays, and ceilings plus a BESS-firming-ratio stock capping the fast tranche; the endogenous electricity-price channel feeding valuations; valuation.rs — power_margin splits into merchant-scarcity (electricity pool: VST/NRG) vs firm-equipment (power_equipment pool: 6501.T/GEV) rents; the OBBBA subsidy shift (rejected gap #10) enters here as a fast-tranche gain step-down prior, and datacenter-siting opposition (rejected gap #9) as a pipeline haircut prior.",
+          "build_difficulty": "Medium — 2-4 days. Split the stock, add the firming-ratio constraint and the bypass flow (scarcity-triggered, skips the interconnection pipeline, with its own congestion arm on turbine demand). Calibration is the work: tranche shares of marginal additions, firming ratio required for 24/7 AI load, bypass cost premium. The valuation-layer split of power_margin forces re-derivation of the VST/NRG/CEG EVs — again, that is the point.",
+          "build_difficulty_note": "",
+          "research_brief": "Calibrate a two-tranche power supply structure plus behind-the-meter bypass for AI load, 2026-2036. Tasks: (1) Decompose 2023-2026 US (and ERCOT-specific) capacity additions serving large loads into firm/slow (CCGT via OEM turbine queue, nuclear uprates, interconnection-dependent) vs fast/commodity (solar+BESS, rental/aero-derivative turbines, fuel cells, onsite gas) — deployment lead time, $/kW, and annual addition ceiling for each; (2) quantify the firming constraint: for a 24/7 90%+ load factor datacenter, what solar:BESS ratio and BESS GWh are required, what is the all-in LCOE premium vs grid firm power, and what is the global BESS manufacturing ramp (Chinese cell glut included) that caps fast-tranche firm-equivalent GW per year through 2030; (3) document the bypass loop from live cases (xAI Colossus 1/2, off-grid Southaven, Stargate sites): cost premium, build time, share of frontier-lab GW now off-grid or behind-the-meter, AND the congestion arm — how much of the current grid-turbine shortage (GE/Siemens/MHI lead times) is bypass demand itself; (4) estimate OBBBA's step-down on fast-tranche additions post-2027 (projects losing ITC/PTC vs safe-harbored pipeline) and the local-opposition haircut ($156B delayed/canceled 2025, Gallup 70% opposition) as priors on tranche gain; (5) Deliver: per-tranche parameters (gain, delay, ceiling, firming cap) plus a rent-normalization estimate: given both tranches, in what year does the merchant scarcity premium (VST/NRG margin over cost-of-new-entry) compress to <25% of its peak in the median path — and does firm-equipment rent (turbines/transformers) DIVERGE from it, validating a 6501.T-over-VST rotation rule."
+        }
+      ],
+      "rejected": [
+        {
+          "name": "R9 — Reflexive equity financing (gap #20, information-lens version)",
+          "reason": "Not rejected on merits — duplicate of the reflexive-financing pick; the two write-ups (equity-valuation stock, credence stock) are the same missing loop and were merged into pick #3."
+        },
+        {
+          "name": "No B1 for ai_services — open-weight competitive fringe",
+          "reason": "Strongest rejection and first alternate: real and book-relevant, but its violent market expression (DeepSeek-class repricing) is carried by the efficiency-jump pick, and the residual — closed-lab margin compression — is a valuation-layer parameter study (sample ai_services_margin 0.10-0.35 keyed to a fringe-lag proxy) that does not require new loop structure to inform the MSFT/GOOGL/PLTR EVs; promote to a build if the parameter study shows the margin assumption is load-bearing beyond +/-30% EV."
+        },
+        {
+          "name": "B12 — Asset-price wealth effect on demand",
+          "reason": "High flip potential but requires demolishing the demand-floor invariant economy-wide; the credence-stock pick opens the same fizzle-transmission door at a fraction of the refactor, and the wealth channel should be phase 2 once demand contraction is expressible at all."
+        },
+        {
+          "name": "No China parallel AI stack",
+          "reason": "Biggest build in the list (a second supply curve for chips, power, models, robots) for an annual closed-region model; capture the first-order effect cheaply as wider glut-mass and supply-gain priors informed by the Ascend/SMIC ramp data, and revisit as a satellite model, not a core layer."
+        },
+        {
+          "name": "External sector — dollar/FX stock and foreign bid",
+          "reason": "By its own admission the weakest-form financial gap; its decision-relevant content (foreign Treasury absorption) folds into the B11 rate equation as a foreign-bid elasticity term, and a full FX state is not worth the build for a judgment-sized GLD sleeve."
+        },
+        {
+          "name": "Foreign-financed boom / capital-account repatriation (B4 wrong balance sheet)",
+          "reason": "Same family as B11+R9; the run dynamics (carry unwinds, lifer hedging) are days-fast and sub-annual — fold as a spread-jump component of the credence stock's step-down events rather than a new cross-border stock."
+        },
+        {
+          "name": "Climate/weather shock class (drought hits chips AND power)",
+          "reason": "Legitimate but second-order for the book: adding a drought ShockKind and a supply-side power shock is parameter/event work on the existing geopolitics machinery, not top-4 structure — schedule as a fast-follow after the power-tranche build lands."
+        },
+        {
+          "name": "Climate-policy lever (OBBBA / subsidy regime)",
+          "reason": "OBBBA is real and material but is best expressed as a policy step-down prior INSIDE the fast-tranche build (where it is explicitly incorporated in pick #4's brief), not as a standalone policy stock."
+        },
+        {
+          "name": "Experience stock (junior-to-senior maturation)",
+          "reason": "Elegant World3-grade structure, but the flip is second-order on a smaller sleeve (deepens an existing RHI downgrade, binds mostly post-2031) — implement later as a two-stock split of cog_pool_m with a senior wage premium; cheap but not urgent."
+        },
+        {
+          "name": "Education response / credential-value collapse",
+          "reason": "Mostly adds a new casualty pool and monitorables (student-loan cohort data) — analyst/screening work, not a conclusion-flipper; the enrollment feedback on entry cohorts matters but its trough lands 2030-33 at the horizon's edge."
+        },
+        {
+          "name": "R1 fuel gauge — frontier-researcher supply / migration coupling",
+          "reason": "The internal-consistency critique is fair, but singularity_year is already a sampled prior — the cheap fix is correlating that prior with the drawn political path (restriction-heavy draws shift mass toward delayed) rather than building a researcher stock; a one-day prior-correlation change, not a top-4 build."
+        },
+        {
+          "name": "BPO/IT casualty pools as EM sovereign feedback",
+          "reason": "Opens multi-region world modeling for a channel whose tradeable output (short PHP/INR, EM CDS) can be sized in an offline satellite analysis off the existing pool-decay paths without touching the core."
+        },
+        {
+          "name": "Migration pressure demand-less (periphery supply-side)",
+          "reason": "Plausible amplifier of the transfer-cap erosion, but it stacks three speculative couplings whose joint calibration is guesswork; test first by making perceived_outgroup a sampled prior (0.35-0.60) and see if the transfers-by-2031 conclusion survives — structure only if it does not."
+        },
+        {
+          "name": "Healthcare-cost AI-deflation on age_creep",
+          "reason": "Correct one-signed-treatment critique with a one-line fix (age_creep decelerated by a capability-lagged adoption term) — do it as a cheap patch in the B11 workstream; too small to occupy a top-4 slot."
+        },
+        {
+          "name": "AI biotech / drug-discovery pool absent",
+          "reason": "Adds book coverage (a CRO short / platform long the map cannot see) rather than flipping existing conclusions — instantiate an EmergingPool later using machinery that already exists; screening work, not architecture."
+        },
+        {
+          "name": "Pandemic / biorisk shock class",
+          "reason": "The only adoption-ACCELERATING shock is a genuinely novel sign, but arrival probability within the horizon is unquantifiable and the probability-weighted flip on any current position is small; add as a low-weight third shock family in a later shock-set expansion."
+        },
+        {
+          "name": "R10 — AI persuasion capability-coupled",
+          "reason": "The write-up itself argues both signs (persuasion wins vs backfires) with no way to calibrate which; an uncalibratable sign-ambiguous loop adds variance, not information — hold until the empirical literature pins the political-level effect size."
+        },
+        {
+          "name": "S9 — Epistemic-integrity stock",
+          "reason": "The capability-negative-trust correlation is a fair critique of R8 familiarity, but the right-sized fix is a capability-scaled drift term on consumer_trust and incident frequency, not a new commons stock; the verification-vertical trade idea goes to the analyst screen."
+        },
+        {
+          "name": "I1 — Thesis priced-in state / credence-gap tracking",
+          "reason": "Correct and the cheapest item listed, but it is a trade-management dashboard feature (track market-implied p(thesis) vs model weights, trigger re-pricing on divergence) — belongs in the monitoring layer, not the simulation state; note pick #3 gives the model-side half of this."
+        },
+        {
+          "name": "Liability regime + AI insurance underwriting capacity",
+          "reason": "Genuine adoption-timing determinant, but expressible as a widened adoption_halflife prior plus one incident-x-exclusion-regime interaction on the existing dread channel; the standalone-insurer pool is screening work — revisit if the friction scenario's weight becomes decision-critical."
+        },
+        {
+          "name": "IP/copyright resolution path",
+          "reason": "Bimodal court outcome resolving 2026-28 is real, but it is a scenario overlay (royalty wedge of 0-7% on ai_services margin, damages shock to lab credit in the credence stock's event set) rather than a dynamic loop — wire both into picks #3's event list and the margin prior from the open-weight rejection."
+        },
+        {
+          "name": "State administrative capacity (transfer delivery / winner-tax collection)",
+          "reason": "Gates the same fiscal conclusions the B11 build already stresses; implement as a delivery-efficiency and collection-efficiency parameter pair inside the B11 fiscal block (sentiment relief gated on transfers delivered, debt_share floor gated on enforcement) rather than a separate capacity stock."
+        },
+        {
+          "name": "Agent transactional-legal infrastructure",
+          "reason": "Submission truncated, but as described it is an adoption-delay gate on the ai_services pool best handled as probability mass shifted from baseline to delayed plus a §8 monitorable (protocol consolidation vs fragmentation); the payments-toll pool idea goes to the screen, not the simulator."
+        }
+      ]
+    },
+    "threads": [
+      {
+        "topic": "B11 — Endogenous long rate: elasticity of US 10y/30y term premium to net duration supply, calibrated as the gain of a new balancing loop (bond market prices the transfer ramp + AI IG supply), with pass-through split to credit spreads vs risk-free curve and a per-scenario discount-rate rule",
+        "key_numbers": [
+          "NET DURATION SUPPLY 2019-2026 (10y-equivalents to private hands, ~% of US GDP): 2019 +$0.9T (4.2%); 2020 -$0.7T (-3.3%, Fed bought $2.4T UST); 2021 +$0.4T (1.7%, taper year); 2022 +$1.0T (3.8%, QT from June); 2023 +$1.3T (4.7%); 2024 +$1.53T ex-Fed (5.2%) on $1.34T gross coupon 10y-eq — both records (Investing.com/Apollo); 2025 +$1.6T UST + $0.15T hyperscaler IG 10y-eq ($121B par, 5 hyperscalers, vs $28B/yr avg 2020-24) = 5.7%; 2026E +$1.55T UST (net issuance $1.9T par, QT ended Dec-1-2025) + $360B AI IG 10y-eq ($300B par Street central; JPM $300B+/yr and $1.5T over 5yrs) = ~6.0% GDP. Dallas Fed (Feb 2026, De Vere/Ramaswamy/Searls): AI IG = ~1/8 of Treasury duration supply, and it is SYNTHETIC duration — pushes swap yields up vs Treasuries (10y asset-swap spread ~40bp June 2026 vs ~60bp total 10y TP).",
+          "TERM PREMIUM REALIZED PATH (ACM 10y): -1.34% Jul-2020 trough -> crossed zero Aug-2024 -> +0.49% Jan-2025 -> +0.8% Jan-13-2025 (highest since 2011) -> +0.73% Jul-2026. Total swing +210bp while annual net duration supply swung from -3.3% to +6% of GDP and the private duration STOCK rose ~27pp of GDP: naive ratio 7.8bp per 1% GDP (upper bound, confounded by inflation vol).",
+          "ELASTICITY LITERATURE (bp of 10y TP per 1% of GDP in 10y-equivalents, STOCK basis): QE-era: Li-Wei 2013 / FEDS-note SOMA models ~4.4bp; KVJ 2011 QE2 ($600B=4% GDP -> ~15bp) ~3.7bp; Gagnon meta-survey ~5bp; euro-area forward-looking supply factor ~5bp; D'Amico-King QE1 localized 30-50bp per $300B (higher, flow+scarcity). Flow/high-frequency: Bi-Phillot-Zubairy 2025 (KC Fed, auction-announcement shocks 1998-2025): +1pp debt/GDP over 2yrs -> +1.3bp impact, +2.5bp peak on 10y (~2-3.5bp per 1% GDP in 10y-eq after par->duration conversion ~0.7). Deficit-based upper anchor: Laubach 20-29bp per 1pp SUSTAINED projected deficit/GDP. CENTRAL ESTIMATE: term_premium_gain = 4.0bp per 1pp GDP of privately-held 10y-eq duration stock; p10 = 1.0bp; p90 = 8.0bp. State-dependence (Hou JMP): elasticity roughly doubles when dealer/intermediary balance sheets are constrained and debt/GDP >120% — apply x1.5 multiplier when model credit_mult < 0.8.",
+          "MODEL BASELINE DURATION PATH 2027-2033 (transfers ramp to 15% GDP by 2031, 60% debt-financed first 5 yrs then 15% winner-tax era; AI IG +1.0-1.2% GDP/yr through 2030): incremental deficit from transfers 1.8/3.6/5.4/7.2/9.0/9.0/~2.3% GDP (2027-33); EXCESS privately-held duration stock vs 2026 (dur_factor 0.55 sovereign, 1.2 AI IG): +2/+6/+12/+20/+29/+36/+41 pp GDP. Implied 10y TP add at central 4bp gain: +8/+24/+48/+80/+116/+144/+164bp -> 10y yield path from 4.5% base: 4.6/4.8/5.0/5.3/5.7/5.9/6.1%. p90 (8bp gain, 0.75 dur_factor): 10y ~7.3-7.8% by 2032 — this IS the 2032-33 entitlement-fight transmission (debt service crosses ~4.5% GDP -> transfer_cap_eff forced down). p10 (1bp gain, bills-heavy 0.2 dur_factor): 10y ~4.7-4.9% flat. 30y: add 20-40% of the 10y TP move as 10s30s steepening (Dallas Fed: 10s30s slope increasingly sensitive to TP; 30y auction cleared 5.06% Jul-2026).",
+          "PASS-THROUGH SPLIT (sets capital_cap tightening vs discount-rate rise): sovereign duration supply lands ~85-95% on the risk-free curve (KVJ convenience-yield: more UST supply COMPRESSES measured IG spreads even as all-in yields rise); AI-sector-specific supply lands substantially in ITS OWN spreads: hyperscaler new-issue concessions 12bp vs 2.5bp market avg (Barclays); tech/hyperscaler spreads widened 20-30bp vs single-A peers while the broad IG index stayed tight; cover ratios collapsed 5x (Feb-2026) -> <2x (Jul-2026) = convex spread response to incremental supply (Apollo). spread_passthrough (share of modeled long-rate rise appearing as ADDITIONAL AI-sector credit spread): central 0.25, p10 0.05, p90 0.50; convexity kicker +0.15 when sector external-funding share >50% of capex.",
+          "DISCOUNT-RATE RULE: DR_scenario = 0.12 + dr_beta x (scenario avg modeled long rate - 4.5%), dr_beta central 0.60 (p10 0.30, p90 1.00). Justification: DDM equity duration of growth/AI stocks 25-50yrs implies beta ~1 for pure discount shocks (Gormsen-Lazarus: pure discount-rate shocks pass ~one-for-one), but realized beta is ~half because ERP co-moves negatively with rates and rate rises driven by growth news are partly self-hedging; supply-driven (non-growth) rate rises sit between: 0.6. Terminal multiples: scale by (0.045+0.055)/(long_rate_T+0.055) — a 10% terminal earnings yield re-levered to the modeled terminal risk-free. Fizzle keeps its 0.75x haircut multiplicatively.",
+          "NEAR-ZERO CASE (MC mass at low end, ~30-35% total): (1) FLAT DEMAND CURVE — US private funds nearly replaced foreign official buyers (State Street); auctions absorbed record 2024-25 supply with TP peaking at only ~0.8%; SLR reform frees dealer balance sheets (Hou: supply effects small when intermediaries unconstrained); realized 2019-26 elasticity could be <2bp. (2) FED RE-ABSORPTION — QT ended Dec-2025, $40B/mo Reserve Management Purchases running, ~$250B SOMA bill buys by Mar-2026; every duration dislocation since 2019 (Mar-2020, UK LDI Oct-2022, SVB) was capped within weeks; in a transfer-ramp/displacement world the Fed plausibly buys the long end again -> gain ~0.2x. (3) FINANCIAL REPRESSION / ISSUANCE ADAPTATION — Treasury held coupons unchanged 9+ quarters, financed marginal deficits with bills (bill share 22% vs 20% TBAC guideline); GENIUS-Act stablecoins are a structural multi-$100B bill bid (BIS WP 1270: inflows compress short yields); if transfer finance goes 80% bills, 10y-eq per deficit dollar falls 0.55->0.2 and B11 barely fires. Implement as mixture: 20% discrete repression regime (gain x0.2, dur_factor 0.2) + continuous prior already left-skewed."
+        ],
+        "base_rates": [
+          "QE/QT natural experiments 2008-2026: ~20% of GDP of 10y-eq removed by SOMA at peak lowered 10y TP ~100bp (FEDS note) = ~4-5bp per 1% GDP; symmetric on the way out: 2020->2026 stock re-supply of ~27pp GDP coincided with +210bp ACM TP (<=7.8bp per 1%, inflation-confounded)",
+          "Auction-shock micro evidence 1998-2025 (Bi-Phillot-Zubairy): 1pp debt/GDP surprise -> +1.3 to 2.5bp on 10y — flow shocks price at roughly HALF the QE stock elasticity",
+          "Laubach 2009 fiscal base rate: 1pp sustained projected deficit/GDP -> +20-29bp long forward rate; a 9pp transfer-driven deficit add maps to +180-260bp, bracketing this model's central-to-p90 2031 outcome",
+          "1946-1951 US financial repression: debt 110% GDP, long rate pegged 2.5% — full repression regime = elasticity ~0 for 6 years (the 20% discrete-regime prior)",
+          "1993-1994 bond-vigilante episode: deficit fear + supply -> +250bp on 10y in 13 months with no Fed absorption — the p90 tail is historically attested",
+          "2025-26 AI IG indigestion: hyperscaler concessions 12bp vs 2.5bp market; cover ratios 5x->2x in 5 months at $244B/half-year issuance (six AI issuers H1-2026) — sector-specific spread channel is convex and already visible",
+          "Kim-Wright/ACM regime: TP negative 2014-Aug-2024 (regime mean -0.30%), durable positive crossing Aug-2024, +0.73% Jul-2026 — the model's 2026 initial condition should be TP_0 ~ +0.7%, not the post-GFC zero"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "priv_duration_stock (10y-equivalents held by price-sensitive private investors, fraction of GDP; init ~0.55 for 2026): inflow = sovereign net coupon issuance [ (baseline_deficit + transfer_share x debt_share) x dur_factor ] + AI-sector external funding x ig_dur_factor (1.2, long-tenor) - fed_absorption; outflow = nominal-GDP-growth dilution (stock x g)",
+            "term_premium / long_rate (bp; init TP_0=70bp, long_rate = r_star_nominal(3.8%) + TP): TP = TP_0 + term_premium_gain x (priv_duration_stock - 0.55) x 100, smoothed with 1-yr information delay; long_rate_30y = long_rate + 0.3 x (TP - TP_0) for terminal-multiple work",
+            "gov_debt_service (share of GDP) = long_rate x gov_debt_gdp — replaces the fixed 3% drain in society.rs:386-388 with debt_gdp += primary_deficit - (g_nominal - long_rate) x debt_gdp (gives the sovereign path a true snowball/equilibrium)"
+          ],
+          "loops": [
+            "B11 (balancing, THE new loop): transfer ramp + AI capex external funding -> duration issuance -> priv_duration_stock up -> term premium up -> (a) capital_cap down via credit_mult and (b) transfer_cap_eff down via debt-service squeeze -> less capex and smaller transfer ramp -> less issuance. Gain = term_premium_gain (central 4bp/1%GDP, p10 1.0, p90 8.0); state-dependent x1.5 when credit_mult<0.8",
+            "R8 (reinforcing, the dangerous one): long_rate up -> debt_service up -> larger deficit -> more issuance -> long_rate up (fiscal snowball). Bounded by the winner-tax handoff (debt_share 0.6->0.15 after 5 transfer years) and by B11's transfer-cap cut; in p90 draws R8 dominates 2031-33 and FORCES the demography entitlement fight — the 2032-33 event now has a transmission mechanism instead of a calendar date",
+            "Repression regime switch (MC, p=0.20): fed_absorption soaks 60% of net supply and dur_factor -> 0.2 (bills-financed); effective gain x0.2 — encodes foreign-bid/re-QE/repression as one absorbing policy state, entered with elevated probability when unrest>0.5 or a credit crunch is underway (politically easiest moment to cap rates)"
+          ],
+          "couplings": [
+            "lib.rs:689-736 (B4): credit_mult denominator gains + spread_passthrough x (long_rate - 0.045) x 20 alongside p.credit_gain term; capital_cap = gdp x 5.5% x credit_mult becomes rate-sensitive; AI-sector debt issuance (sector_debt inflow, lib.rs:758) feeds priv_duration_stock x ig_dur_factor — closing the loop the Dallas Fed documents (AI IG = 1/8 of Treasury duration supply)",
+            "society.rs:288-297: DELETE crowding_gain hack; credit_injection = spread_passthrough x (long_rate - 0.045) x 20 + spiral; society.rs:386: debt evolution uses the snowball equation with modeled long_rate",
+            "demography.rs:303 (transfer_cap_eff): subtract debt_service_squeeze = 0.5 x (gov_debt_service - 0.045).max(0) — when debt service exceeds 4.5% GDP the transfer cap erodes, colliding with age_creep exactly in the 2032-33 window",
+            "valuation.rs:12: DISCOUNT_RATE const -> per-scenario DR_s = 0.12 + dr_beta x (mean long_rate 2027-2036 in scenario s - 0.045); terminal_multiple x (0.10 / (long_rate_T + 0.055 - 0.045)) clamp [0.6, 1.15]; fizzle keeps 0.75x",
+            "MC priors: term_premium_gain ~ lognormal(ln 4.0, sigma s.t. p10=1/p90=8) bp per 1%GDP; dur_factor(sovereign) triangular(0.2, 0.55, 0.75); spread_passthrough beta-dist central 0.25 (p10 0.05, p90 0.50); dr_beta triangular(0.3, 0.6, 1.0); P(repression regime)=0.20"
+          ]
+        },
+        "lessons_for_model": [
+          "The model's own baseline (transfers to 15% GDP by 2031, 60% debt-financed) implies a duration-supply shock 3-6x the 2024 record ($1.53T 10y-eq ex-Fed = 5.2% GDP was already an all-time high) — leaving the long rate exogenous while modeling that fiscal path is the largest remaining internal inconsistency; B11 makes the bond market price the transfer ramp the society layer creates",
+          "Central calibration: 4bp of 10y term premium per 1pp of GDP of privately-held 10y-equivalents (range 1-8bp), applied to the STOCK not the flow; this turns the baseline into a 10y path 4.5% -> ~6.1% by 2033 (p10 ~4.8%, p90 ~7.5%) — the p90 leg is what makes the 2032-33 entitlement fight endogenous rather than scripted",
+          "AI IG issuance is a self-referential coupling the model already half-contains: sector_debt (B4) IS duration supply ($360B 10y-eq in 2026 = 1/8 of Treasury's, per Dallas Fed) — route it into the same duration stock so heavy externally-funded capex raises the sector's own discount rate and capital cap tightness (reflexivity for free)",
+          "Pass-through is asymmetric and this determines the loop's split: sovereign supply hits the risk-free curve (~90%) and mildly COMPRESSES measured spreads (convenience-yield effect), while AI-sector supply hits its own spreads convexly (concessions 12bp vs 2.5bp; cover 5x->2x in 5 months); so route sovereign-driven rate rises mostly to valuation.rs discount rates and sector-driven rises mostly to B4 credit_mult",
+          "Reserve ~30-35% of MC prior mass for near-zero effective elasticity via a 20% discrete repression/re-QE regime (QT already ended Dec-2025 with $40B/mo bill RMPs; 1946-51 precedent; stablecoin bill bid) plus a left-skewed continuous prior — the 2024-25 experience (record supply, TP peaked at only 0.8%) is genuine evidence the demand curve is flatter than QE-era estimates",
+          "Replace two hacks when implementing: society.rs crowding_gain (0.3, ad hoc) becomes the rate-driven credit injection, and the fixed -0.03 debt drain becomes the (g - r) snowball — the latter matters because the model currently cannot express r > g, which is precisely the regime B11 exists to detect",
+          "valuation.rs's flat punitive 12% DR currently double-punishes low-rate scenarios and under-punishes high-rate ones; DR = 0.12 + 0.6 x (modeled long rate - 4.5%) with terminal-multiple re-levering makes scenario ranking rate-consistent (fizzle: rates FALL, partially cushioning the 0.75x multiple haircut — a real effect the current engine misses)"
+        ]
+      },
+      {
+        "topic": "Jevons elasticity of AI compute demand + efficiency-jump process calibration (fixes the #1 structural gap: smooth R1 + hard-floored capex demand cannot express an efficiency discontinuity; couples to lib.rs:550-561 R1 schedule, lib.rs:723-724 gw_per_unit drift, lib.rs:654-674 desired_capex floor, main.rs:162-227 MC priors)",
+        "key_numbers": [
+          "Epoch AI fixed-milestone inference price declines: 9x-900x/yr across 6 benchmarks, median 50x/yr (2022-2025), post-Jan-2024-only median 200x/yr; GPT-4-level GPQA milestone fell 40x/yr; GPT-4-equivalent $20/Mtok (late 2022) -> $0.40 (2025); a16z LLMflation: 10x/yr at fixed quality, GPT-3-class 1000x cheaper 2021->2024",
+          "Smooth component under the jumps: algorithmic effective-compute doubling every 8.4 months (95% CI 4.5-14.3 mo, Epoch/Ho et al. 231 models) = ~2.7x/yr drift; hardware FLOP/W only ~1.3x/yr - so ~85% of price-per-capability decline is software, currently NOT coupled to power demand in the model (gw_per_unit drifts a fixed 12%/yr regardless of algo_eff)",
+          "Realized elasticity, commodity tier: Google tokens 9.7T/mo (Apr'24) -> 480T (May'25) -> 980T (Jul'25) -> 1.3Q (Oct'25) -> 3.2Q (May'26): 49x yr1 vs ~40x price fall => eps~1.05; 6.7x yr2 vs ~10x => eps~0.83; Microsoft 100T tokens/qtr up 5x yoy (Q3 FY25) vs ~10x => eps~0.70; OpenRouter top-10 1.24T->13.95T tokens/wk (Mar'25->Feb'26, 11.3x; total 5T->25T/wk Nov'25->May'26) vs ~3-4x blended price => eps~1.7-2.0; OpenAI '10x price cut -> 100x calls' => eps~2.0 (upper bound). Cross-source commodity band: 0.7-2.0, volume-weighted center ~1.1-1.3",
+          "Realized elasticity, frontier tier: Claude Opus $15/$75 held ~20 months, single 67% cut (Opus 4.5 -> $5/$25) then flat across 4 releases; Opus leads every benchmark yet ranks 7th by OpenRouter tokens (Jun'26) - volume did not chase the price cut => frontier volume eps~0.3-0.7; frontier revenue is capability-gated (Anthropic $47B run-rate on minority token share). Reasoning models partially self-hedge: test-time compute re-spends efficiency as more tokens (Epoch excluded them from price trends for exactly this reason)",
+          "DeepSeek R1 natural experiment: Jan 27 2025 one-day moves VST -28%, CEG -21%, GEV -21%, TLN -21%, NVDA -17% (-$589B, largest single-day loss ever) on a believed 2-4x power efficiency gain + $5.6M training claim => market-implied eps ~0.5-0.65 (GW path priced down 35-50% for a ~3x efficiency gain: 0.6 = 3^(eps-1) => eps=0.54)",
+          "R1 reversal: every hyperscaler reaffirmed or RAISED capex within weeks; 2025 capex $410B (+40% through the shock), 2026 guides $725B (+77%: AMZN $200B, GOOGL $180-190B, MSFT ~$190B, META $125-145B, Q1'26 alone $131B); NVDA recovered 90% in 1 month; CEG repaired by Meta 20-yr Clinton PPA Jun 3 2025; VST slowest, new ATH $217.02 Sept 22 2025 vs $199.84 pre-shock => full round trip 4-8 months => market's updated eps >= 1.2; 'AI spending accelerated 40% in 2025 - cheaper models created more demand' is now the consensus Jevons reading",
+          "Jump catalog (>=3x price-per-capability steps, fixed tier): GPT-4->Turbo 3x (Nov'23); China price war (May'24): DeepSeek V2 GPT-4-class at RMB1($0.14)/Mtok, ByteDance Doubao RMB0.8, Alibaba cuts to 97% => 10-30x; GPT-4o-mini ~33x vs 4o (Jul'24); DeepSeek V3 ~10x ($5.576M train, 2.788M H800-hrs, MLA -93% KV cache) Dec'24; R1 o1-class at $0.55/$2.19 vs $15/$60 = 27x (Jan'25); o3 -80% same-model (Jun'25) = 5x pure serving-stack; GPT-5 $1.25/$10 ~8x (Aug'25); Opus 4.5 3x frontier (Nov'25); DeepSeek V3.2-Exp/V4-Pro 2-4x ('25-'26)",
+          "Jump arrival rate: >=10x events ~0.5/yr 2020-2023 -> ~2/yr 2024-2026 while capability stock grew ~10x; Epoch median decline 50x/yr full-period vs 200x/yr post-2024 confirms rate acceleration correlated with capability/research-compute stock - jump rate belongs INSIDE R1, not exogenous",
+          "Jump size fit (given J>=3x): ln J ~ 3x * Exp(mean 0.9 in ln units): median ~5.5x, p90 ~25x, observed max 33x, cap 100x; frontier jumps rarer and ~sqrt-sized (3x vs 27x commodity same season)",
+          "Power-demand consequence per eps draw (GW multiplier = J^(eps-1) for jump J=10x): eps=0.3 => GW x0.20 (-80%): efficiency-boom/power-bust, capex cut >30%, power rents normalize ~2029-30 - resembles FIZZLE scenario for the power sleeve while capability booms (currently INEXPRESSIBLE: desired_capex growth floored at +14%/yr); eps=0.6 => GW x0.40 (-60%): 2-3yr digestion, resembles DELAYED scenario, power normalization p50 ~2031 (matches the Taiwan-shock p10 but benign); eps=1.0 => GW unchanged, jumps neutral = current model's implicit assumption; eps=1.5 => GW x3.2: jumps ACCELERATE the power bind, resembles FAST-TAKEOFF - and matches realized 2025-26 (record efficiency year + capex +77%)",
+          "System-level check: IEA datacenter electricity 415 TWh (2024) -> ~945 TWh (2030) projected THROUGH the R1 shock; Gartner 40% of AI DCs power-constrained by 2027 unchanged - realized aggregate eps has never printed <1 at annual horizon since 2023"
+        ],
+        "base_rates": [
+          "Market-implied Jevons elasticity repriced from ~0.55 to >=1.2 in ONE natural experiment within 4-8 months (Jan-Sep 2025); the one-day -21/-28% power-complex move was a 100% false signal for the GW path - base rate for 'efficiency scare kills power demand': 0-for-1",
+          ">=10x price-per-capability jumps at the commodity tier: ~1 per 8-14 months since 2023 (4o-mini Jul'24, V3/R1 Dec'24-Jan'25, GPT-5 Aug'25), vs ~1 per 2 yrs 2020-2022; arrival rate roughly doubles per ~10x of capability stock",
+          "Frontier-tier price steps: ~1 material cut per 18-24 months (GPT-4 -> Turbo Nov'23; o3 -80% Jun'25; Opus -67% Nov'25), each 3-5x, price then held flat across multiple releases (Opus flat 4 consecutive releases) - monopoly-toll behavior, matching the model's IP-toll no-supply-response class",
+          "Fixed-quality inference price drift between jumps: 10x/yr (a16z 3-yr average), Epoch median 50x/yr including jumps; drift accelerated to ~200x/yr median post-2024 - treat 10x/yr as drift, the rest as jump mass",
+          "Commodity-tier realized token elasticity across 5 independent sources spans 0.7-2.0 with volume-weighted center 1.1-1.3; every estimate below 1 comes from token counts polluted by free/internal usage (Google Search overviews) or enterprise mix (Azure), every estimate near 2 from the price-sensitive marginal buyer (OpenRouter, API startups)",
+          "Efficiency-driven capex cuts have NEVER occurred: through 1000x cumulative efficiency gain 2021-2026, hyperscaler capex rose every single year (2024 $228B, 2025 $410B, 2026 guide $725B); the only observed capex-cut regimes in tech history were demand-fizzle or credit driven (2001 telecom -40%/yr, 2009, 2022 crypto) - so a capex cut WITH rising tokens would be historically unprecedented and diagnostic",
+          "Token volume growth at aggregators while prices fell: Google 49x (2024-25) then 6.7x (2025-26); OpenRouter ~10-25x/yr sustained into 2026; growth is decelerating in RATIO terms even as absolute exaflop demand explodes - consistent with eps drifting DOWN toward 1 as the cheap-token frontier saturates chat/search and the marginal token moves to agents (task-coverage concavity, the model's rho=0.85)"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "cost_per_capability index (derived, not stored): 1/(algo_eff * hw_cost_index) - the price signal buyers actually see; replaces the implicit assumption that software efficiency is demand-neutral",
+            "efficiency_jumps: Vec<(year:i32, size:f64, frontier:bool)> in Params, MC-drawn like geo_shocks (empty = deterministic baseline exactly unchanged - reuse the tail-module regression-guard pattern from geopolitics)",
+            "jevons_elasticity_commodity + jevons_elasticity_frontier as Params (draws below); effective eps_t = w_t*eps_c + (1-w_t)*eps_f with commodity token share w_t ramping 0.6 (2026) -> 0.85 (2032) (OpenRouter: cheap/Chinese models already 46% of tokens; Opus #7 by usage while #1 by capability)",
+            "perceived_efficiency stock (1-yr information delay on jump recognition): the market/buyers take ~1-2 quarters to decide whether a jump is Jevons-positive - this delay IS the Jan-27-2025 air pocket and must live in the perception smoothing, not in the physics"
+          ],
+          "loops": [
+            "R1-J (extend R1): jump arrivals are Poisson with rate lambda_t = jump_rate_base * (1 + 0.5*log2(algo_eff)) * (1 + r1_gain post-singularity boost) - jump frequency rises with the capability stock (0.5/yr 2020-23 -> 2/yr 2024-26 empirically); on arrival algo_eff *= J subject to existing algo_eff_cap headroom. Ablation test: jumps off => current smooth R1 exactly recovered",
+            "B3-J (new balancing sub-loop, the Jevons demand response): on jump J, inject (eps_eff - 1)*ln(J) into perceived_growth through the existing perception_smoothing (1yr) - eps>1 accelerates desired_capex after a 1-2 quarter perceived-demand air pocket (the R1 episode shape: -25% repricing then +77% capex guide); eps<1 produces a genuine multi-year demand contraction",
+            "FLOOR RELAXATION (the structural fix): desired_capex growth floor of ~+14%/yr must be allowed to go negative in the 3 years after a jump when eps_eff<1, floored at -30%/yr (2001 telecom capex -40%/yr is the historical worst) - without this the eps<1 branch is dead code and the #1 gap remains; keep the floor everywhere else so the round-2 'no absorbing zero-capex state' fix survives",
+            "B-power-J: replace gw_per_unit fixed 12%/yr drift with gw_per_unit *= (1 - hw_power_eff_gain) for hardware only (keep 0.12 default for golden parity) AND divide compute-demand growth by realized software efficiency: GW demand for the capability path scales as J^(eps_eff - 1) on jump years - this is the single coupling that makes an efficiency discontinuity reach the power sleeve"
+          ],
+          "couplings": [
+            "MC prior block (main.rs Draw::params): jevons_elasticity_commodity ~ LogNormal(mu=ln 1.25, sigma=0.30) truncated [0.5, 2.5] (p10 0.85 / p50 1.25 / p90 1.85); jevons_elasticity_frontier ~ Normal(0.55, 0.20) truncated [0.15, 1.0]; draw jointly with existing cognitive_demand_elasticity (currently uniform 1.1-1.7) at rank correlation ~+0.5 - they are the same underlying demand curvature seen from two sides, and sampling them independently would let the MC assemble incoherent worlds (task demand elastic while compute demand inelastic)",
+            "jump_rate_base ~ Gamma(k=2, theta=0.6) (mean 1.2/yr, p90 ~2.4/yr) for J>=3x commodity events; frontier jumps at 1/3 the rate with size J^0.5; jump_size: J = 3*exp(X), X~Exp(0.9) => median ~5.5x, p90 ~25x, hard cap 100x",
+            "eps saturation coupling: eps_eff_t *= adoption headroom (1 - adopt)^0.3 or equivalently drift eps down ~0.05/yr after adoption >0.7 - Google's own deceleration (49x -> 6.7x token growth) shows the elastic frontier exhausting; ties cleanly to existing intelligence_returns_rho concavity",
+            "Valuation layer: eps<0.7 draws with a >=10x jump land the power sleeve in fizzle-scenario P&L (VST/CEG/GEV -30-60%) while SEMI demand holds (compute still bought, just fewer GW) and casualty shorts ACCELERATE (cheaper AI = faster displacement) - a scenario shape none of the existing 6 scenarios contains: 'efficiency bust' decouples the power sleeve from the AI-progress sleeve for the first time",
+            "SECTION 8 MONITORABLE (efficiency-cut vs fizzle-cut discriminator - the two demand OPPOSITE power-sleeve playbooks): compute trailing-4Q realized elasticity eps_hat = dln(tokens)/dln(1/price-per-GPT4-class) from (a) Google/MSFT disclosed token counts, (b) OpenRouter weekly totals, (c) Epoch price index. IF a hyperscaler capex guidance cut arrives with eps_hat >= 1.0 AND token growth >= 3x yoy => efficiency digestion: BUY the power dip, add VST/CEG/GEV within the 4-8 month R1-episode recovery window, keep semis. IF eps_hat < 0.7 AND token growth < 2x yoy AND frontier vendors are cutting prices into weakness (price war on FALLING volume = the fizzle tell; price cuts on rising volume = the Jevons tell) => fizzle: exit the power sleeve entirely, keep only IP tolls, activate casualty-short accelerant. The signature difference: efficiency cuts arrive with tokens/watt utilization RISING and lab revenue growing; fizzle cuts arrive with both falling"
+          ]
+        },
+        "lessons_for_model": [
+          "The model's implicit Jevons elasticity is exactly 1.0 (software efficiency raises capability supply but never touches GW demand per unit or desired capex direction) - realized history 2023-26 says the truth is a DISTRIBUTION centered near 1.1-1.3 with a fat lower tail, and the entire risk content is in the tails the model cannot currently draw",
+          "The single most tradeable fact found: the market itself ran this experiment on Jan 27 2025, priced eps~0.55 for one day (-$589B NVDA, -21/-28% power complex), and was proven wrong within 4-8 months (capex +40% then +77%, VST new ATH Sept 22 2025) - the model should reproduce a transient perceived-demand air pocket on every jump (via the 1-yr perception delay) followed by re-acceleration when eps>1, giving the power sleeve a recurring BUYABLE dip signature rather than a smooth path",
+          "Tier segmentation is structural, not cosmetic: commodity-tier eps 0.7-2.0 (center ~1.25) vs frontier eps 0.3-0.7; frontier pricing behaves like the model's existing IP-toll class (price held flat across releases, single strategic cuts) while commodity pricing behaves like commodity silicon (hog-cycle price war: China May 2024, -97%) - the same moat taxonomy the model already validated across 12 historical episodes applies to MODEL PRICING itself",
+          "Jump arrival rate is endogenous to R1: >=10x jumps went from ~0.5/yr to ~2/yr as capability grew ~10x, and Epoch's post-2024 median decline (200x/yr vs 50x/yr) confirms acceleration - so jumps must be drawn with rate increasing in algo_eff and boosted post-singularity, otherwise the singularity worlds understate their own efficiency-shock frequency (and hence understate power-sleeve volatility exactly when the book is most exposed)",
+          "Relaxing the +14%/yr desired-capex floor ONLY in post-jump windows (floored -30%/yr, 2001 telecom precedent) is the minimal change that makes 'efficiency-driven capex cut' expressible without reopening the round-2 absorbing-zero-capex bug; it also finally separates capacity_glut (supply overshoot) from demand-side contraction in the diagnostics",
+          "Reasoning/test-time compute is a partial hedge the model gets for free: efficiency gains at the frontier get re-spent as more tokens per query (Epoch excluded reasoning models from price trends for this reason; o3's 80% cut was 'same model, cheaper serving'), which is one mechanism holding realized eps >= 1 - if a future architecture removed test-time scaling, eps would drop toward the Microsoft-style 0.7 estimates; worth a note in the eps prior justification",
+          "The efficiency-bust tail (eps<0.7 + big jump) is the ONLY discovered mechanism that kills the power thesis while the AI thesis SUCCEEDS - every existing scenario that hurts power (fizzle, Taiwan) also hurts semis and the thesis; this new tail decorrelates the book's two biggest sleeves and therefore changes hedge sizing even at low probability (~10-15% mass below eps=0.7 in the proposed prior)",
+          "Implementation anchors: R1 schedule lib.rs:550-561 (add jump multiply after headroom line); gw_per_unit drift lib.rs:723-724 (split hardware vs software efficiency); desired_capex lib.rs:654-674 (jump injection into perceived_growth + conditional floor relaxation); MC priors main.rs:162-227 (add 4 draws + jump sampler following the geo_shocks Vec pattern at main.rs:206-212); keep empty-jump-vec => bit-identical baseline as the regression guard, mirroring geopolitics::sample_shocks"
+        ]
+      },
+      {
+        "topic": "R9 reflexive financing loop: market-credence stock calibration — how AI-trade belief converts into external funding capacity, how fast it collapses, and annual impulse-response coefficients from marks to funding to capex (dot-com analog), with step-down triggers and a model-derived de-gross threshold",
+        "key_numbers": [
+          "EXTERNAL-FUNDED SHARE OF AI SECTOR CAPEX BY YEAR vs the model's static internal_funding_share=0.65 (lib.rs:270): 2023 ~5-8% external (Big-4 capex ~$150B, essentially all operating-cash-flow; hyperscaler bond issuance 2020-24 averaged only $28B/yr); 2024 ~9-12% (FactSet: incremental debt = 9% of capex FY24; Big-4 capex ~$226B; CoreWeave $7.5B GPU-backed Blackstone facility May-2024 opens the private-credit rung); 2025 ~30-35% (Big-5 capex ~$388-410B; hyperscaler IG bonds $121B = 4.3x the 5-yr average: ORCL $18B Sep, META $30B Oct-30 at +98bp 30-yr with a $125B order book, AMZN $15B Nov; SPV/private-credit ~$65B off-balance-sheet: Meta-Blue Owl Hyperion $27B loans + $3B equity, Blue Owl Abilene/Stargate $15B; data-center ABS ~$27B; total DC debt issuance ~$182B; AI = ~30% of ALL net new US IG supply); 2026 ~45-55% run-rate (FactSet: incremental debt = 32% of capex LTM mid-2026; Morgan Stanley projects ~$400B hyperscaler borrowing vs $165B in 2025; GOOGL $84.75B equity raise Jun-2026 incl. Berkshire $10B and a $40B ATM — equity is the last funding rung, now active; ORCL plans $45-50B debt+equity against FY27 capex $90-95B and a ~$42B FCF deficit; AMZN raised $79B in 2026 with FCF -95% to $1.2B). Internal share is a TRAJECTORY ~0.93 (2023) -> ~0.90 (2024) -> ~0.67 (2025) -> ~0.50 (2026), falling 10-15pp/yr — 0.65 is correct only for calendar 2025.",
+          "EVENT STUDY 1 — DeepSeek (Jan 27, 2025), a belief shock WITHOUT funding-structure content: NVDA -17% / -$589-600B (largest 1-day loss ever), AVGO -17.4%, SOX -9.2%. Credit response: NVDA 2030 bonds +10bp, rest of Mag-7 FLAT; issuance-window closure: ZERO days; realized capex guidance change: ZERO or positive sign (MSFT reaffirmed $80B within days; META and GOOGL RAISED 2025 guides within 2 weeks); only trace response = MSFT ~200MW lease cancellations (TD Cowen Feb-2025), ~1-2% of pipeline. Implied credence->capex gain at high internal-funding share (~0.90 then): approximately 0. Wire-in: capex sensitivity must be GATED by external share — credence shocks transmit only through the funding channel.",
+          "EVENT STUDY 2 — NVDA-OpenAI walk-back sequence: Sep-22-2025 LOI 'up to $100B' (10GW) -> Nov-19-2025 10-Q 'no assurance' -> Dec-2-2025 CFO admits not definitive -> Feb-3-2026 talks stalled -> Feb-27-2026 final $30B equity inside OpenAI's $110B round -> Mar-2026 Huang: $100B 'probably not in the cards'. Vendor-financing quantum cut 70% over ~5 months. Concurrent spread move: IG tech +10bp from tights (Nov-7-2025); Oracle 5-yr CDS 60bp (Sep) -> 139-147bp (Nov-Dec). Realized sector capex change: ~0 within the window (2026 guides went UP to $630-725B) because the gap was refilled by equity ($110B round) and other channels; OpenAI's own pledge walked back $1.4T->$600B. Lag credence->spread: weeks; credence->capex: not realized inside 12 months when a replacement channel exists.",
+          "EVENT STUDY 3 — Oracle CDS repricing: 5-yr CDS <60bp Sep-2025 -> 139bp Nov-12 -> 147bp Dec -> 203bp peak (highest since series began 2008); equity -49.5% from high; S&P downgrade BBB->BBB- and A-2->A-3; FY26 capex realized $55.7B, FY27 guide $90-95B UNCUT; CDS 'plummeting' Feb-2-2026 once the $45-50B financing plan was detailed. Lesson: a 3.4x CDS repricing closed no IG window and cut no capex — in the up-regime, credence shocks reprice the funding LADDER (shift toward SPV/ABS/private credit at +150-250bp and equity) rather than ration quantity. Rationing is a threshold phenomenon, not a linear one.",
+          "DOT-COM ANALOG REVERSE LOOP (1999-2002 telecom): marks: global telecom equity -$2T 2000-02, S&P telecom -$700B, DJ comm-tech index -86%. Funding: US telecom bonds >$500B issued 1996-2001, telecom = ~1/3 of the HY index by 2000; HY telecom new issuance effectively closed within 2-3 quarters of the Mar-2000 peak (down ~80-90% by 2001); HY default rate averaged 9.2%/yr 2000-02 (~4.5x the 1992-99 rate). Vendor financing: $25.6B committed across 9 suppliers end-2000 (Lucent $8.1B, Nortel $3.1B, Cisco $2.4B); vendors ACCELERATED financing into early 2001 as outside capital fled — Nortel financed up to 130% of equipment cost; then bad-loan share exploded within 12 months: Lucent 2.6%->60%, Nortel 25.5%->80%. Capex (Richmond Fed): communications-equipment investment $135B/yr Q4-2000 -> <$93B Q4-2001 = -31% yoy in 4 quarters; roughly halved cumulatively by 2002; Lucent revenue $30B->$12B in 2 years.",
+          "ANNUAL IMPULSE-RESPONSE COEFFICIENTS (marks fell X -> funding fell Y -> capex fell Z, dot-com realized): Year 0 (marks -40-50%): external funding -50-70%, capex -5 to -10% (orders in flight still land); Year 1: external funding -80-90%, capex -31%; Year 2: capex another -25-30% (cumulative ~-50%). Elasticities for the annual timestep: d(external funding)/d(marks) ~ 1.5-2.0 with ~0.5yr lag (funding falls PROPORTIONALLY MORE than marks — the credence channel amplifies); d(capex)/d(marks) ~ 0.6-0.7 cumulative with 1-yr lag. Vendor financing is the LAST channel to close and overshoots (+30% financing-to-cost at the top), extending the boom ~1 year and deepening the bust via bad-debt writebacks.",
+          "ASYMMETRY CALIBRATION: credence builds slowly — external share expanded ~+10-15pp/yr 2023-26 through four sequential rungs (OCF -> IG bonds -> SPV/ABS/private credit -> vendor financing/warrants [NVDA-OpenAI $100B LOI; AMD warrant: 160M shares at $0.01 strike vesting on 6GW of purchases + stock targets to $600] -> public equity [GOOGL Jun-2026]); it collapses in <1 year (dot-com HY closure in 2-3 quarters). Up/down time-constant ratio ~4-6x — same asymmetric-trust template as society.rs sentiment.",
+          "STEP-DOWN TRIGGER PRIORS for the MC: (a) P(discounted/delayed lab IPO by mid-2027) ~ 0.25-0.35 (Anthropic S-1 filed Jun-1-2026, Oct-2026 Nasdaq target at ~$1T vs $965B private ~21x ARR; OpenAI 2027 with Altman's $1T floor; SpaceX Jun-2026 precedent: +67% then gave back 32%); credence step -0.15 to -0.25 — the IPO is the mark-to-market for ~$2T of private value = the credit quality of 40-45% of MSFT/AVGO/GOOGL backlogs. (b) P(major vendor-financing cancellation WITHOUT replacement round) ~ 0.15-0.20/yr while boom persists (one 70% walk-back already realized WITH replacement = no step); credence step -0.10 to -0.20. (c) neocloud/SPV/ABS default or downgrade (CoreWeave-class, Beignet-class) ~ 0.10-0.15/yr rising with rate level and external share; step -0.05 to -0.15. (d) two consecutive hyperscaler capex guidance cuts (existing book kill-criterion): step -0.20 to -0.30. Correlations: rate spikes (future B11) multiply hazards x1.5-2.0; geopolitics shock rungs (gfx.spread 0.075-1.0) should co-shock credence at ~0.5x their spread injection.",
+          "PRIOR TABLE: credence stock C in [0,1], init 2026H2 = 0.75 (post-correction, IPOs pending; 2025 peak ~0.90; DeepSeek trough ~0.70 for days). credence_gain_up ~ U(0.08, 0.25)/yr (median 0.15: rebuild from 0.25 to 0.85 takes ~4-5yrs). credence_step_down_dist: annual P(>=1 step) ~ U(0.25, 0.40) while external share >0.30, size ~ LogNormal(mu=ln 0.15, sigma=0.5) truncated [0.05, 0.50], plus deterministic event steps above. funding_share_sensitivity: external_share(C) = clamp(0.05 + 0.65*C^1.5, 0.05, 0.60) — reproduces 2023 (C~0.35 -> 0.19... use C_2023~0.15 -> 0.09), 2025 (C~0.85 -> 0.56 cap 0.5 with lag), 2026 (C~0.75 -> 0.47); crash elasticity d ln(ext)/d ln(C) ~ U(1.3, 2.2). capex_sensitivity: desired_capex_t *= (1 - k * max(0, -dC_{t-1})) with k ~ U(0.4, 0.8) (median 0.6, dot-com), plus same-year term 0.1*max(0,-dC_t); gate the whole term by external_share_{t-1}/0.35 capped at 1 (DeepSeek lesson).",
+          "DE-GROSS THRESHOLD (model-derived, replaces judgment-only rule): cut the correlated MSFT/AVGO/GOOGL exposure when C < 0.55 — i.e., one large step (>=0.15, a discounted lab IPO) or two medium steps within 4 quarters from the 0.75 start. Mechanics: at C=0.55 external_share(C) ~ 0.31 vs the ~0.45-0.50 needed to fund guided 2026-27 capex ($630-725B Big-4 + $90-95B ORCL); the implied funding gap >$150B/yr forces capex cuts within 1 year, impairing the vendor-financed backlogs (OpenAI = 45% of MSFT commercial RPO, disputed anchor of AVGO's backlog; Anthropic >40% of GOOGL Cloud backlog) BEFORE reported earnings move. Observable proxies: Oracle-complex 5-yr CDS >250bp sustained 4+ weeks, or any lab IPO pricing <70% of last private mark, or an IG AI issue pulled/postponed (has not happened yet in this cycle — its first occurrence is itself the regime signal)."
+        ],
+        "base_rates": [
+          "IG issuance-window closures in this cycle so far: ZERO (Oracle CDS 60->203bp, still issued; Meta $30B drew $125B book; Amazon $15B mid-Nov-2025) — in the up-regime, quantity rationing has never occurred, only price/ladder repricing.",
+          "Dot-com capex bust: -31% yoy at trough (Q4-2001 vs Q4-2000, Richmond Fed), ~-50% cumulative over 2 years; equipment-vendor revenue -60% in 2 years (Lucent $30B->$12B).",
+          "Funding collapse speed: HY telecom new issuance ~closed within 2-3 quarters of the equity peak; external funding -80-90% within ~5 quarters of marks peaking.",
+          "Vendor-financing bad-debt transition: Lucent 2.6%->60% and Nortel 25.5%->80% of loans impaired within 12 months — the vendor channel fails as a cliff, not a slope.",
+          "HY default rate 2000-02: 9.2%/yr average vs ~2% baseline (4.5x); telecom was ~1/3 of the HY index at peak.",
+          "Hyperscaler bond issuance base rate: $28B/yr avg 2020-24 -> $121B 2025 (4.3x) -> ~$400B projected 2026 (14x the base) — the current boom's funding expansion is faster than telecom's 1996-2000 ramp.",
+          "AI-related debt = ~30% of net new US IG supply in 2025; JPMorgan projects ~$300B/yr of AI/DC deals for 5 years; data-center ABS $27B 2025 -> $30-40B/yr projected 2026-27.",
+          "Down-round/delayed IPO base rate in stressed windows: ~25-35% (assigned; SpaceX Jun-2026 gave back 32% of its pop within weeks; Anthropic Oct-2026 window not yet tested).",
+          "Equity-shock-to-credit pass-through when capex is internally funded: ~10bp on the issuer's own bonds, 0bp sector-wide (DeepSeek, Jan-2025).",
+          "Time from first credence crack to full funding closure, dot-com: ~3 quarters; time to rebuild external funding access post-bust: 4-6 years (telecom HY did not reopen at scale until 2004-05)."
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "market_credence C in [0,1] — new stock in SimState; init 0.75 (2026H2); accretes slowly via delivered-vs-expected AI revenue growth, steps down via MC event draws; floor 0.05",
+            "external_share (derived, not a stock): ext = clamp(0.05 + 0.65*C^1.5, 0.05, 0.60), applied with a 1-yr information lag; replaces the constant (1 - internal_funding_share) at lib.rs:758-759",
+            "expectation_anchor E (1-yr smoothed perceived AI-revenue growth, reuse perceived_growth machinery) — credence accretion = gain_up * (realized_ai_services_growth - E), clipped at +gain_up max; this is the marks->credence link, giving valuation-relevant model output its first feedback INTO the simulation (a sector-marks proxy: d ln(ai_services pool PV proxy) drives the same term)"
+          ],
+          "loops": [
+            "R9 (reinforcing, both directions): credence up -> external_share up -> capital_cap up (credit_mult less binding) AND desired_capex less throttled -> more compute delivered -> realized growth meets expectation -> credence sustained. Down-direction is the bust engine the model currently lacks: credence step -> external funding gone (elasticity 1.5-2.0) -> capex cut next year (gain 0.6) -> realized growth misses expectations -> further credence decay — the first demand-side contraction channel, deliberately exempted from the +14%/yr desired-capex floor documented in meadows_design.md ('demand never contracts')",
+            "R9b (vendor-financing overshoot sub-loop): when C falls below ~0.6 while margins are still high, vendor channel EXPANDS for 1 year (dot-com: Nortel 130% financing-to-cost) before failing as a cliff — implement as a 1-yr grace on the external-share decline followed by an extra sector_debt writedown (bad-debt shock 0.3-0.6 of the grace-year vendor flow)",
+            "Ablation contract: R9 off -> credit crunch frequency reverts toward the leverage-only ~33-57%; R9 on -> crunches can occur at LOW leverage (2001 pattern: IG survivors cut capex too), and fizzle-adjacent paths finally show a demand bust, not only supply gluts"
+          ],
+          "couplings": [
+            "lib.rs:758 sector_debt accumulation: replace (1 - p.internal_funding_share) with ext(C_{t-1}) — externally-funded share becomes state; leverage and credence now co-evolve (rate spikes and credence breaks correlate, as required for the B11 interaction)",
+            "lib.rs:689 credit_mult: add spread_credence = credence_spread_slope * (C_peak_run - C).max(0) (prior U(0.3,0.8)) inside the B4 denominator alongside soc_credit and gfx.spread",
+            "lib.rs:672 desired_capex: multiply by (1 - k*max(0,-dC_{t-1}) - 0.1*max(0,-dC_t)), k ~ U(0.4,0.8), gated by min(1, ext_{t-1}/0.35) — DeepSeek gate: belief shocks without funding content do not cut capex",
+            "geopolitics.rs gfx.spread: co-shock credence dC -= 0.5 * gfx.spread (a blockade rung at spread 0.6 costs ~0.3 of credence — funding and belief break together)",
+            "MC event draws (reuse incident machinery): discounted-lab-IPO event (annual p 0.25-0.35 in 2026-27 only, step -0.15..-0.25); vendor-cancellation-without-backstop (p 0.15-0.20/yr, step -0.10..-0.20); SPV/ABS default (p 0.10-0.15/yr scaled by ext and rates, step -0.05..-0.15)",
+            "valuation.rs: expose C path per scenario; book rule: de-gross the MSFT/AVGO/GOOGL correlated sleeve when C < 0.55 (replaces the judgment-only 'de-gross on any lab markdown' rule in REPORT.md section 5b) — threshold derived from ext(0.55)~0.31 vs ~0.45-0.50 funding need"
+          ]
+        },
+        "lessons_for_model": [
+          "The static internal_funding_share=0.65 is a 2025 snapshot of a fast-moving trajectory (0.93 in 2023 -> ~0.50 in 2026). Making it a function of credence is not a refinement — the model's headline credit-crunch statistic (57% of paths) currently rests on a constant that was already 15pp stale at calibration time.",
+          "Belief shocks do not transmit to capex directly; they transmit ONLY through the funding structure. DeepSeek (-$600B in a day) cut zero capex at ~90% internal funding; dot-com marks (-45%) cut capex 31%/yr at ~50%+ external funding. The capex-sensitivity term must be gated by lagged external share or the model will overproduce busts in early years and underproduce them late.",
+          "Funding falls FASTER than marks (elasticity 1.5-2.0) and capex follows funding with a 1-year lag at gain ~0.6 — on the annual timestep this is a clean 2-year impulse response: year1 funding collapse, year1-2 capex -30%/yr. The existing B4 loop (leverage->spread) cannot produce this because leverage builds too slowly; the credence step is the fast variable.",
+          "In the up-regime, credence deterioration reprices the funding LADDER (IG -> SPV/ABS -> private credit -> vendor paper -> equity, each rung +150-250bp or dilutive) before it rations quantity; Oracle's 3.4x CDS move closed no window. Model this as continuous spread pass-through above C~0.65 and quantity rationing (the ext(C) curve's steep region) only below.",
+          "Vendor financing is counter-cyclical at the top: it EXPANDS as third-party capital retreats (Nortel financed 130% of cost in early 2001; NVDA/AMD warrants play this role now), extending the boom ~1 year and converting into a cliff of bad-debt writedowns. Without this sub-loop the model will time the bust ~1 year early and understate its depth.",
+          "The lab IPOs (Anthropic Oct-2026, OpenAI 2027) are not exogenous 'event risk' — they are the marks-to-market of ~$2T of private value that IS the credit quality of 40-45% of the backlogs carrying three of the book's five core longs. Wiring P(discounted IPO) into the credence MC converts the book's most important judgment rule (de-gross) into a model-derived threshold: C < 0.55.",
+          "Credence rebuild is 4-6x slower than collapse (telecom HY shut in ~3 quarters, did not reopen at scale for 4-6 years) — the asymmetric time-constant template already used for society.rs sentiment/stringency applies directly; reuse that machinery rather than inventing new smoothing.",
+          "First-occurrence signals to monitor (each is itself the regime break, since none has happened this cycle): a pulled/postponed IG AI bond deal; a lab IPO pricing <70% of the last private mark; a data-center ABS downgrade; sustained Oracle-complex CDS >250bp. Any one of these is worth more information than a quarter of spread drift — encode them as step events, not as continuous variables."
+        ]
+      },
+      {
+        "topic": "Two-tranche power supply (firm/slow vs fast/commodity) + behind-the-meter bypass for AI load, 2026-2036: calibration, priors, and stock/flow proposal for splitting lib.rs power B1 and valuation.rs power_margin",
+        "key_numbers": [
+          "FIRM TRANCHE (grid CCGT/nuclear-uprate): heavy-duty turbine lead time ~3yr directional, 5yr for large frames; Wood Mackenzie measured 243 weeks (~4.7yr) for some classes (utilitydive.com, publicpower.org). Order-to-COD total delay 4.5-5.5yr (slot + EPC).",
+          "FIRM CEILING: GE Vernova expanding 55 -> 70-80 HDGT/yr (~20 GW/yr output) in 2026; backlog+slot reservations 100->116 GW mid-2026, targeting 125 GW by YE2026; only ~10 GW of slots left across 2029+2030 COMBINED; one developer paid $25M just to reserve a 2030 slot (power-eng.com, GEV 8-K). Global turbine orders ~100 GW/yr vs 60-70 GW/yr global manufacturing capacity — order/capacity ratio ~1.5x. Mitsubishi doubling output but sold out into 2028.",
+          "FIRM US ADDITIONS (EIA planned CCGT): 1.6 GW 2025, 3.3 GW 2026, 3.3 GW 2027, 10.6 GW 2028 (largest since 2018) — the firm tranche is a trickle-then-wave with the wave landing 2028-2031 (eia.gov, power-technology.com).",
+          "FIRM COST: new CCGT $2,200-2,500/kW 2026 vs $1,116-1,427/kW for 2026-27-vintage projects — CONE roughly DOUBLED in 3 years (GridLab Sept 2025). PJM capacity cleared at the FERC cap two straight auctions: $329.17/MW-day (26/27) and $333.44/MW-day (27/28); new-generation response only 2,669 then 774 MW UCAP — measured firm B1 gain is tiny.",
+          "FAST TRANCHE (solar+BESS, aero/simple-cycle, fuel cells): US utility additions 2024: 30 GW solar + 10.3 GWac BESS; 2025: 32.5 + 18.2; 2026 (record 86 GW total): 43.4 solar + 24.3 BESS (eia.gov, enerdata.net). ERCOT: ~10 GW solar 2024; BESS 7.8 -> 13.9 GW during 2025 (+6.1 GW/yr); queue 154 GW solar + 149 GW BESS (modoenergy.com, datacenterdynamics.com). Deployment lead time 18-24 months (12 achievable); off-grid microgrid ~2yr including permitting (offgridai.us).",
+          "FIRMING RATIO (offgridai.us, US Southwest): 1 GW of 24/7 flat AI load at ~90% solar share needs 5 GW solar + 16 GWh BESS + 1.25 GW gas backup; at 82% share 4 GW + 14 GWh; at 44% share 2 GW + 2 GWh. Land 20-25 acres/MW. So BESS-firming cap ~= bess_gwh_stock / 16 per firm-equivalent GW (or /14 with 18% gas).",
+          "FAST-TRANCHE LCOE: firm 90%-solar microgrid $109/MWh ($87-97 optimized); 44%-solar + gas $93/MWh vs pure off-grid gas $86/MWh; rental/bridge generation >$300/MWh; TMI nuclear PPA ~$130/MWh; IRENA firm solar+BESS $54-82/MWh best regions 2025, <$50 by 2035; ERCOT forwards Cal-2025 $57 -> Cal-2028 $67/MWh. Fast-tranche firm premium over grid wholesale ~1.5-1.9x today, trending to ~1.1-1.3x by 2030 on cell glut.",
+          "BESS MANUFACTURING (the fast-tranche firming cap is NOT cells): global Li-ion nameplate >4 TWh at YE2025 (+30% yoy), China >80% of production, ~100% of LFP cathode; China Q1-2026 ESS cell shipments 215 GWh (+139% yoy); global ESS installs heading to 400-926 GWh/yr by 2030; US cumulative >600 GWh by 2030 (IEA, Rystad, Benchmark/SEIA). Binding constraint is US-side: OBBBA FEOC rules on Chinese cells + interconnection + integrator EPC. US 2026 BESS additions 24.3 GW (~70-90 GWh): if 25-50% is diverted to AI firming -> 1.1-2.8 firm-equivalent GW/yr now, 4-8 GW/yr by 2030.",
+          "BYPASS STOCK: ~2 GW of behind-the-meter datacenter generation online mid-2026 across 4 projects, 2.8-3.2 GW by YE2026 (cleanview.co) — ~6-10% of US AI load LEVEL, but a much larger share of frontier FLOW: xAI Colossus 1 (~300 MW gas onsite, built in ~122 days, ~35 turbines), Colossus 2 + Southaven MS (acquired 780 MW Duke CCGT site; 7 turbines, 245 MW feeding Memphis, scaling >1 GW; $20B/2 GW Southaven facility, ops Feb 2026; 200 MW live 6 months after site acquisition), Stargate Abilene 360.5 MW BTM across 10 simple-cycle turbines permitted in 6 DAYS (Crusoe, $1.1B). Frontier-lab new-GW flow going BTM/off-grid: ~25-40% in 2025-26.",
+          "CONGESTION ARM: Crusoe alone ordered 29 GE Vernova turbines (>1.3 GW) in Dec-2024 + Jun-2025; data centers drove GEV's record 21 GW of Q1-2026 gas-turbine agreements. Estimate: datacenter/BTM demand is ~20-30% of the US-bound turbine order book, and each 1 GW of bypass load consumes ~1.25-1.4 GW of turbine slots (N+1 redundancy at 1.25x per offgridai/Crusoe permits) — i.e., the bypass channel amplifies the very slot shortage that motivates it: a reinforcing loop with gain ~0.3-0.4 (saturating).",
+          "OBBBA STEP-DOWN: solar/wind ITC/PTC dead unless placed-in-service by 12/31/2027 OR construction begun by 7/4/2026 (physical-work test; 5% capital safe harbor eliminated except <1.5 MW). Result: a pull-forward bulge (record 2026-27 additions) then a 2028-30 air pocket. 2025 cancellations: $32B+ clean-energy manufacturing/generation (E2), 266 GW / ~$400B all-cause project cancellations (cleanview.co), $83B attributed to federal policy by Jul-2026 (usnews.com). Prior: fast-tranche gain x0.65-0.75 for additions energizing 2028-2030, recovering to x0.85-0.9 by 2032 as unsubsidized solar+BESS clears in TX (storage keeps ITC into 2030s but FEOC content rules cost 20-30% of credit value).",
+          "OPPOSITION HAIRCUT: $156B of datacenter projects delayed/canceled in 2025 on local opposition; Gallup Mar-2026: 71% oppose a local data center (48% strongly); protests in 125 cities Jul-2026; state-level moratorium candidates and a federal AI Data Center Moratorium Act cosponsored Jul-2026. Prior: 0.85 pipeline-throughput multiplier on GRID-COUPLED additions (visible, ratepayer-linked), 0.95 on off-grid West Texas private-land builds (>1,200 GW of suitable private sites, >95% privately owned) — opposition DIFFERENTIALLY favors the bypass tranche.",
+          "RENT NORMALIZATION: merchant scarcity premium (VST/NRG margin over CONE) peaks 2026-27 (PJM at cap, ERCOT 2028 forwards +$10 over spot). Median path: compression to <25% of peak in 2031 (p10 2029: safe-harbor glut + 10.6 GW 2028 CCGT wave + bypass removing frontier load from grid; p90 2034: fast-takeoff demand + OBBBA air pocket + FEOC BESS drag). Firm-EQUIPMENT rent (GEV/6501.T/transformers): slots sold through 2030, book-to-bill >1.3, oligopoly capacity discipline (all three OEMs remember the 2001-02 turbine bust and are expanding only ~30-45%) — equipment margin stays >60% of peak through 2033. DIVERGENCE OPENS ~2029: rotation rule 6501.T/GEV-over-VST/NRG triggers when 2028 CCGT wave energizes AND PJM clears below cap AND OEM book-to-bill still >1.2 — earliest signal window 2H2028-2029."
+        ],
+        "base_rates": [
+          "Capacity-scarcity rents die 1-3 years after the supply response ARRIVES (not after it is ordered) — with the fast tranche's 1.5-2yr delay vs firm's 4.5-5yr, the two tranches imply two separate rent-decay clocks ~3yr apart, matching the model's century envelope (capacity-rent duration 1.6-13yr).",
+          "Equipment-OEM rents historically outlast merchant rents in every electrification boom: GE/Westinghouse held pricing through the 1930s Depression while utility holding companies collapsed; the 1999-2001 turbine bubble saw merchant spark spreads collapse in 2002 while turbine backlogs paid cancellation fees for 3 more years. Oligopoly (3 firms >70% share) + slot reservation fees = low-B1-gain IP-adjacent moat.",
+          "OEM capacity expansion after demand shocks runs 30-50% over ~4 years, never 2x — GE 55->70-80 units/yr (+27-45%) and Mitsubishi 'double by 2028' bracket the range; consistent with the model's WWII 2.5x/yr mobilization ceiling never being approached by private oligopolists.",
+          "Solar+BESS addition growth has run +35-60%/yr off an established base for 4 straight years in the US (BESS: 10.3 -> 18.2 -> 24.3 GW = +77%, +34%) but subsidy cliffs historically produce 30-50% single-year drops (Spain 2012 -85%, UK ROC-to-CfD 2016 -50%, US wind PTC lapses 1999/2001/2003 -73/-76/-77%) — the OBBBA 2028 air pocket prior of -30-40% on new starts is mid-range because storage keeps its ITC and TX economics clear unsubsidized.",
+          "Behind-the-meter/self-generation share rises when grid queue times exceed ~3x build times (Japan 1990s cogen, US 1978-1990 PURPA QFs reached 7% of US capacity in 12 years): with 5-7yr interconnection queues vs 0.5-2yr BTM builds, expect bypass to plateau at 15-30% of AI load LEVEL by 2030, not a full exit from the grid (PURPA analog).",
+          "Chinese manufacturing gluts compress hardware prices ~15-25%/yr for 3-5 years once export share >50% (solar modules 2011-14 and 2023-25, EV cells 2023-26): BESS system prices $165/kWh (2024) -> ~$100-110/kWh (2027) -> $80 (2030) is the central path; tariff/FEOC walls slow US pass-through to ~half that rate."
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "firm_capacity_gw — grid-side firm AI-serving capacity (CCGT, nuclear uprate, coal life-extension). Fed by firm_pipe: 4-stage pipeline, ~4.5yr total (replaces 1 of the 2 uses of the current 3-stage power_pipe). Init 2026: ~44 GW of the existing 58 GW ai_power_2026; additions ~8 GW/yr of the current 30.",
+            "fast_capacity_gw — firm-EQUIVALENT fast capacity (solar+BESS microgrids, fuel cells, aero/simple-cycle onsite). Fed by fast_pipe: 2-stage pipeline, ~1.75yr. Init 2026: ~14 GW; additions ~22 GW/yr nameplate but firm-equivalent gated by the firming cap.",
+            "bess_firming_gwh — cumulative BESS energy dedicated to AI firming. Inflow = bess_addition_rate (GWh/yr, grows 30%/yr, price-elastic to cell glut, x0.75 FEOC drag 2026-29); firm-equivalent fast GW <= bess_firming_gwh / 15.0 (blend of 16 GWh/GW at 90% solar and 14 at 82%). Init 2026: ~60 GWh AI-dedicated; inflow 2026 ~45 GWh/yr.",
+            "btm_bypass_gw — AI load served off-grid/behind-the-meter (subset of fast_capacity but tracked separately because it (a) subtracts from GRID power demand in the utilization calc and (b) consumes OEM turbine slots). Init 2026: 2.5 GW; own 2-stage pipeline ~1.25yr.",
+            "oem_slot_gw_yr — turbine-OEM global annual deliverable output (the firm tranche's ceiling stock). Init 2026: 65 GW/yr; max growth 12%/yr, and expansion responds to equipment_margin with gain 0.5x the normal B1 gain (oligopoly restraint — this low gain IS the 6501.T moat).",
+            "obbba_mult (exogenous schedule, not a stock): fast-tranche gain multiplier 1.0 through 2027, 0.70 [0.6,0.8] 2028-30, 0.87 [0.8,0.95] 2031+. opposition_mult: 0.85 on firm_pipe and grid-coupled fast_pipe throughput, 0.95 on btm pipe; optionally endogenized to society.rs sentiment (haircut = 0.80 + 0.15*(1-sentiment))."
+          ],
+          "loops": [
+            "B1a — FAST supply response (the new rent-killer): grid scarcity margin -> fast_pipe orders, gain 1.2 (vs current single 0.55), delay 1.75yr, ceiling min(+35%/yr addition growth x obbba_mult x opposition_mult, firming cap from bess_firming_gwh). Kills ENERGY-market scarcity ~2yr after margins peak.",
+            "B1b — FIRM supply response: grid scarcity -> firm_pipe orders, gain 0.25, delay 4.5yr, ceiling = US share (~0.55) of oem_slot_gw_yr MINUS 1.3 x btm bypass orders. Reproduces the measured PJM result (price at cap, ~1-3 GW new entry/yr through 2027, 10+ GW wave 2028-31).",
+            "R5 — BYPASS CONGESTION (new, reinforcing, saturating): queue_ratio > ~2 -> share of NEW frontier AI power demand routes to btm_pipe (activation share s = 0.25 + 0.15*(queue_ratio-2), cap 0.45) at cost premium 1.35x grid firm -> each bypass GW consumes 1.3 GW of oem slots -> firm_pipe ceiling tightens -> queue_ratio stays high. Loop gain ~0.35, saturates as oem_slot_gw_yr grows and as bypass shifts from turbines to solar+BESS (turbine-slot coefficient decays 1.3 -> 0.6 by 2031).",
+            "B5 — CELL-GLUT FIRMING RELIEF: Chinese ESS cell overcapacity -> BESS $/kWh -13%/yr -> bess_addition_rate accelerates -> firming cap rises -> fast tranche firm-equivalent ceiling rises. This is the loop OBBBA/FEOC throttles (halve the pass-through 2026-29), and the loop that makes the fast tranche the dominant rent-killer post-2030."
+          ],
+          "couplings": [
+            "lib.rs utilization split: power_demand_gw_GRID = total AI power demand - btm_bypass_gw; merchant utilization and electricity_price computed on GRID quantities only. Bypass load pays its own cost (1.35x, declining to 1.1x) charged to ai_capex, NOT into the electricity pool — this is the demand-subtraction that compresses merchant rents even while total AI power grows.",
+            "valuation.rs pool split: power_margin bifurcates. merchant_scarcity_margin = margin_from(grid_utilization) -> Electricity pool (VST/NRG/CEG capture rows). equipment_margin = margin_from(oem order/slot ratio = (firm orders + 1.3x btm turbine orders)/oem_slot_gw_yr) -> PowerEquipment pool (GEV/6501.T ratio rows). Today: order/slot ~1.5 -> equipment margin at ceiling; grid utilization ~1.05 -> merchant margin high. The two series must be allowed to decorrelate — that decorrelation IS the rotation signal.",
+            "Electricity pool sizing: pools.electricity = grid-served AI GWh x electricity_price only; add a new small pools line (or fold into dc_infra) for btm energy at cost-plus ~10% margin — bypass energy is a COST center, not a rent pool.",
+            "Rent-normalization output metric: report per-run year_merchant_norm = first year merchant_scarcity_margin < 0.25 x its run-peak, and year_equipment_norm same for equipment_margin. Expected: median year_merchant_norm ~2031 (p10 2029, p90 2034+), median year_equipment_norm ~2034+ (often not in horizon); divergence gap >= 2yr in >70% of runs validates the 6501.T-over-VST rotation with trigger window 2H2028-2029 (conditions: 2028 CCGT wave energized AND PJM clears below cap AND OEM book-to-bill still >1.2).",
+            "Geopolitics hook: gfx.power_mult applies to BOTH pipes, but a Taiwan-shock demand destruction hits grid utilization first (bypass is contracted/owned) — merchant rents are MORE Taiwan-fragile than equipment rents, consistent with the round-4 finding that power-rent p10 normalization (2031) comes only via Taiwan paths.",
+            "Backtest/ablation contract: (1) with fast tranche OFF, model must reproduce old single-tranche behavior (power binds ~95% of runs); (2) with bypass OFF, merchant normalization must shift ~1.5yr LATER (bypass is a demand subtraction) while equipment margin drops earlier (no slot congestion); (3) 2026 anchors: additions split 8 firm / 22 fast GW, btm stock 2.5 GW, oem slots 65 GW/yr vs ~100 GW orders."
+          ]
+        },
+        "lessons_for_model": [
+          "The single power_supply_gain=0.55 is a fiction averaging two real regimes: measured firm gain is ~0.25 (PJM at price cap two years running elicited under 3 GW UCAP of new entry) and measured fast gain is >1.0 (US BESS additions +77% then +34% yoy into high margins). Splitting them changes WHERE the rent dies (energy market first, capacity/equipment last), not just when.",
+          "The current model charges all AI energy to the electricity pool; but 25-40% of new frontier GW is going behind the meter, where the energy margin accrues to NO listed merchant — keeping this in the pool overstates VST/NRG terminal earnings by roughly the bypass share and understates the speed of merchant rent compression.",
+          "Bypass is simultaneously demand relief for merchants and demand PRESSURE for OEMs (1.3 turbine-slot GW consumed per bypass GW) — one physical GW moves the two power sub-pools in OPPOSITE directions. That sign flip is impossible to express with the current undifferentiated power_margin and is exactly what the 6501.T-over-VST rotation trades.",
+          "OBBBA is a fast-tranche-only shock: it does not touch turbine economics but cuts the tranche that kills merchant rents — so the subsidy REPEAL is bullish VST/NRG (extends merchant scarcity ~1yr) and roughly neutral GEV/6501.T. The model's rejected gap #10 belongs in the model precisely because its sign is counterintuitive.",
+          "Local opposition (71% Gallup, $156B delayed) differentially penalizes GRID-COUPLED builds over off-grid private-land builds, so it accelerates the bypass share rather than uniformly slowing power — a society-layer coupling (sentiment -> tranche-asymmetric haircut) rather than a flat pipeline multiplier.",
+          "The firming constraint means fast-tranche GW are NOT fungible with firm GW at ratio 1:1 — ~15 GWh BESS + ~4.5 GW solar per 24/7 GW; the binding sub-constraint through 2029 is US-side FEOC/tariff-limited BESS integration, not global cells (China shipped 215 GWh of ESS cells in Q1-2026 alone). Model it as a stock (bess_firming_gwh) with a price-elastic inflow, not a fixed ratio.",
+          "Two-tranche structure produces the round-4 addendum's missing mechanism honestly: merchant scarcity premium median-compresses below 25% of peak ~2031 WITHOUT requiring a Taiwan shock (the current model's only path there), while equipment rents run to ~2034 — the model should stop treating 'power normalizes' as a single event."
+        ]
+      }
+    ]
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Scan"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Rank"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Threads"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "scan:macro-finance",
+      "phaseIndex": 1,
+      "phaseTitle": "Scan",
+      "agentId": "aab7e4bab5758ebbe",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784986028209,
+      "queuedAt": 1784986024965,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Monetary/financial structure: endogenous rates, reflexivity…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784986258168,
+      "tokens": 105148,
+      "toolCalls": 16,
+      "durationMs": 229959,
+      "resultPreview": "{\"lens\":\"Monetary/financial structure: endogenous rates, reflexivity, asset-price feedbacks, currency/sovereign-debt dynamics\",\"gaps\":[{\"name\":\"R9 — Reflexive equity financing: valuations fund the capex that justifies the valuations (and the loop runs in reverse)\",\"mechanism\":\"Missing reinforcing loop with a sign-flip. The model's ONLY financing channel is B4 debt: `sector_debt += ai_capex * (1 - …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "scan:tech-structure",
+      "phaseIndex": 1,
+      "phaseTitle": "Scan",
+      "agentId": "afb9465cc2031630a",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784986026932,
+      "queuedAt": 1784986024965,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Technology market structure: open vs closed model economics…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784986259682,
+      "tokens": 105226,
+      "toolCalls": 16,
+      "durationMs": 232750,
+      "resultPreview": "{\"lens\":\"Technology market structure: open vs closed model economics, parallel (China) supply stacks, and compute-efficiency discontinuity — what the bottleneck/loop architecture structurally cannot express\",\"gaps\":[{\"name\":\"No supply-response loop (B1) for the intelligence layer: the ai_services pool has no open-weight competitive fringe, so the model layer is silently treated as an IP toll when …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "scan:energy-climate",
+      "phaseIndex": 1,
+      "phaseTitle": "Scan",
+      "agentId": "a848797d6428dcebc",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784986263191,
+      "queuedAt": 1784986024965,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Energy/climate structure: the power stock is a single undif…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784986506513,
+      "tokens": 101156,
+      "toolCalls": 14,
+      "durationMs": 243322,
+      "resultPreview": "{\"lens\":\"Energy/climate structure: the power stock is a single undifferentiated GW aggregate with one supply-response gain; no generation-mix composition, no behind-the-meter bypass, no water/climate hazards, no climate-policy lever, no carbon price. The model's anchor conclusion (\\\"power rents never normalize in any draw\\\") rests on this aggregation.\",\"gaps\":[{\"name\":\"Undifferentiated power stock…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "scan:human-capital",
+      "phaseIndex": 1,
+      "phaseTitle": "Scan",
+      "agentId": "a06e80605e0056aa4",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784986263343,
+      "queuedAt": 1784986024965,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Education / reskilling / human capital: skill composition o…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784986509613,
+      "tokens": 103484,
+      "toolCalls": 16,
+      "durationMs": 246270,
+      "resultPreview": "{\"lens\":\"Education / reskilling / human capital: skill composition of the cognitive pool, education-system response, credential-value collapse, and researcher supply for the R1 loop\",\"gaps\":[{\"name\":\"No experience stock: the junior-to-senior maturation flow the freeze channel is silently destroying\",\"mechanism\":\"The cognitive pool (demography.rs cog_pool_m) is a homogeneous headcount. Missing Mead…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "scan:global-south",
+      "phaseIndex": 1,
+      "phaseTitle": "Scan",
+      "agentId": "a7618192cb93f22ae",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784986510211,
+      "queuedAt": 1784986024965,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "International structure beyond the OECD core: the model is …",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784986799502,
+      "tokens": 92094,
+      "toolCalls": 20,
+      "durationMs": 289290,
+      "resultPreview": "{\"lens\":\"International structure beyond the OECD core: the model is one closed world economy — no trade/current-account structure, no FX, no periphery feedback (premature deindustrialization, BPO-sovereign stress, remittances, migration pressure), no cross-border financing of the AI boom.\",\"gaps\":[{\"name\":\"The boom is foreign-financed and FX-exposed, but B4 prices credit off the wrong balance shee…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "scan:bio-health",
+      "phaseIndex": 1,
+      "phaseTitle": "Scan",
+      "agentId": "a3ae0cb3ca77081b1",
+      "model": "claude-fable-5",
+      "fallbackModel": "claude-opus-4-8",
+      "state": "done",
+      "startedAt": 1784986514080,
+      "queuedAt": 1784986024965,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Biology/health channels — AI biotech productivity, healthca…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784986721840,
+      "tokens": 78813,
+      "toolCalls": 17,
+      "durationMs": 207759,
+      "resultPreview": "{\"lens\":\"Biology/health channels — AI biotech productivity, healthcare-cost deflation feedback, and pandemic/biorisk as a distinct shock class. Verified against src/demography.rs (age_creep is a pure calendar-time constant, demography.rs:303), src/valuation.rs (EmergingPool/RatioPool enums — no biotech or health pool exists), and src/society.rs + geopolitics.rs (shock classes are AI incidents [dre…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 7,
+      "label": "scan:epistemics-markets",
+      "phaseIndex": 1,
+      "phaseTitle": "Scan",
+      "agentId": "aea1d6987e8e07c6c",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784986725817,
+      "queuedAt": 1784986024965,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Information/reflexivity: market expectations, AI persuasion…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784987032965,
+      "tokens": 94221,
+      "toolCalls": 19,
+      "durationMs": 307147,
+      "resultPreview": "{\"lens\":\"Information/reflexivity: market expectations, AI persuasion, trust-in-information, and forecasting signals as missing stocks and loops\",\"gaps\":[{\"name\":\"R9 — Reflexive financing loop: market belief in the thesis is a stock that sets the sector's external funding, and it is entirely absent\",\"mechanism\":\"Missing stock: market-implied thesis credence (an expectations stock with its own fast/…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 8,
+      "label": "scan:institutions-law",
+      "phaseIndex": 1,
+      "phaseTitle": "Scan",
+      "agentId": "a531699bbf967a422",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784986804025,
+      "queuedAt": 1784986024965,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Legal/institutional structure: liability regimes, IP resolu…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784987043347,
+      "tokens": 83497,
+      "toolCalls": 14,
+      "durationMs": 239322,
+      "resultPreview": "{\"lens\":\"Legal/institutional structure: liability regimes, IP resolution paths, state administrative capacity, and legal infrastructure for agent-native commerce — the court/insurance/administrative channels that the model's society layer (which only has statute-driven regulation, appropriation-equals-delivery transfers, and hardware IP tolls) structurally omits.\",\"gaps\":[{\"name\":\"Liability regime…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 9,
+      "label": "rank:gaps",
+      "phaseIndex": 2,
+      "phaseTitle": "Rank",
+      "agentId": "a46f088222299f5b2",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784987049965,
+      "queuedAt": 1784987044865,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are the model's chief architect. Rank these 27 proposed gaps for a systems-dynamics model whose OUTPUT is an investment trade book (power/toll longs, wage shorts, Taiwan hedges, fiscal/rates macro sleeve). Score each 1-10 on: (a) could it FLIP a current book conclusion, (b) tractability in an annual-step Rust model, (c) evidence the channel binds 2026-2036 (not 2040s), (d) not already implicit…",
+      "lastProgressAt": 1784987296472,
+      "tokens": 66230,
+      "toolCalls": 5,
+      "durationMs": 246506,
+      "resultPreview": "{\"top4\":[{\"name\":\"Missing B11 — Endogenous long rate / bond-market pricing of the transfer ramp\",\"score\":9.5,\"rationale\":\"Highest combined score: (a=9) it can flip 'capital binds late (2034+)' into a late-2020s binding constraint, forces scenario-conditional discount rates (baseline with 14pp-of-GDP fiscal expansion should NOT be discounted at the same 12% as fizzle — this compresses power/toll EV…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 10,
+      "label": "thread:Missing B11 — Endogenous",
+      "phaseIndex": 3,
+      "phaseTitle": "Threads",
+      "agentId": "a92015b95ca393d21",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784987299887,
+      "queuedAt": 1784987297988,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "B11 — Endogenous long rate: elasticity of US 10y/30y term p…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784987698261,
+      "tokens": 72406,
+      "toolCalls": 26,
+      "durationMs": 398374,
+      "resultPreview": "{\"topic\":\"B11 — Endogenous long rate: elasticity of US 10y/30y term premium to net duration supply, calibrated as the gain of a new balancing loop (bond market prices the transfer ramp + AI IG supply), with pass-through split to credit spreads vs risk-free curve and a per-scenario discount-rate rule\",\"key_numbers\":[\"NET DURATION SUPPLY 2019-2026 (10y-equivalents to private hands, ~% of US GDP): 20…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 11,
+      "label": "thread:Compute-efficiency discon",
+      "phaseIndex": 3,
+      "phaseTitle": "Threads",
+      "agentId": "a943f7135729fd6af",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784987299740,
+      "queuedAt": 1784987297988,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Jevons elasticity of AI compute demand + efficiency-jump pr…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784987731756,
+      "tokens": 122601,
+      "toolCalls": 26,
+      "durationMs": 432015,
+      "resultPreview": "{\"topic\":\"Jevons elasticity of AI compute demand + efficiency-jump process calibration (fixes the #1 structural gap: smooth R1 + hard-floored capex demand cannot express an efficiency discontinuity; couples to lib.rs:550-561 R1 schedule, lib.rs:723-724 gw_per_unit drift, lib.rs:654-674 desired_capex floor, main.rs:162-227 MC priors)\",\"key_numbers\":[\"Epoch AI fixed-milestone inference price decline…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 12,
+      "label": "thread:R9 — Reflexive financing",
+      "phaseIndex": 3,
+      "phaseTitle": "Threads",
+      "agentId": "ad6e87cbaa483d98a",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784987702039,
+      "queuedAt": 1784987297989,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "R9 reflexive financing loop: market-credence stock calibrat…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784988186833,
+      "tokens": 100051,
+      "toolCalls": 28,
+      "durationMs": 484794,
+      "resultPreview": "{\"topic\":\"R9 reflexive financing loop: market-credence stock calibration — how AI-trade belief converts into external funding capacity, how fast it collapses, and annual impulse-response coefficients from marks to funding to capex (dot-com analog), with step-down triggers and a model-derived de-gross threshold\",\"key_numbers\":[\"EXTERNAL-FUNDED SHARE OF AI SECTOR CAPEX BY YEAR vs the model's static …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 13,
+      "label": "thread:Undifferentiated power st",
+      "phaseIndex": 3,
+      "phaseTitle": "Threads",
+      "agentId": "abd18201058046781",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784987741976,
+      "queuedAt": 1784987297989,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Two-tranche power supply (firm/slow vs fast/commodity) + be…",
+      "promptPreview": "Model repo: /home/user/Amulet-Map-Editor/singularity_economy. Read meadows_design.md, REPORT.md (round-4 addendum), output/history/demography_design.md, and skim rust/singularity-econ/src/lib.rs + society.rs + geopolitics.rs + demography.rs to learn what EXISTS. The model already has: bottleneck accounting (power/chips/capital/demand), B1-B4 + R1-R4 loops, society layer (sentiment/regulation/trans…",
+      "lastProgressAt": 1784988109842,
+      "tokens": 83394,
+      "toolCalls": 27,
+      "durationMs": 367866,
+      "resultPreview": "{\"topic\":\"Two-tranche power supply (firm/slow vs fast/commodity) + behind-the-meter bypass for AI load, 2026-2036: calibration, priors, and stock/flow proposal for splitting lib.rs power B1 and valuation.rs power_margin\",\"key_numbers\":[\"FIRM TRANCHE (grid CCGT/nuclear-uprate): heavy-duty turbine lead time ~3yr directional, 5yr for large frames; Wood Mackenzie measured 243 weeks (~4.7yr) for some c…"
+    }
+  ],
+  "totalTokens": 1208321,
+  "totalToolCalls": 244
+}
