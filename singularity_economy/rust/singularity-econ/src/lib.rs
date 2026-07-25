@@ -17,11 +17,13 @@ pub mod demography;
 pub mod geopolitics;
 pub mod scenarios;
 pub mod society;
+pub mod space;
 pub mod valuation;
 
 pub use demography::{DemographyOutputs, DemographyParams, DemographyState};
 pub use geopolitics::{GeoRng, GeoShock, ShockKind};
 pub use society::{SocietyParams, SocietyState};
+pub use space::{SpaceParams, SpaceState};
 
 // ---------------------------------------------------------------------------
 // Parameters
@@ -51,6 +53,10 @@ pub struct Loops {
     /// filter, youth blockage, care economy, migration/solidarity/tension
     /// politics. With 0.0 the static-pool legacy is exactly recovered.
     pub d_demography: f64,
+    /// R5: Wright-law launch learning -> orbital-compute gate. With 0.0
+    /// (and orbital_effectiveness 0) the terrestrial-only legacy is
+    /// exactly recovered.
+    pub r5_launch_learning: f64,
 }
 
 impl Default for Loops {
@@ -66,6 +72,7 @@ impl Default for Loops {
             r4_physical_acceleration: 1.0,
             society_layer: 1.0,
             d_demography: 1.0,
+            r5_launch_learning: 1.0,
         }
     }
 }
@@ -141,6 +148,8 @@ pub struct Params {
     pub society: society::SocietyParams,
     /// Demography-layer parameters (pools, youth, care, migration, tension).
     pub demography: demography::DemographyParams,
+    /// Space-layer parameters (launch growth, orbital compute).
+    pub space: space::SpaceParams,
     /// MC-drawn shock: calendar year an AI incident lands (0 = none).
     pub incident_year: i32,
     /// Whether that incident is dread-class (TMI pattern) vs ordinary-major.
@@ -246,6 +255,7 @@ impl Default for Params {
             afford_gain: 0.4,
             society: society::SocietyParams::default(),
             demography: demography::DemographyParams::default(),
+            space: space::SpaceParams::default(),
             incident_year: 0,
             incident_dread: false,
             geo_shocks: Vec::new(),
@@ -446,6 +456,10 @@ pub struct YearState {
     pub migration_openness: f64,
     pub cog_pool_m: f64,
     pub phys_pool_m: f64,
+    // space layer
+    pub orbital_gw_equiv: f64,
+    pub launch_cost_per_kg: f64,
+    pub launch_capacity_tpy: f64,
     pub pools: Pools,
     pub profits: Profits,
 }
@@ -501,6 +515,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         &p.demography, p.cognitive_workers_m, p.physical_workers_m);
     let mut demo_out: Option<DemographyOutputs> = None;
 
+    // Space: launch learning + orbital compute (B11 rent-clipper).
+    let mut space = SpaceState::new(&p.space);
+
     // Geopolitics: metals index is mean-reverting (half-life ~2.5yr);
     // onshoring scares boost the supply response for 4 years.
     let mut metals_index = 1.0_f64;
@@ -528,6 +545,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut out: Vec<YearState> = Vec::new();
 
     for year in p.start_year..=p.end_year {
+        // ---- space: step on prior-year power rents (B11 gate) ----
+        let power_rent_index = ((power_margin - p.normal_margin)
+            / (p.margin_ceiling - p.normal_margin))
+            .clamp(0.0, 1.0);
+        space.step(&p.space, year, power_rent_index, l.r5_launch_learning);
+
         // ---- geopolitical shock effects for this year ----
         let gfx = geopolitics::effects_for_year(&p.geo_shocks, year);
         if gfx.chip_destruction > 0.0 {
@@ -730,8 +753,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // Shock haircut on energization (blockade: no GPUs to fill halls;
         // the lost flow is destroyed, not deferred — war losses).
         let power_additions = power_pipe.step_accel(orders, speedup) * gfx.power_mult;
-        let power_headroom =
-            (ai_power + power_additions - compute_stock * gw_per_unit).max(0.0);
+        let power_headroom = (ai_power + space.orbital_gw_equiv + power_additions
+            - compute_stock * gw_per_unit)
+            .max(0.0);
         let power_cap = (power_headroom / gw_per_unit) * cost_per_unit;
         let capital_cap = gdp * p.capex_gdp_cap * credit_mult;
 
@@ -777,7 +801,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let power_demand_gw = pre_stock * (1.0 - p.compute_deprec) * gw_per_unit
             + (desired_capex / cost_per_unit) * gw_per_unit;
         let power_utilization = (power_demand_gw
-            / (ai_power).max(1e-9))
+            / (ai_power + space.orbital_gw_equiv).max(1e-9))
             .min(1.35);
 
         let margin_from = |u: f64, gain_class: f64| -> f64 {
@@ -1084,6 +1108,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             migration_openness: demo.migration_openness,
             cog_pool_m: demo.cog_pool_m,
             phys_pool_m: demo.phys_pool_m,
+            orbital_gw_equiv: space.orbital_gw_equiv,
+            launch_cost_per_kg: space.launch_cost_per_kg,
+            launch_capacity_tpy: space.launch_capacity_tpy,
             pools,
             profits,
         });
