@@ -185,6 +185,40 @@ now expands only under excess demand and never into slack (defending price is
 what market power means) — and B3's price signal is capped (2026 evidence:
 buyers keep ordering through scarcity; queues run >2x at rising prices).
 
+## Society layer (added overnight July 25-26): politics as a rate detector
+
+Eleven political-economy research briefs (output/history/society_sweep.json)
+converged on one structural insight: **democracies regulate the RATE of
+displacement, not the level** — US autos killed 40k/yr for four decades with
+no design regulation, while Three Mile Island killed approximately nobody
+and froze an industry (stringency tracks dread × concentration ×
+zero-warning, not body count). The layer (src/society.rs) adds six stocks —
+public sentiment (grievance salience), regulatory stringency + enforcement
+(3.5-yr lag between them; GDPR's 2018 statute vs 2021 fines), transfer
+share of GDP, labor power, institutional trust, consumer trust — with
+asymmetric time constants: stringency ratchets and never decays in-horizon
+(railroad deregulation took 93 years), sentiment spikes fast and drains in
+years (faster once transfers flow), transfers staircase at elections or in
+weeks under crisis (Depression 3.5yr vs COVID 4wk).
+
+B2's backlash gain stops being a constant: it becomes a pulse — log-law in
+the displacement rate, scaled by sentiment, labor power (which R6 erodes as
+displacement hollows out the picket lines: the backlash window is 2026-29,
+then closes), transfer damping (the relief valve is how democracies
+historically LET fast transitions happen — dockworkers were bought off, not
+defeated), and an anti-system reroute when institutional trust collapses.
+Incidents (MC-drawn) step stringency +0.55 in dread cases and arm the R7
+regulatory-cost spiral — the nuclear-style industry-kill absorbing state,
+which the validation contract requires to be a conjunction (dread incident
+AND high enforcement AND credit tightening), never a default. Eight
+contract tests in tests/society.rs pin all of this.
+
+Baseline consequences: transfers reach the 15%-of-GDP cap by 2031 (the
+model now asserts a UBI-scale fiscal response is REQUIRED for the
+displacement path the thesis assumes — validation contract #4), sovereign
+debt crowding mildly tightens late-decade credit, and adoption tops out at
+the consumer-trust ceiling (~0.90) rather than saturating at 1.0.
+
 Post-R4 findings: power STILL binds in ~95% of runs and never normalizes
 within the horizon in any draw — the power conclusion survives ASI-speed
 construction because acceleration raises compute demand as fast as supply.
