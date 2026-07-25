@@ -86,3 +86,11 @@ rust_test(
     edition = "2021",
     deps = [":core"],
 )
+
+rust_test(
+    name = "land",
+    srcs = ["tests/land.rs"],
+    crate_root = "tests/land.rs",
+    edition = "2021",
+    deps = [":core"],
+)

@@ -456,6 +456,17 @@ pub struct YearState {
     pub migration_openness: f64,
     pub cog_pool_m: f64,
     pub phys_pool_m: f64,
+    /// Land diagnostics: autonomization index = investment share of
+    /// output over wage-financed share (teleoplexy/means-ends reversal
+    /// made measurable; historical base rate: every production-for-
+    /// production regime — Soviet, China 45% inv/GDP, railroads —
+    /// reverted, but none contained recursive intelligence).
+    pub autonomization_index: f64,
+    /// Meltdown ratio: economic change rate / political response rate.
+    /// Land predicts divergence; the society layer predicts
+    /// spike-then-collapse. Regulatory-latency history (web->GDPR 23yr,
+    /// social->acts 15yr, ChatGPT->AI Act 1.5yr) favors the thermostat.
+    pub meltdown_ratio: f64,
     // space layer
     pub orbital_gw_equiv: f64,
     pub launch_cost_per_kg: f64,
@@ -1108,6 +1119,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             migration_openness: demo.migration_openness,
             cog_pool_m: demo.cog_pool_m,
             phys_pool_m: demo.phys_pool_m,
+            autonomization_index: (ai_capex / gdp)
+                / ((pools.human_cognitive_wages + pools.human_physical_wages)
+                    / gdp)
+                    .max(1e-9),
+            meltdown_ratio: new_disp.max(0.0)
+                / (soc.transfer_share() + soc.reg_enforcement + 0.02),
             orbital_gw_equiv: space.orbital_gw_equiv,
             launch_cost_per_kg: space.launch_cost_per_kg,
             launch_capacity_tpy: space.launch_capacity_tpy,
