@@ -544,7 +544,7 @@ MC v4 (10k paths, shocks + AI incidents drawn):
 - Robot 2032 median 0.37M/yr (minerals squeezes shave ~8%; an embargo is a
   hard gate early, decaying ~12%/yr as MP/Lynas/eVAC capacity ramps).
 - **Credit: tightening (≥10% capex haircut) in 93% of paths; genuine
-  crunch (≥20%) in 60%, roughly double the pre-layer 33%** — geopolitical
+  crunch (≥20%) in 57%, roughly 1.7x the pre-layer 33% (final post-equilibrium-fix figure)** — geopolitical
   spreads and transfer-financed sovereign crowding stack on sector leverage.
 
 ## 4. Trade book deltas
