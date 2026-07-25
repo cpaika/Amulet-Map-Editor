@@ -479,3 +479,118 @@ have expiration dates (most cite specific prints and levels).
 - Model-capability plateau through 2027 (no agentic reliability step-change)
   → delayed/fizzle scenarios → unwind displacement shorts (they bleed carry),
   keep power/grid longs (they work on electrification alone).
+
+---
+
+# Round 4 addendum (overnight July 25-26): backtest, society, geopolitics
+
+## 1. The model survived a 100-year backtest — mostly untouched
+
+Fourteen research agents reconstructed 12 boom/bust episodes (railway mania
+1840s → GPU/crypto 2016-24) plus century base rates. Nine envelope tests were
+written from that data BEFORE any retuning; the model passed 8/9 unmodified
+(the ninth failure was a test-metric artifact — a growth ratio off a
+near-zero base). Strongest validations:
+
+- **IP-toll vs capacity rents is unanimous across all 12 episodes** (RCA's
+  patent toll through the radio bust, GE/Westinghouse through the
+  Depression, CUDA through two crypto busts, mineral royalties through both
+  shale busts). The book's core moat distinction is not a modeling choice;
+  it is the single most reliable regularity in a century of capex booms.
+- Capacity-rent duration envelope 1.6-13yrs (model: ~6), bust lag 0-6yrs,
+  glut depth 1.15-3.5x — all inside historical bands, none calibrated in.
+- **WWII mobilization ceiling**: no stock may grow >2.5x/yr off an
+  established base — the fastest physical scaling ever recorded under
+  unlimited capital and total state will. The model respects it even
+  post-R4. This is now the permanent empirical answer to "robots will just
+  scale faster": nothing industrial ever has, including when losing the
+  war was the alternative.
+
+## 2. Society layer: politics is a rate detector (and the thesis is fiscally contingent)
+
+Eleven political-economy briefs → six new stocks (sentiment, regulatory
+stringency + enforcement, transfers, labor power, institutional + consumer
+trust). B2's backlash gain is no longer a constant: it is a pulse peaking
+with the displacement RATE and fading as labor power erodes (the backlash
+window is roughly 2026-29, then closes — pickets need members).
+
+**Headline structural finding: every path reaching ≥40% cognitive
+displacement by 2032 requires UBI-scale transfers (≥3% GDP by 2030,
+reaching the 15%-of-GDP cap by ~2031).** The relief valve is not policy
+color; it is load-bearing. This is how every fast transition historically
+cleared politics (dockworkers were bought off, not defeated). Trade
+implication: the fiscal/rates leg of the book (steepener, gold) is not a
+side bet — it is the same bet as the AI longs, expressed in the bond market.
+Regulation lags: statute ~1-2yrs behind sentiment, enforcement 3.5yrs behind
+statute (GDPR pattern) — too slow to stop the transition in the baseline,
+decisive only in dread-incident tails (the TMI/nuclear conjunction, present
+in a small minority of MC paths).
+
+## 3. Geopolitics layer: what the shock table changes
+
+Ten briefs + architect synthesis → 8 shock types with an escalation-ladder
+Monte Carlo (quarantine→blockade 25%/yr, blockade⇒minerals embargo p=0.8,
+export rung⇒tit-for-tat squeeze p=0.8). Key concentrations: ≤3nm logic
+~99-100% Taiwan, CoWoS ~100% Taiwan, fabs blockade-fragile within ~2-6
+weeks (11-day LNG buffer). P(≥1 major chip supply shock 2026-36) ≈ 45%.
+
+MC v4 (10k paths, shocks + AI incidents drawn):
+- **Power rents: the one new vulnerability.** Previously power rents never
+  normalized in any draw; now the p10 is 2031 — but ONLY via severe Taiwan
+  shocks destroying compute demand. Absent a blockade-class event, the
+  power thesis is unchanged. Power longs are therefore implicitly short
+  Taiwan-conflict risk — hedge accordingly (below).
+- Silicon glut timing (median 2032) and displacement timing: unchanged.
+- Robot 2032 median 0.37M/yr (minerals squeezes shave ~8%; an embargo is a
+  hard gate early, decaying ~12%/yr as MP/Lynas/eVAC capacity ramps).
+- **Credit: tightening (≥10% capex haircut) in 93% of paths; genuine
+  crunch (≥20%) in 60%, roughly double the pre-layer 33%** — geopolitical
+  spreads and transfer-financed sovereign crowding stack on sector leverage.
+
+## 4. Trade book deltas
+
+The valuation now carries a sixth scenario — **taiwan_shock (7% weight)**:
+2028 quarantine → 2029 blockade + minerals embargo + energy spike. Every EV
+prices the tail; a book lock enforces that it can never silently collapse.
+
+- **Unchanged (all 15 locks green)**: power complex longs (VST, NRG, CEG,
+  GEV), toll longs (TSM half-weight, AVGO, NVDA), wage shorts (RHI, HUBS),
+  robotics-longs-are-early discipline.
+- **TSM**: E[up] still large (+289%) but the taiwan_shock row is the
+  book's single largest name-level scenario loss. The existing preference
+  (2330.TW over the ADR, half-weight, long-dated puts as tail insurance)
+  is now model-derived, not just red-team judgment. Keep the put ladder.
+- **GLD always-on sleeve**: upgraded from "macro hedge" to structurally
+  required — it is the only book position that pays in BOTH tails
+  (fiscal-debasement from the transfer ramp AND Taiwan shock).
+- **Hedge sleeve additions (new)**: the shock table's beneficiaries are
+  onshoring/defense-industrial names and ex-China supply chains. The
+  cleanest expressions: defense-tech/onshoring basket small (2-3%), and
+  keep FCX/copper exposure (metals index spikes in every severe path).
+- **MP Materials — read the model row INVERTED.** The pool mapping carries
+  no supply geography, so the model prices MP as an embargo casualty
+  (E[up] -41%); in reality a China magnet embargo is MP's bull case (it IS
+  the ex-China capacity the West would pay anything for). MP stays
+  hold-only on valuation, but it doubles as Taiwan/minerals tail insurance
+  — size it as a hedge, not a growth long. (Documented model limitation.)
+
+## 5. Red-team round 3 ledger (45 findings, ~27 confirmed)
+
+Fixed in code: compliance cost mischarged to world GDP; missing unrest/R5
+consequence (trust collapse was pro-adoption); missing emergency-powers
+throttle; sentiment saturation artifact + missing anticipation term; crisis
+threshold 3x too high; same-kind shock stacking (squared supply gates);
+bolt-from-blue invasion share 3x contract; S6 frequency band; robot pools
+priced off the clean cost curve; S8 2026 double-count; credit metric
+mislabeling ambient spreads as crunches; taiwan_shock reachability from the
+valuation (the biggest one — EVs previously moved by exactly 0).
+
+Documented, deliberately not coded: grid-equipment Stock B as a baseline
+constraint (transformer lead times are inside the power pipeline
+calibration; a separate stock would double-count without per-region
+detail); within-episode severity time-profiles; US/EU two-region
+regulation split; multi-incident habituation (MC draws at most one
+incident, so repeat-incident machinery only activates in manual
+scenarios); power-delay channel folded into haircuts. Each is a known
+bias with stated direction in output/history/geopolitics_shock_table.md.
+
