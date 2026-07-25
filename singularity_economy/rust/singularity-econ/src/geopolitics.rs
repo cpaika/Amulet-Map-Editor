@@ -344,8 +344,12 @@ pub fn sample_shocks(rng: &mut GeoRng, start_year: i32, end_year: i32) -> Vec<Ge
             push(ShockKind::MineralsEmbargo, 1.5, &mut shocks);
         }
 
-        // S8 energy chokepoint: 2026 initializes active, 8%/yr recurrence.
-        let p_s8 = if year == start_year { 1.0 } else { 0.08 };
+        // S8 energy chokepoint: 8%/yr recurrence from 2027. The spec's
+        // "2026 initializes active" is deliberately NOT drawn: the model's
+        // 2026 anchors are calibrated to the as-is world, which already
+        // contains the active Hormuz/Red Sea state — re-injecting it
+        // double-counts (red-team round 3 follow-up).
+        let p_s8 = if year == start_year { 0.0 } else { 0.08 };
         if rng.next_f64() < p_s8 {
             push(ShockKind::EnergyChokepoint, 0.75, &mut shocks);
         }

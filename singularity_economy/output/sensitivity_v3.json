@@ -1,0 +1,158 @@
+{
+  "ai_capex_2032": [
+    {
+      "param": "power_supply_gain",
+      "rho": 0.228
+    },
+    {
+      "param": "singularity_year",
+      "rho": -0.22
+    },
+    {
+      "param": "power_base_growth",
+      "rho": 0.177
+    },
+    {
+      "param": "power_growth_ceiling",
+      "rho": 0.096
+    },
+    {
+      "param": "momentum_gain",
+      "rho": 0.08
+    },
+    {
+      "param": "adoption_halflife",
+      "rho": -0.059
+    }
+  ],
+  "cog_displacement_2032": [
+    {
+      "param": "adoption_halflife",
+      "rho": -0.583
+    },
+    {
+      "param": "singularity_year",
+      "rho": -0.581
+    },
+    {
+      "param": "backlash_gain",
+      "rho": -0.087
+    },
+    {
+      "param": "capex_gdp_cap",
+      "rho": 0.059
+    },
+    {
+      "param": "power_growth_ceiling",
+      "rho": 0.045
+    },
+    {
+      "param": "robot_cost_2028_k",
+      "rho": 0.035
+    }
+  ],
+  "min_credit_multiplier": [
+    {
+      "param": "internal_funding_share",
+      "rho": 0.251
+    },
+    {
+      "param": "singularity_year",
+      "rho": -0.132
+    },
+    {
+      "param": "power_base_growth",
+      "rho": 0.048
+    },
+    {
+      "param": "robot_cost_2028_k",
+      "rho": -0.046
+    },
+    {
+      "param": "max_displacement_rate",
+      "rho": -0.037
+    },
+    {
+      "param": "transition_drag",
+      "rho": 0.033
+    }
+  ],
+  "power_margin_2032": [
+    {
+      "param": "momentum_gain",
+      "rho": 0.365
+    },
+    {
+      "param": "power_supply_gain",
+      "rho": -0.161
+    },
+    {
+      "param": "singularity_year",
+      "rho": -0.125
+    },
+    {
+      "param": "adoption_halflife",
+      "rho": -0.092
+    },
+    {
+      "param": "max_displacement_rate",
+      "rho": -0.069
+    },
+    {
+      "param": "backlash_gain",
+      "rho": -0.052
+    }
+  ],
+  "robot_prod_2032": [
+    {
+      "param": "singularity_year",
+      "rho": -0.729
+    },
+    {
+      "param": "component_supply_gain",
+      "rho": 0.149
+    },
+    {
+      "param": "power_growth_ceiling",
+      "rho": 0.063
+    },
+    {
+      "param": "robot_cost_2028_k",
+      "rho": 0.06
+    },
+    {
+      "param": "backlash_gain",
+      "rho": -0.054
+    },
+    {
+      "param": "transition_drag",
+      "rho": 0.034
+    }
+  ],
+  "silicon_rent_normalization_year": [
+    {
+      "param": "chip_base_growth",
+      "rho": -0.432
+    },
+    {
+      "param": "chip_supply_gain",
+      "rho": -0.262
+    },
+    {
+      "param": "momentum_gain",
+      "rho": 0.153
+    },
+    {
+      "param": "adoption_halflife",
+      "rho": -0.089
+    },
+    {
+      "param": "power_supply_gain",
+      "rho": 0.087
+    },
+    {
+      "param": "internal_funding_share",
+      "rho": -0.067
+    }
+  ]
+}

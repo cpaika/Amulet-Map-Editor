@@ -241,6 +241,7 @@ fn monte_carlo(n: usize, seed: u64) {
     let mut silicon_norm_year: Vec<f64> = Vec::new();
     let mut power_norm_year: Vec<f64> = Vec::new();
     let mut credit_crunch = 0usize;
+    let mut credit_tighten = 0usize;
     let mut queue_peak: Vec<f64> = Vec::new();
     let mut glut_2036: Vec<f64> = Vec::new();
     let mut disp_2032: Vec<f64> = Vec::new();
@@ -264,7 +265,14 @@ fn monte_carlo(n: usize, seed: u64) {
         };
         silicon_norm_year.push(norm(|s| s.silicon_margin));
         power_norm_year.push(norm(|s| s.power_margin));
-        if states.iter().any(|s| s.credit_multiplier < 0.98) {
+        // Two credit metrics: TIGHTENING (>=10% haircut — common now that
+        // geopolitical spreads and sovereign crowding stack) vs CRUNCH
+        // (>=20% haircut: the levered-periphery accident, historically
+        // railway-calls/fiber-debt class).
+        if states.iter().any(|s| s.credit_multiplier < 0.90) {
+            credit_tighten += 1;
+        }
+        if states.iter().any(|s| s.credit_multiplier < 0.80) {
             credit_crunch += 1;
         }
         queue_peak.push(states.iter().map(|s| s.queue_ratio)
@@ -305,6 +313,7 @@ fn monte_carlo(n: usize, seed: u64) {
         "silicon_rent_normalization_year": dist(&silicon_norm_year),
         "power_rent_normalization_year": dist(&power_norm_year),
         "credit_crunch_frequency": credit_crunch as f64 / n as f64,
+        "credit_tightening_frequency": credit_tighten as f64 / n as f64,
         "queue_peak": dist(&queue_peak),
         "capacity_glut_2036": dist(&glut_2036),
         "cog_displacement_2032": dist(&disp_2032),
