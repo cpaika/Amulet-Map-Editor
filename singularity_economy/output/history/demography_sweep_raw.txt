@@ -1,0 +1,748 @@
+{
+  "summary": "Research demographic structure, aging, immigration and cohort politics to build a demography layer for the singularity-economy model",
+  "agentCount": 10,
+  "logs": [],
+  "result": {
+    "briefs": [
+      {
+        "topic": "Working-age population 2026-2040 by region (UN WPP 2024 medium, 15-64 basis via OWID grapher; 20-64 levels ~0.93x aged regions / ~0.85x SSA, growth rates within 0.1pp) — cognitive vs physical workforce demographics for demography.rs",
+        "key_numbers": [
+          "LEVELS 15-64 (M), 2026|2031|2036|2040: World 5421|5647|5817|5916; China 990|966|915|860; India 1013|1062|1098|1118; US 224|226|228|230; Europe(UN incl RU/UK) 474|464|452|439; Japan 72|69|65|61; Korea 35.5|33.7|31.0|28.6; Taiwan 15.6|14.7|13.7|12.9; SE Asia(ASEAN11) 481|499|508|511; SSA 740|851|968|1067; LatAm 455|468|476|478; N.America 250|252|255|257; Pakistan 155|173|191|205; Bangladesh 117|125|131|137; Nigeria 138|158|178|193; Ethiopia 81|92|105|117; Germany 52|49|47|47; Brazil 147|148|147|146; Mexico 90|94|96|97; Russia 93|93|92|90",
+          "GROWTH %/yr 2026-31|2031-36|2036-40: World +0.82|+0.59|+0.43; China -0.49|-1.07|-1.56; India +0.95|+0.67|+0.44; US +0.14|+0.15|+0.22; Europe -0.43|-0.54|-0.70; Japan -0.71|-1.22|-1.76; Korea -1.04|-1.66|-1.95; SE Asia +0.72|+0.39|+0.15; SSA +2.83|+2.62|+2.45; LatAm +0.56|+0.34|+0.11; Germany -1.06|-0.76|-0.35; Thailand -0.71|-1.01|-1.07; Vietnam +0.69|+0.23|-0.03",
+          "PEAK YEARS (15-64): Japan 1995 (~87M); Europe 2010 (504M); Russia 2010 (104M); Taiwan 2013 (17M); China 2015 (1000M); Korea 2017 (38M); Thailand 2018 (51M); Germany 2024 (53M); Brazil 2033 (148M); Turkey 2036; Vietnam 2037 (72M); LatAm 2041 (478M); SE Asia 2043 (512M); UK 2044; India 2048 (1135M); Indonesia 2045 (211M); US/N.America/SSA/World still rising past 2060 (World 6217M @2060, peaks ~2072 per PRB/WPP)",
+          "NET ANNUAL ADDITIONS (M/yr) 2026-31 -> 2031-36: SSA +22.2 -> +23.5; India +9.8 -> +7.2; Pakistan +3.5 -> +3.6; SE Asia +3.5 -> +2.0; LatAm +2.6 -> +1.6; N.America +0.4 -> +0.45; Europe -2.0 -> -2.5; Japan+Korea -0.86 -> -1.38; China -4.9 -> -10.1 (accelerating to -14M/yr by 2040)",
+          "CHINA DETAIL: exits (turning 65) ~25-28M/yr 2027-2040 (born 1962-75 boom cohorts) vs entrants ~16M/yr (born 2006-16; 2016 blip 17.9M births) collapsing to ~12M by 2040, ~9M by 2043 (2023 births 9.0M); UN: -22% working-age 2022-2050, ~-0.9%/yr avg; 204M total pop decline 2024-2054 (largest globally)",
+          "ENTRY COHORTS (turning 20, M/yr): India ~24 flat through 2036 then ~22; SSA ~28 (2026) -> ~34 (2036) -> ~36 (2040); China 15.7 (2026) -> 17.8 (2036 blip) -> 12 (2040); EU-27 ~4.8 declining; US ~4.4 flat",
+          "GLOBAL COGNITIVE-WORKFORCE demographic growth 2026-36, weighted by cognitive-worker headcount (China .23, Europe .15, India .12, LatAm .095, US+CAN .09, SEA .08, JP/KR/TW .06, MENA .06, SSA .05): +0.10%/yr, turning ~-0.1%/yr by 2038; GDP/value-weighted (US+CAN .25, EU .20, China .20, JP/KR/TW .08): -0.2%/yr. Effectively STATIC-to-shrinking -> current static 950M pool is defensible",
+          "GLOBAL PHYSICAL-WORKFORCE demographic growth 2026-36, weighted by physical-worker location (SSA .16, India .20, China .175, S.Asia-other .083, SEA .096, LatAm .08, MENA .054): +0.8%/yr (decelerating +0.95 -> +0.65) -> static 2400M pool is WRONG: +19-20M/yr, ~2600M by 2036",
+          "RETIREMENT (turn-65) OUTFLOW as % of working-age pool/yr: Japan ~3.0; Europe ~2.6; Korea ~2.9 rising; China ~2.6 rising to 3.1 by 2035; US ~2.4; India ~1.4; SSA ~0.9 — cognitive-heavy geographies average ~2.5-2.8%/yr natural attrition",
+          "IMMIGRATION SENSITIVITY: UN medium embeds US net migration ~1.2M/yr (drives ALL US growth; zero-migration variant => US 15-64 ~-0.3%/yr); Europe medium embeds ~1.0M/yr net and still declines -0.5%/yr",
+          "DEPENDENCY: EU 65+/(20-64) ratio ~40% 2026 -> ~50% 2040; Japan 55% -> 64%; China 22% -> 35%; pension+health pre-commits ~12-13% GDP in EU/Japan before any UBI vs the 15%-GDP transfer cap"
+        ],
+        "base_rates": [
+          "World 15-64 growth: +0.82%/yr (2026-31), +0.59 (2031-36), +0.43 (2036-40)",
+          "China working-age decline: -0.5%/yr now, -1.1%/yr by mid-2030s, -1.6%/yr by 2040; -0.9%/yr avg 2022-2050",
+          "Cognitive-pool demographic drift: +0.1%/yr headcount-weighted, -0.2%/yr value-weighted, 2026-36",
+          "Physical-pool demographic drift: +0.8%/yr 2026-36 (+19M/yr inflow net of retirement)",
+          "Natural retirement attrition in cognitive-core geographies: 2.5-3.0%/yr of pool (silent absorption capacity stacking with the 4%/yr political threshold)",
+          "Entry-cohort inflow to global labor: ~95M/yr turning 20, of which SSA ~30%, India ~25%, China ~16% falling to 10%",
+          "Aged-economy working-age decline band: -0.5 to -2.0%/yr (EU -0.5, Japan -1.2, Korea -1.7, Taiwan -1.4 in 2031-36 window)",
+          "Demographic elasticity of GDP: China working-age decline estimated to subtract ~0.5pp/yr from GDP growth (IMF/WaPo cited)",
+          "UN medium-variant net migration priors: US +1.2M/yr, EU +1.0M/yr, Japan +0.15M/yr — the entire US/EU cognitive-supply sign flips on this assumption"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "cognitive_workers split into 2 geo-buckets: aging_core (US+EU+China+JP/KR/TW, ~520M, demographic drift -0.4%/yr) and young_periphery (India/SEA/LatAm/MENA/SSA, ~430M, +0.9%/yr)",
+            "physical_workers split same way: aging_core ~700M (-0.7%/yr) and young_periphery ~1700M (+1.4%/yr)",
+            "retiree_dependents stock (fiscal-load driver; grows ~2.8%/yr in core)",
+            "entrant_unemployed stock (new grads/school-leavers who never got a first job — absorbs AI displacement invisibly to the attrition-threshold politics)"
+          ],
+          "flows": [
+            "entry_flow = regional cohort turning 20 x participation x cognitive_share (cognitive_share rising ~0.3pp/yr with education); core ~11M/yr flat, periphery ~60M/yr rising",
+            "retirement_flow = pool x retire_rate (core 2.6-3.0%/yr rising, periphery 1.2%/yr) -> feeds retiree_dependents",
+            "migration_flow periphery->core ~2.5M/yr baseline, elastic to core labor-scarcity and to sentiment stock (anti-migration politics)",
+            "hiring_freeze_absorption: AI displacement first cancels entry_flow hiring (diverts entrants to entrant_unemployed) before triggering layoff-displacement that the 4% threshold sees"
+          ],
+          "couplings": [
+            "REPLACES static 950M/2400M pools with drifting stocks: cognitive ~flat (+0.1%/yr), physical +0.8%/yr — robot displacement now races +19M/yr physical entrants",
+            "attrition threshold: effective silent-absorption = political threshold (4%/yr) + retirement_flow (2.5-3%/yr in core) when displacement lands as hiring freezes -> society layer should see displacement_rate net of retirement_flow",
+            "labor-power stock: rises with core working-age decline (scarcity) — China -10M/yr and EU -2.5M/yr partially offset AI-driven labor-power erosion until ~2030, then AI wins",
+            "UBI cap 15% GDP: subtract rising pension/health pre-commitment (core dependency ratio +8-10pp by 2040) -> effective discretionary transfer headroom shrinks ~0.3pp GDP/yr",
+            "robot fleet demand: China's -10M/yr worker gap is a demand PULL for the 0.4M units/yr fleet (robots fill vacancies before displacing) — delays displacement-rate politics in aging core by ~5-8 yrs",
+            "sentiment stock: entrant_unemployed (youth) has higher political volatility weight than incumbent displacement; SSA +23M/yr entrants meeting AI-closed export ladder feeds migration_flow and periphery instability"
+          ]
+        },
+        "lessons_for_model": [
+          "Static cognitive pool (950M) is approximately right through 2036 (+0.1%/yr headcount, -0.2%/yr value-weighted) — no urgent fix; static physical pool (2400M) is wrong by +200M over the decade and understates the jobs-needed denominator in young regions",
+          "Demography is a displacement SINK in exactly the geographies AI hits first: cognitive-core retirement attrition of 2.5-3.0%/yr means AI can remove ~2.5-3% of cognitive jobs/yr via hiring freezes without a single layoff — stacked on the 4%/yr political threshold, total silent absorption ~6-7%/yr, which pushes the political trigger years later than the current model implies",
+          "The displacement then lands on ENTRANTS: cohort turning 20-24 can face 20-30% first-job scarcity while measured displacement rate stays under threshold — model needs a youth-unemployment channel to sentiment or it will miss the earliest political signal (cf. China youth unemployment already 15-20%)",
+          "China is simultaneously the largest cognitive pool (~220M) and the fastest-shrinking (-1%/yr) — its working-age gap of -10M/yr (2031-36) makes it a robot demand sink, not displacement site, through the 2030s; robot fleet at 0.4M/yr covers <1M worker-equivalents vs the 10M/yr gap",
+          "Geographic mismatch is the deep risk: SSA adds 23M workers/yr with peak cohorts arriving 2035-40 precisely when robots/AI erode the export-manufacturing development ladder — premature-deindustrialization plus migration pressure belongs in the society layer, not the labor layer",
+          "UBI cap is softer than 15% in aging cores: pension/health already ~12-13% GDP in EU/Japan and rising ~0.3pp/yr with dependency; effective new-transfer headroom is maybe 3-5% GDP, tightening each election cycle",
+          "All rich-world workforce growth signs hinge on UN migration assumptions (US +1.2M/yr); an anti-migration sentiment feedback (already in society layer) can flip US cognitive supply from +0.15%/yr to -0.3%/yr — cheap high-leverage coupling to add",
+          "Sources: OWID grapher population-young-working-elderly-with-projections (UN WPP 2024 medium, downloaded CSVs in scratchpad: owid1-6.csv); UN WPP2024 Summary of Results (population.un.org); EC Knowledge4Policy demographic imbalances; PRB Future of Work in 9 Charts; China -22%/2022-50 and -204M/2024-54 via UN cited in China Briefing/Washington Post"
+        ]
+      },
+      {
+        "topic": "Retirement/natural attrition as silent displacement absorption, 2026-2036, vs 1980s deindustrialization",
+        "key_numbers": [
+          "BLS 2024-34 projections: labor-force EXIT rate 4.7%/yr avg all US occupations + occupational-transfer rate 5.9%/yr = 10.6%/yr total permanent separations (bls.gov/emp occupational-separations tables)",
+          "US Peak-65: record 4.1M Americans turn 65 EVERY year 2024-2027 (11,400/day); 30.4M boomers hit 65 by 2030; ~1.7M net explicit retirements/yr on ~168M labor force (~1.0%/yr net, ~2.5-3%/yr gross 55+ exits)",
+          "18 US sectors projected to lose avg 10.1% of workforce to retirement in 5 yrs (14.8M retirees) = ~2.0%/yr retirement-only outflow",
+          "JOLTS 2025: quits 2.1%/mo (~25%/yr), layoffs+discharges ~1.0%/mo (~13%/yr), total separations 3.3%/mo (~40%/yr churn) — gross churn is 10-40x any plausible AI net displacement rate",
+          "Japan: working-age pop 60.8M (2025) -> 52.45M (2040) = -0.93%/yr structural shrinkage; labor SHORTAGE 3.41M by 2030, 11M by 2040 (Recruit Works); robot-adopting nursing homes had 3-8% MORE staff than non-adopters",
+          "EU: employees 55+ rose 23.8M (2010) -> 40M (2023); 55-64 cohort >=30% of workforce in many countries by 2030; net entrants < net retirees already",
+          "Acemoglu-Restrepo US 1990-2007: +1 robot/1000 workers -> emp/pop -0.18 to -0.34pp, wages -0.25 to -0.5%; ~6 jobs lost per robot; drove rust-belt-style local backlash",
+          "Dauth et al Germany 1994-2014: ZERO incumbent displacement from robots (exposed incumbents MORE likely to stay at original plant); 2 mfg jobs/robot destroyed (275k, 23% of mfg decline) fully offset by services; 100% of incidence on young labor-market ENTRANTS via reduced hiring",
+          "1980s US baseline: labor force median age ~34.6 (1980) vs ~42 today; mfg median age 40.5 (2000) -> 46.1 (2013); labor force GROWING ~1.6-1.7%/yr in 1980s (boomers entering) vs ~0.3-0.5%/yr now; 7.5M mfg jobs lost since 1980, mfg 22% of workforce (1980) -> 7% (mid-2000s)",
+          "Implied 1980s absorption capacity: exit rate ~2.2-2.8%/yr (young workforce) AND +1.6%/yr entrant inflow competing for slots => effective silent-absorption ~2%/yr; 2026 US capacity ~4.7%/yr exits + ~1.5-2%/yr divertible entrant inflow => ~6%/yr ceiling, i.e. 2.5-3x the 1980s",
+          "Absorption timing: US exit rate peaks ~2026-2030 (boomer wave crest), decays to ~4.2-4.3%/yr by 2036 as wave passes; Japan absorption effectively unlimited through 2040 (shortage >> displacement); EU between (~4-4.5%/yr)",
+          "Robot fleet reality check: 0.4M units/yr 2032 x ~2-6 jobs/unit = 0.8-2.4M jobs/yr globally = 0.03-0.1%/yr of 2400M physical pool — an order of magnitude below the ~2-3%/yr retirement outflow of that pool through 2036"
+        ],
+        "base_rates": [
+          "labor_force_exit_rate_US(t): 4.7%/yr 2026, hold thru 2030, linear decay to 4.2%/yr by 2036; global blended (incl. young-workforce EM): ~3.0-3.5%/yr",
+          "occupational_transfer_rate: 5.9%/yr US (workers who leave occupation but stay employed) — reallocation channel, not exit",
+          "retirement_gross_outflow: physical pool ~2.5-3.0%/yr developed / ~1.5% global; cognitive pool ~2.0-2.5%/yr (cognitive workers retire 2-4 yrs later but pool skews boomer-heavy 2026-2032)",
+          "entrant_inflow divertible via hiring freeze: ~1.5-2.0%/yr of pool (Dauth channel) — silent short-term, builds youth grievance with ~8-12yr political lag",
+          "silent_absorption_ceiling = exit_rate + 0.5*divertible_entrant_inflow: US ~5.5-6%/yr 2026-30 -> ~5%/yr 2036; Japan effectively infinite (labor deficit -0.9%/yr); EU ~4.5%/yr; 1980s counterfactual ~2%/yr (ratio 2.5-3x)",
+          "jobs displaced per industrial robot: 6 (US, tight labor mkt effects) to 2-net-0 (Germany/Japan, aging) — use aging-economy figure for 2030s deployment since fleets deploy where labor is scarce",
+          "elasticity of robot adoption to aging: strongly positive (60-country evidence) — model robot fleet allocation weighted toward high-attrition economies, further raising effective absorption",
+          "backlash trigger is NOT rate alone: US rust-belt backlash at ~1-2%/yr national mfg decline because spatially concentrated (plant closures, single-industry towns); Japan/Germany at similar automation intensity: zero backlash. Spatial/sectoral concentration multiplier on political salience: x2-4 for concentrated, x0.3-0.5 for diffuse cognitive displacement"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "retirement_eligible_share (55+ fraction of each worker pool; US cognitive ~26% 2026, rises to ~29% 2030 then declines)",
+            "youth_grievance (educated entrants denied entry-level jobs — Dauth channel accumulator, decays slowly, ~10yr half-life)",
+            "silent_absorption_capacity (derived, per-region or global blend: exit_rate(t) + divertible_hiring)"
+          ],
+          "flows": [
+            "retirement_outflow = pool * exit_rate(t) [convert static 950M/2400M pools to dynamic: cognitive outflow ~2.2%/yr, physical ~1.8%/yr global blend, both peaking 2026-2030]",
+            "entrant_inflow = pool * ~2.2%/yr global (shrinking to ~1.8% by 2036 in developed, growing in EM)",
+            "displacement_split: displaced = AI_cognitive_displacement + robot_physical_displacement; silent_part = min(displaced, retirement_outflow_unreplaced + hiring_freeze); visible_part = remainder -> ONLY visible_part feeds political displacement-rate signal",
+            "hiring_freeze = min(displaced - retirement_unreplaced, entrant_inflow * 0.7) -> increments youth_grievance instead of visible displacement"
+          ],
+          "couplings": [
+            "READS: robot fleet displacement flow, AI cognitive displacement flow, GDP (for pool sizing)",
+            "WRITES: political displacement-rate signal (replace raw displacement rate with visible_part rate — this RAISES the effective backlash threshold from 4% raw to ~4% visible, i.e. ~8-9% raw in 2026-2030, decaying)",
+            "WRITES: labor_power stock (retirement outflow tightens labor mkt short-term, offsets displacement pressure on wages)",
+            "WRITES: sentiment via TWO channels: incumbent visible displacement (fast, election-cycle) and youth_grievance (slow, 8-12yr lag, potentially larger amplitude — educated-youth-unemployment is the historically revolutionary variable)",
+            "MODIFIES: existing 4%/yr attrition threshold becomes endogenous = silent_absorption_capacity(t), time-varying and region-weighted"
+          ]
+        },
+        "lessons_for_model": [
+          "Your 4%/yr threshold is empirically well-anchored (BLS exit rate = 4.7%/yr) but should be TIME-VARYING: the boomer retirement wave (Peak-65 2024-2027, elevated exits through ~2030) is a coincidental shock absorber timed exactly with the AI transition — absorption capacity is at its historical maximum 2026-2030 and decays ~0.5pp by 2036, exactly as displacement accelerates. The crossing point (displacement > absorption) is the political phase change; plausibly 2030-2033 for cognitive, 2040s for physical.",
+          "Displacement mechanism matters more than rate: automation in aging economies displaces via NOT-HIRING (Dauth: zero incumbent displacement, all incidence on entrants), which is politically silent for ~a decade, then emerges as educated-youth grievance — a different, slower, more destabilizing political channel than the incumbent-layoff channel your society layer currently models. Add the second channel.",
+          "Same automation, opposite politics: Japan (world-max robot density, labor deficit 11M by 2040) has zero anti-automation politics; US rust belt (lower automation intensity but young-at-the-time workforce + spatial concentration + abrupt plant closures) produced durable backlash. Political salience = visible displacement x spatial concentration, not raw displacement. AI cognitive displacement is geographically diffuse -> weight its salience DOWN (~0.3-0.5x) vs rust-belt calibration but note it concentrates GENERATIONALLY (entry-level white collar) -> youth channel again.",
+          "The robot fleet is NOT a displacement source through mid-2030s in aging economies — it is a shortage filler: 0.4M units/yr covers <5% of Japan+EU+China's annual retirement outflow from physical work. Physical-worker displacement should read as max(0, robot_capacity_added - natural_outflow_unfilled); this stays negative (shortage) in developed economies until fleet ~10-20x current trajectory (consistent with your labor-relevant-2040s timing).",
+          "Absorption capacity today is 2.5-3x the 1980s baseline (exit ~4.7%/yr + shrinking entrant cohorts vs ~2-2.5%/yr exits + 1.6%/yr labor-force GROWTH then). A given displacement rate in 2028 generates roughly one-third the political energy of the same rate in 1982 — but only for incumbent-style displacement, and only until the boomer wave passes.",
+          "Make the 950M/2400M pools dynamic: without any AI, developed-economy pools shrink ~0.5-0.9%/yr (Japan -0.93%/yr working-age) while EM pools grow; the STATIC pools currently overstate displacement pressure in aging economies and understate it in young ones. Minimum viable fix: single global exit flow ~2%/yr and entrant flow ~2.2%/yr per pool with the developed/EM split folded into the political-weighting, since backlash politics live in aging rich democracies where absorption is highest."
+        ]
+      },
+      {
+        "topic": "Labor-market entry blockage (graduate ladder-lockout) as a distinct political flashpoint channel vs mid-career displacement",
+        "key_numbers": [
+          "US entry-level job postings: -35% Jan 2023 → mid-2025 (Revelio Labs); ≈ -13%/yr flow contraction",
+          "Big Tech new-grad share of hires: 25% (2019) → 7% (2024), -50%+ vs pre-pandemic; startups 30% (2019) → <6% (2024) (SignalFire, 650M LinkedIn profiles)",
+          "Law/consulting/IB entry roles: -35% since 2023; PwC plans -39% audit hires by 2028; Baker McKenzie cut 1,000 roles; Indian IT entry roles -20-25% (EY)",
+          "UK tech graduate roles: -46% in 2024, projected further -53% by 2026; US junior tech postings -67% in some series",
+          "US recent-grad unemployment 5.6-5.7% Q1 2026 vs 4.2% all workers — first sustained inversion on record (grads worse than average)",
+          "US recent-grad UNDERemployment: 42.5% Q4 2025 (highest since 2020), 41.5% Q1 2026 (NY Fed)",
+          "Handshake campus listings -15/16% YoY Aug 2024→Aug 2025; applications per posting +26-30%",
+          "China youth (16-24, ex-students) unemployment: 21.3% Jun 2023 (record, series then suppressed), 18.9% Aug 2025 peak new-method, 16.5% Dec 2025, 16.1% Feb 2026; response = 'lying flat' apathy + Sep 2025 censorship campaign, NOT unrest",
+          "Tunisia 2010 (revolution trigger year): graduate unemployment 40% vs 24% non-graduates; 47% for young Master's holders (law/econ/mgmt, 2007); graduate workforce grew 27x 1976-2010 while only 34% of graduate labor demand was met",
+          "MENA pre-Arab-Spring: youth = 40-60% of all unemployed (Egypt/Syria ~60%); NEET 25-30%+ (Egypt, Palestine, Jordan, Tunisia)",
+          "Southern Europe: youth unemployment >50% Spain/Greece (regional peaks ~60% Greece); Spain crossed 40% in 2010 → indignados May 2011 → Podemos founded 2014, 4th in EP election same year; Greece ~30% at 2011 Syntagma protests, 55%+ by 2013 → Syriza wins Jan 2015. Stock-threshold-to-electoral-rupture lag: 3-4 years in democracies",
+          "Global graduate cohort inflow ~40M/yr (China 11.8M 2024, India ~10M, US ~4M) ≈ 4.2%/yr of the 950M cognitive-worker pool — a 50% entry-hiring cut removes ~2%/yr of pool inflow, invisible to a displacement-RATE trigger"
+        ],
+        "base_rates": [
+          "Entry-level cognitive hiring flow decline under current AI adoption: -10 to -15%/yr (2023-2026 observed), front-loaded in tech/law/consulting; use -12%/yr median 2026-2029, decaying",
+          "Underemployment as buffer: ~85% of blocked graduates absorb into sub-degree jobs (41.5% underemployed vs only 5.7% unemployed in US) — buffer converts unemployment into sentiment decay at ~1/7 the political salience, but fills physical/service-worker pool",
+          "Youth-unemployment STOCK → political rupture thresholds: <15% silently absorbed; 18-25% = apathy/exit behaviors (lying flat, NEET, emigration; China now); 25-30% sustained 3+ yrs = mass protest risk in weak institutions (Arab Spring: grad unemployment 30-40%); 40-50%+ = electoral rupture in democracies with 3-4 yr lag (Spain/Greece); regime-threatening unrest needs threshold + trigger event (food prices, self-immolation) + blocked electoral channel",
+          "Cross-country elasticity (AfDB WP171, 24 developing countries 1980-2010, IV): +1pp youth unemployment → ~+1-2% relative increase in political-instability probability; positive but NOT robust for violence — education level DAMPENS violence but AMPLIFIES organized protest/electoral mobilization (educated unemployed protest, uneducated unemployed riot or comply)",
+          "Graduate-specific multiplier: political salience per unemployed GRADUATE ≈ 2-3x per unemployed non-graduate (Tunisia 40% vs 24% split; indignados were degree-holders); entry blockage hits exactly this group",
+          "Institutional routing: democracy → new-party vote share ~15-25% within 4 yrs of crossing 40% youth unemployment (Podemos 21% 2015, Syriza 27%→36% 2012-2015); autocracy → suppression success if grad unemployment <25% and surveillance high (China), revolution risk if >30% + trigger",
+          "Mid-career displacement channel (existing model): 4%/yr RATE threshold confirmed as separate — entry blockage produces near-ZERO displacement-rate signal because nobody is fired; it is a stock accumulation of never-hired"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "graduates_seeking_entry (new stock; global, ~60M steady-state at 1.5yr avg search; inflow ~40M/yr)",
+            "blocked_graduates (new stock; cumulative never-hired cohort, political-salience-weighted; drains via underemployment 60%/yr, gig/informal 20%/yr, NEET/lying-flat residual)",
+            "underemployed_graduates (new stock; low-visibility buffer, feeds sentiment decay not unrest directly; 2026 init: ~42% of recent US cohorts, ~25M globally in formal economies)",
+            "cohort_grievance (new slow stock; generational scarring, decays over ~15yr; drives long-run legitimacy/labor-power even after re-employment — scarred cohorts vote anti-system for a decade)"
+          ],
+          "flows": [
+            "graduation_inflow: 40M/yr 2026, +1%/yr growth (China/India expansion offsets rich-world demographics)",
+            "entry_hiring: base 4%/yr of cognitive pool x (1 - AI_entry_automation); AI_entry_automation follows cognitive-AI capability with ~1yr lead over mid-career displacement (entry tasks automate FIRST — routine, low-context)",
+            "blockage_rate = graduation_inflow - entry_hiring; when blockage_share = blocked/(cohort x 3yr window) exceeds thresholds: 0.18 apathy, 0.25 protest, 0.40 electoral rupture (democracies, 3-4yr lag via delay3)",
+            "underemployment_spillover: blocked graduates entering physical/service pool — COUPLES to physical-worker wage pressure and robot-displacement pool sizing",
+            "cognitive_pool_inflow: replaces static 950M assumption — pool now shrinks ~0.5-2%/yr when entry hiring collapses even with zero firings (attrition ~3%/yr uncompensated)"
+          ],
+          "couplings": [
+            "READS: cognitive AI capability / task-automation fraction (drive entry_hiring with 1yr lead), election timer (rupture only actualizes at election ticks), robot fleet (underemployed graduates swell the physical pool robots later displace — double-jeopardy cohort)",
+            "WRITES: political pressure (NEW second input: pressure = f(displacement_rate > 4%/yr) + g(blockage_share, thresholds 18/25/40%) — g has 2-3x salience weight per capita because educated + young + urban + networked), sentiment stock (underemployment drains it slowly at ~1/7 unemployment rate), labor_power (blocked cohort has ZERO strike power — not employed — so labor_power falls even as unrest rises; these must decouple), UBI demand (blocked graduates are the constituency that makes 15%-GDP transfers electorally viable ~2030-2032)",
+            "MODIFIES: cognitive_workers 950M static pool → aging chain (entry/mid/senior) so blockage shows up as pool erosion + experience-pipeline hollowing (no juniors 2026-2030 → senior shortage 2035+)"
+          ]
+        },
+        "lessons_for_model": [
+          "The two channels have ORTHOGONAL signatures: mid-career displacement is a RATE (%/yr fired, threshold 4%/yr, immediate salience); entry blockage is a STOCK (share of a cohort never hired, thresholds 18/25/40%, 3-4yr political lag). A model keyed only on displacement rate will read 2026 as calm while the flashpoint stock is already accumulating — entry postings fell 35% with near-zero layoffs.",
+          "Entry automation LEADS mid-career displacement by 1-3 years because entry tasks are the routine ones — so the entry-blockage channel fires FIRST in the timeline (2026-2029), before robots (2032+) and before mass mid-career cognitive displacement. It is plausibly the model's first political rupture.",
+          "Underemployment is the great shock absorber and the great mislabeler: 41.5% underemployed vs 5.7% unemployed means headline unemployment understates blockage 7x. Model the buffer explicitly or the political response will trigger years too late — but note the buffer pushes graduates into the physical-labor pool that robots then hit in the 2030s (double-jeopardy cohort = maximum-grievance agents 2033-2036).",
+          "Regime type routes the output: democracies convert blockage into new-party electoral rupture with 3-4yr lag (Podemos/Syriza template) — quantize to the existing election timer; autocracies convert it into apathy/exit ('lying flat') suppressible up to ~25% grad unemployment, with tail risk of Arab-Spring-style discontinuity above ~30% + trigger event. China at 16-19% is inside the suppressible band — consistent with observed censorship-not-concession response.",
+          "Educated unemployment is 2-3x politically potent per capita vs uneducated (networked, urban, articulate, high expectations — Tunisia 40% grad vs 24% non-grad unemployment preceded revolution; indignados were degree-holders). Weight blocked graduates accordingly in the pressure function; do NOT reuse the generic 4% attrition threshold for them.",
+          "Decouple unrest from labor_power for this cohort: blocked graduates generate street/electoral pressure but zero strike leverage (they hold no jobs). The existing labor-power stock should FALL while sentiment/unrest rises — that divergence (angry but powerless → UBI demand rather than wage bargaining) is what makes election-quantized transfers the dominant absorption path.",
+          "Static 950M cognitive pool breaks first at the inflow margin: 40M/yr graduate inflow vs ~4%/yr pool replacement means a 50% entry-hiring cut erodes the pool ~2%/yr with zero firings, and hollows the 2035+ senior pipeline. Minimum viable fix if a full aging chain is too heavy: make pool inflow = entry_hiring and track blocked_graduates as one extra stock with the three thresholds."
+        ]
+      },
+      {
+        "topic": "Immigration as a policy valve responding to labor shocks: 100-year base rates, response elasticities, and automation-era blame dynamics",
+        "key_numbers": [
+          "US 1921 Emergency Quota Act: gross immigration 805k (1921) -> 310k (1922), -61% in 1 yr; passed ~12 months after 1920-21 depression (unemployment ~11.7%)",
+          "US 1924 Johnson-Reed: permanent cap 153,714/yr vs pre-WWI ~1M/yr peak (1.285M in 1907) = -85%; Italy quota 42,000 -> <6,000 (-86%); S/E-Europe share of slots 41% -> 11%",
+          "1930s Depression: total 1931-40 immigration 528k (~53k/yr vs 410k/yr in 1920s); Mexican Repatriation 1929-36 removed 400k-1.8M (est. 60% US citizens); net migration negative for the decade — precedent for NEGATIVE net flow under labor collapse",
+          "Bracero: ~200k/yr admissions 1948-64, 4-5M total contracts; terminated Dec 31 1964 under union wage-undercutting pressure — note: harvest mechanization was simultaneously eliminating the same jobs",
+          "Germany Gastarbeiter: 14M recruited 1955-73; Anwerbestopp Nov 23 1973 came ~5 WEEKS after Oct 1973 oil embargo — fastest valve-closure on record; France suspended July 1974; foreign employment fell ~25% within 3 yrs",
+          "US 1965 Hart-Celler (liberalization): ~300k/yr -> 1M+/yr took ~25 years to ramp — opening is slow, closing is fast (speed asymmetry ~10:1)",
+          "Brexit: net migration peak 330k (2015, ~0.5% pop) drove Leave framing despite measured wage effect of ALL 2004+ EU migration on low-skill wages = only -0.7% total; post-Brexit paradox: net migration ROSE to ~906k (2023) via non-EU visas, then 2024 rules cut it to 431k in ONE year (-50%)",
+          "Canada Oct 2024 (first pro-immigration country to reverse): PR target 500k -> 395k (2025) -> 380k (2026) -> 365k (2027), -27% by 2027; temporary residents 7.3% -> 5.0% of population target by end-2026; new temp arrivals 674k (2025) -> 517k (2026); trigger = housing gap, not unemployment; PBO: cuts shrink housing gap ~670k units by 2027",
+          "US 2025-26: net migration NEGATIVE in 2025 for first time in ~50 yrs (Brookings: -295k to -10k; CBO: +400k) vs ~+3.3M in 2023 — a swing of ~3-3.5M/yr (~2% of labor force) inside 18 months; border encounters 2.1M (FY24) -> 444k (FY25, -79%); removals ~310-315k vs 285k (2024); refugee cap 125k -> 7.5k -> 17.5k (Afrikaners only); CHNV/Ukraine parole ended May 2025; H-1B $100k fee Sept 2025 (vacated by court June 2026) — cognitive-migrant channel attacked FIRST in the automation era",
+          "EU: Migration & Asylum Pact adopted 2024, fully applicable June 12 2026 (border procedures, accelerated returns, detention expansion); Netherlands 2024 'strictest asylum policy ever' + EU opt-out request, naturalization wait 5 -> 10 yrs; Denmark 'zero refugee' policy since 2019, 839 asylum approvals 2025 (historic low); Sweden applications -30% (2025)",
+          "Scale anchors: ~169M international migrant workers globally (ILO, ~4.9% of global labor force); US foreign-born workers ~31M (~19% of US labor force); roughly 80-85% of migrant labor maps to your physical-worker pool, 15-20% cognitive",
+          "Post-2017 US natural experiment: migration slowdown raised vacancy/unemployed ratio +5.5pp 2017-2021 (SF Fed) — restriction demonstrably tightens labor markets within 2-4 yrs"
+        ],
+        "base_rates": [
+          "Restriction-response lag to a labor/salience shock: 1 month (Germany 1973) to ~2 yrs (Canada 2024); median across 8 episodes ~1 yr legislative + 1 yr flow effect. Model as: valve closes within 1 annual tick of trigger, election-quantized where applicable",
+          "Magnitude of closure: gross inflows cut 50-85% within 1-3 yrs of restriction; net migration can be driven to 0 or negative (-0.1 to -0.2% of population/yr: US 1930s, US 2025) when enforcement adds outflows",
+          "Asymmetric ratchet: closing speed ~1 yr, reopening speed ~10-25 yrs (1965 ramp; post-WWII rebuild). Openness stock: max down-rate ~0.5/yr, max up-rate ~0.05/yr",
+          "Frequency of major restrictionist episodes: ~1 per 20-25 yrs over the century (1921-24, 1929-36, 1964, 1973-74, 2016-2026); currently IN one — 2026 initial condition should be openness already at ~0.3-0.4 of 2015 baseline across OECD",
+          "Trigger thresholds (whichever fires first): unemployment > ~8%, OR net migration > ~0.7-1.0% of population/yr (UK 906k = 1.3%; Canada pop growth 3.2%/yr both triggered), OR housing/wage salience proxy. Note Canada proves NON-labor triggers (housing) fire at lower unemployment",
+          "Normal-times OECD net migration: +0.4-0.6% of population/yr; boom-times +1-1.3%; restriction-regime 0 to -0.2%",
+          "Wage elasticity ground truth vs perception: measured native wage effect of migration ~-0.7% cumulative on low-skill (UK), near zero average — but political response behaves as if elasticity were ~10x larger; the valve responds to SALIENCE, not measured wage harm",
+          "Blame misattribution rate: experimental evidence — telling subjects automation (not migrants) caused job loss does NOT reduce anti-immigration preference; China-shock regions (59.3% of 2001-19 US mfg job losses) swung to Trump; robot-exposure regions show nationalist vote gains. Model: ~70-90% of automation displacement grievance is available for redirection onto migration while migrant stock share is visible (>10% of workforce)",
+          "Labor-market feedback of closure: vacancy/unemployed ratio +5.5pp per ~1M/yr flow reduction sustained 4 yrs (US 2017-21) — restriction partially masks automation displacement in aggregate unemployment stats for ~2-4 yrs"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "migrant_worker_pool (split: ~135M physical / ~30M cognitive globally, subsets of the 2400M/950M pools — makes part of the static pools mobile)",
+            "immigration_openness (0-1 policy stock; 2026 init ~0.35 reflecting the in-progress 2016-2026 restrictionist wave; asymmetric rate limits: -0.5/yr down, +0.05/yr up)",
+            "displacement_blame_pool (grievance stock fed by job destruction regardless of cause; drained by restriction acts, transfers, or attrition)"
+          ],
+          "flows": [
+            "net_migration = openness * base_flow(0.5%/yr of destination workforce) - enforcement_outflow(0 to 0.2%/yr when openness<0.2)",
+            "restriction_flow (election-quantized like your UBI lever; fires when displacement_rate > ~2.5-3%/yr OR sentiment below threshold — deliberately LOWER trigger than the 4% attrition threshold, because restriction is the cheap first-resort policy: costs ~0% GDP vs UBI's up-to-15%)",
+            "blame_redirect_flow: 70-90% of automation displacement grievance routes to migration target while migrant share of workforce > ~10%; redirect efficiency decays as restriction visibly fails to stop job losses (half-life ~2 election cycles)"
+          ],
+          "couplings": [
+            "READS: displacement rate (same signal as the 4%/yr attrition threshold), sentiment stock, election timer, unemployment",
+            "WRITES: physical_workers (+/- 0.3-0.5%/yr — the pools stop being static), cognitive_workers (H-1B-type channels cut FIRST in automation era, -0.1%/yr on cognitive pool)",
+            "WRITES: labor_power (+, restriction tightens markets, +5.5pp vacancy ratio per sustained 1M/yr cut — temporarily boosts native wages and masks displacement)",
+            "WRITES: sentiment (restriction act gives one-cycle sentiment bump ~ equal to a small transfer, at zero GDP cost)",
+            "DELAYS: UBI-scale transfers by 1-2 election cycles — restriction absorbs blame first; when automation displacement continues anyway, blame returns amplified, so the 15%-GDP transfer cap gets hit LATER but HARDER",
+            "GDP: workforce contraction from closed valve drags potential output -0.2 to -0.4%/yr while closed"
+          ]
+        },
+        "lessons_for_model": [
+          "Restriction is the FIRST policy valve, not the last: in every episode (1921, 1930, 1964, 1973, 2016-25) migration was cut before or instead of large transfers. Sequence your society layer: blame -> restriction (cycle 1) -> restriction fails because automation keeps displacing -> transfers (cycle 2-3). This delays your UBI trigger by ~4-8 years versus a model where transfers are the only lever.",
+          "The valve responds to the RATE and SALIENCE of change, not measured wage harm (Brexit: -0.7% actual wage effect drove a constitutional rupture). Wire the trigger to displacement RATE + migrant-flow rate, not wage levels.",
+          "Blame misattribution is robust: experiments show correcting people ('automation did it') does not reduce anti-migrant preference. In your 2026-2032 window, COGNITIVE displacement (native white-collar) will still discharge through the migration valve — the Sept 2025 $100k H-1B fee is the prototype: automation-era anxiety expressed as cognitive-migrant protectionism. Expect skilled-migration channels to close before physical-labor channels.",
+          "Precedent for negative net migration under labor collapse exists twice in the century (1930s: -; 2025: -295k to -10k) — allow the flow to go negative, magnitude up to -0.2% of population/yr.",
+          "The 2026 initial condition is mid-wave: openness already ~0.35 of 2015 baseline (US net migration swung ~3.3M/yr, Canada -27% targets, UK -50% in one year, EU Pact live June 2026). Your model starts with the valve mostly shut — meaning when 2027-2030 cognitive displacement hits, this pressure release is ALREADY SPENT, and blame flows faster to the next targets (corporations/AI itself -> your regulation and UBI levers). A spent valve steepens the political response curve.",
+          "Restriction mechanically masks displacement for 2-4 yrs: cutting 1M/yr inflow raised US vacancy ratio 5.5pp — in the model, closed valve subtracts from measured unemployment/displacement signal, keeping politics below your 4%/yr attrition threshold longer while grievance stock still accumulates. This is a classic Meadows delayed-feedback trap: the correction suppresses the signal, then the threshold is crossed with a jump.",
+          "Bracero 1964 is the direct historical analog of automation+migration interaction: the program died just as harvest mechanization eliminated the jobs — restriction and automation arrived together and restriction took the political credit. Expect 2027-2032 politicians to claim restriction 'saved jobs' actually lost to AI, buying sentiment at zero fiscal cost.",
+          "Asymmetry matters for the 2040s robot era: reopening takes 10-25 yrs, so if physical-worker shortages appear (aging + closed valve) before robots are labor-relevant (2040s), there is a 2033-2042 squeeze window where neither migrants nor robots fill physical labor — labor_power for the 2400M pool spikes in that window before collapsing when the fleet scales."
+        ]
+      },
+      {
+        "topic": "Heterogeneity and transfer-program politics: does diversity lower the UBI cap/speed, and who is eligible",
+        "key_numbers": [
+          "Alesina-Glaeser (2001/2004): US social spending ~14.6% GDP vs EU-15 ~25.5% (1998); ~50% of the ~11pp gap attributed to racial heterogeneity, ~50% to institutions (PR, centralization)",
+          "Ethnic fractionalization: US ~0.49 vs core EU 0.10-0.30 (Alesina et al 2003 'Fractionalization'); cross-country regression: fractionalization negatively predicts social transfers/GDP across 54 countries",
+          "US state-level: Black population share strongly negatively correlated with AFDC/welfare benefit generosity (Alesina-Glaeser ch.6); Luttmer 2001: support for welfare rises when nearby recipients are own-race (in-group targeting effect)",
+          "Alesina-Miano-Stantcheva (REStud 2023, 6 countries n=24k): respondents overestimate immigrant population share ~2-3x (US actual ~10-14%, perceived ~30-36%); merely priming immigration salience before redistribution questions cuts stated support and real charity donations; factual correction does NOT restore support (narrative about hard-working immigrants does)",
+          "Achard 2023 (J Econ Surveys, survey of causal studies): general tendency negative (diversity -> less redistribution support) but heterogeneous and modest; regional %foreign-born negatively correlated with support for comprehensive welfare state",
+          "Pew Aug 2020 UBI ($1k/mo for all adult citizens): 45% favor / 54% oppose overall; age <30: 67% favor; 65+: 26%; Black 73%, Hispanic 63%, White 35%; low-income 63%; net Dem +33 vs Rep -56 (~90pt partisan net gap)",
+          "Gallup 2018 (UBI for AI-displaced workers): 48% support (65% Dem, 28% Rep); only 46% of supporters willing to pay higher taxes for it; Gallup 2019: UK 77%, Canada 75%, US 43% support",
+          "COVID counter-evidence: 3 EIP rounds ~$814B total (~476M payments) in 11 months = ~3.8% of one year's GDP; $2,000-check proposal Dec 2020 polled ~78% incl ~60-64% of Republicans; delivery lag 2 weeks (direct deposit) after passage; support uniform across racial groups",
+          "Expanded CTC 2021: quasi-universal monthly payments, cut child poverty ~40% (3.7M kids), polled 71-87% support (Data for Progress 2024: 71%; National Parents Union 2024: 87-9) — yet expired Jan 2022 after 6 months of payments; one senator sufficed to kill renewal",
+          "Eligibility gates (universal in every historical program): CARES: SSN required — citizens, green cards, H-1B, DACA, TPS eligible; ITIN filers (undocumented, ~11M = 3.3% of US pop) excluded; round 1 also excluded 1.2M citizen spouses + 3.7-5.1M mostly-citizen children in mixed-status families (fixed retroactively Dec 2020)",
+          "Alaska PFD (44 yrs running): citizens + permanent residents + refugees/asylees, 1-yr state residency; NOT citizen-only but always legal-status-gated; Iran 2010 (~73M covered), Mongolia 2010-12, Kuwait 2011 ($3,500/head): citizens only",
+          "Welfare chauvinism (EU vignette experiments): substantial native majority supports redistribution in principle but wants migrant claimants excluded; chauvinism rises with transfer salience, largely independent of actual local immigration levels"
+        ],
+        "base_rates": [
+          "Chronic-state heterogeneity penalty on transfer ceiling: ~-5pp of GDP sustained social spending for US-level (0.49) vs EU-level (~0.15) fractionalization => slope ~ -14pp GDP per unit fractionalization (after netting out institutions)",
+          "Crisis-state passage speed: displacement/emergency shock -> universal transfers enacted in 2-12 weeks, scale 2-4% GDP/yr, bipartisan 60-80% approval, heterogeneity penalty ~0 during acute phase",
+          "Post-crisis decay: emergency transfers expire by default; CTC monthly payments dead 6 months after start, no EIP round 4 after Mar 2021 => decay rate ~50-100%/yr once displacement RATE (not level) falls below salience threshold",
+          "Eligibility coverage: 96-97% of resident population (SSN-type gate); citizen-only variant covers ~93% US / ~90-92% EU; undocumented ~3.3% US pop always excluded in all historical precedents",
+          "Perception multiplier: perceived out-group beneficiary share = 2-3x actual immigrant share; salience priming alone shifts stated redistribution support by roughly -3 to -5pp",
+          "Demographic support gradient for UBI: +40pp young-vs-old, +38pp Black-vs-White, +28pp low-vs-high income, ~90pp net partisan gap => coalition strength depends on WHO is displaced",
+          "In-group displacement bonus (Luttmer sign-flip): when beneficiaries are perceived majority in-group (college-educated cognitive workers 2026-2030), the heterogeneity penalty on cap shrinks toward 0; when beneficiaries read as out-group, penalty binds at full strength"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "perceived_outgroup_beneficiary_share (0-1, init ~0.30 US-type; 2-3x actual, decays slowly, driven by media salience not facts)",
+            "transfer_legitimacy (0-1; boosted when displaced cohort = majority in-group cognitive workers, eroded by welfare-chauvinism flow)",
+            "eligible_coverage_fraction (0.96 SSN-gate default; policy variable 0.90-0.97)"
+          ],
+          "flows": [
+            "chauvinism_pressure = k * perceived_outgroup_beneficiary_share * transfer_scale (grows AS transfers grow — endogenous backlash, k calibrated so sustained 15% GDP at US heterogeneity is politically unstable)",
+            "crisis_universalization: when displacement_rate > attrition threshold (~4%/yr), transfer ramp speed multiplier x4-6 and heterogeneity penalty suspended for 1-2 yrs",
+            "post_crisis_expiry: transfer scale decays 50-100%/yr toward chronic cap whenever displacement_rate < threshold, quantized to election cycle"
+          ],
+          "couplings": [
+            "reads: displacement RATE from cognitive/physical worker pools; displaced-cohort composition (cognitive=in-group-coded, physical=mixed) to set transfer_legitimacy; sentiment stock; election-quantization timer",
+            "writes: effective transfer cap = 15% GDP * (1 - 0.35 * heterogeneity_index * (1 - ingroup_share_of_displaced)) => US-type chronic cap ~9-11% GDP if beneficiaries read as out-group, ~13-15% if displaced are majority in-group; EU-type ~15% but add welfare-chauvinism erosion if immigration salience high",
+            "writes: transfer ramp speed (crisis regime bypasses heterogeneity drag); writes eligible_coverage_fraction into per-capita transfer arithmetic (3-7% of residents receive nothing => tension-index contribution)"
+          ]
+        },
+        "lessons_for_model": [
+          "Two-regime politics: heterogeneity lowers the CHRONIC cap (~-5pp GDP at US diversity levels) but has near-zero effect on CRISIS speed/scale — COVID proves universal checks pass in weeks at 60-80% approval across all racial groups when the shock is legible and universal; the model's 4% attrition threshold should gate which regime applies, not just whether transfers happen",
+          "Expiry-by-default is the strongest historical regularity: every emergency universal transfer (EIP, expanded CTC) died within 6-12 months of the acute phase despite 70-87% polling support; model transfers as a decaying stock requiring re-authorization each election tick, not a ratchet — permanence requires displacement RATE staying above threshold across multiple election cycles",
+          "Beneficiary composition flips the heterogeneity sign: 2026-2030 cognitive displacement hits college-educated majority-group workers (in-group-coded), so the Alesina-Glaeser penalty is weak early; it re-binds late (2030s) when physical-worker displacement (more diverse cohort, robot fleet era) dominates the beneficiary pool — i.e., the transfer cap should be TIME-VARYING via displaced-cohort mix, tighter in the robot era than the LLM era",
+          "Eligibility is never universal: all historical programs gate on legal status (SSN/PR); assume 96-97% resident coverage, with the excluded 3-4% feeding the tension/sentiment stocks; expect UBI legislation to re-fight immigration policy (welfare chauvinism scales WITH transfer size, an endogenous brake the current society layer lacks)",
+          "Perceptions, not demographics, are the operative variable: perceived immigrant/out-group share runs 2-3x actual and is immune to factual correction — so rising actual diversity 2026-2036 enters the model through a salience-amplified perception stock, and elite narrative choices (who the 'deserving displaced' are) are a genuine leverage point",
+          "Net answer to the calibration question: keep the 15% GDP cap as the crisis-mode ceiling, but add a chronic-mode effective cap of ~9-11% GDP for US-type high-heterogeneity polities (multiplier 0.65-0.75) rising to ~13-15% when displaced cohorts are in-group-coded; EU-type polities keep ~15% chronic but acquire a welfare-chauvinism erosion term; do NOT slow crisis ramp speed for diversity — evidence says speed is unaffected"
+        ]
+      },
+      {
+        "topic": "Care/eldercare labor demand vs age structure: shortage projections, care share of physical labor, Japan robotics reality check, dependency-ratio fiscal loads competing with UBI",
+        "key_numbers": [
+          "GLOBAL: WHO-revised health-worker shortage 10M by 2030 (down from 18M 2016 est). ILO: 381M care workers = 11.5% of global employment (123M education, 92M health/social work, 70M domestic). Non-education (physical-ish) care = ~162M = ~6.8% of model's 2400M physical pool",
+          "GLOBAL upside: ILO says doubled care investment => up to 299M new care jobs by 2035 — care is the largest job-creation sink in the model window",
+          "US: 5.0M direct care workers 2024 (2.9M home care — doubled from 1.4M in 2014; 656K residential aides; 459K nursing assistants). +860K net new jobs 2022-32 (largest of any US sector) but 8.9M GROSS openings 2022-32, 9.7M openings 2024-34 => replacement/turnover demand is ~10x net growth. Home care alone 6.1M openings by 2034. Median pay $26K/yr (~60% of US median wage). 3.5M additional health+direct-care workers needed by 2030",
+          "JAPAN: MHLW official care-worker shortfall 570K by 2040 (alt est 700K) on a ~2.2M care workforce — a 20-25% gap. OADR 54.5, world's highest",
+          "EU: WHO-Europe health/social shortfall 1.6M (2024) -> 4M by 2030 (600K doctors, 2.3M nurses, 1.1M social-care). Health+LTC workforce must grow +11M 2018-2030. LTC recipients 23.6M by 2030, 30M+ by 2050. EU 65+ = 22.0% of pop (2025), +2.9pp in one decade",
+          "CHINA: ~10M caregiver shortage NOW vs only ~0.5M professional caregivers (2021); 45M currently disabled elderly; disabled elderly 52.7M (2020) -> ~78M (2030), +48%/decade; projected nursing staff demand 5.6M low-skill + 11.5M high-skill; 60+ pop 310M (22.0%), 65+ 220M (15.6%) end-2024; 30 care beds per 1000 elderly",
+          "JAPAN ROBOTICS REALITY (leading indicator): after 20+ yrs of subsidies (up to ¥1M-2.1M/facility, METI 50% cost share) — monitoring/sensor robots in 63% of nursing homes (avg cost ~$1,370/unit) but mobility robots only 26.4%, wearable TRANSFER robots introduced in only 7.6% of facilities (vs 60% expressing interest) and >50% of those sit unused. Paro: ~3,000 units in Japan / 5,000 global after two decades. Pepper RCTs: no significant effect. Japan medical+nursing robot MARKET ~¥37.6B (~$250M) by FY2027 — 0.1% of Japan's ¥25T+ LTC spend",
+          "FISCAL US: SS+Medicare+Medicaid+ACA 11.9% GDP (2026) -> 15.5% GDP; SS 5.2%->6.0% GDP by 2035; total federal outlays 23.3%->24.4% GDP 2025-35; OASI trust fund depleted FY2032 (CBO) => statutory ~21-23% benefit cut lands mid-model-window, forcing a mega fiscal fight in 2032-33 exactly when robot displacement accelerates",
+          "FISCAL JAPAN: social security benefits ¥140T = 21.8% GDP (2025) -> ¥190T = 24% GDP (2040); LTC spend ¥13T -> ¥25.8T by 2040 (doubles); social security already 56% of general-account discretionary spending",
+          "FISCAL EU: age-related spend 24.4% GDP (2022) +1.2pp by 2070 (reforms already banked); public LTC 1.7% -> 2.6% GDP; pensions 11.4 -> 11.8% GDP — EU is the LEAST fiscally squeezed bloc, US/China/Japan more",
+          "DEPENDENCY: US OADR 29.3 (2026) -> 37.9 (2050); Japan 54.5 now; China 65+ 15.6% and fastest-rising OADR of major economies (~22 now -> mid-30s by 2035)"
+        ],
+        "base_rates": [
+          "Care-demand growth: LTC demand in worker-equivalents grows ~2.5-3.5%/yr 2026-36 (driven by 80+ cohort ~+4%/yr in China, +3%/yr OECD), vs care-worker supply growth ~1.5%/yr => gap widens ~1-2%/yr of care workforce; persistent unmet gap 10-25% of demand in all four blocs",
+          "Care share of physical labor: ~6.8% of global physical pool (162M/2400M) is direct care; US-specific: direct care is fastest-growing sector, +1.6%/yr net. Treat 6-8% of physical pool as automation-resistant until dexterity threshold",
+          "Gross-to-net openings ratio in care ~9-10x (US: 8.9M openings vs 860K net) — displaced workers can be absorbed into care churn at ~1-2% of physical pool/decade without any net job creation",
+          "Physical-assist robot diffusion in care: 0.5-1 pp of facilities/yr even with 50% subsidies (Japan 7.6% after ~10 yrs of push); >50% shelf-ware rate post-purchase => effective substitution ~0.3x nominal adoption. Monitoring/info robots: ~6pp/yr (63% in a decade) but displace ~0 workers (augmentation)",
+          "Care robot substitution of labor: ~0% of care tasks 2026-2031; plausible 5-20% of transfer/monitoring/logistics tasks 2032-2040 if humanoid cost <$30K; companionship/toileting/bathing resistant past 2036",
+          "Fiscal aging creep: US +0.35-0.40 pp GDP/yr (SS+health 2026-35); Japan +0.15 pp/yr; EU +0.05-0.10 pp/yr; China pension gap rising fast off low base. Age load pre-empts 1.5-4.0 pp GDP of the 15%-GDP UBI cap headroom by 2036",
+          "Care wage penalty: care median ~60% of economy median (US $26K); public-payer price-setting caps care wages => reallocation into care = income downgrade of ~30-40% for displaced manufacturing/logistics workers",
+          "Election-forcing fiscal event base rate: US OASI depletion FY2032 = statutory 21-23% benefit cut; historical precedent (1983 Greenspan) = last-minute patch via tax rise + benefit trim, not expansion — crowds OUT new transfer programs in a 1-2 election-cycle window"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "care_workers (subset of physical pool; init ~162M global, ~6.8% of physical_workers; endogenous inflow)",
+            "care_demand_worker_equivalents (init ~185M 2026; grows with 80plus_population index ~3%/yr; ~240M by 2036)",
+            "unmet_care_gap (care_demand - care_workers - robot_care_capacity; init ~15-20M worker-equivalents, China-heavy)",
+            "fiscal_age_load_pct_gdp (init: US 11.9, Japan 21.8, EU 24.4 age-related; model as single global-weighted ~13% GDP, creep +0.25pp/yr)",
+            "care_robot_fleet (service/care units, separate stock from industrial robot fleet; init ~0.05M effective units, meaningful only post-2032)"
+          ],
+          "flows": [
+            "care_demand_growth = care_demand * (0.025 + 0.01*china_weight) per yr [demography-driven, exogenous-ish]",
+            "care_recruitment = f(unmet_care_gap, displaced_physical_workers) — absorption capped at ~1.5%/yr of displaced flow; each absorbed worker takes ~35% wage cut",
+            "robot_care_substitution = care_robot_fleet * 0.3 effectiveness * task_share_cap(0 until 2031, ramp to 0.15 by 2040)",
+            "fiscal_age_creep = +0.25pp GDP/yr baseline; step +1.0-1.5pp shock in 2032-33 (US OASI depletion event) unless benefits cut",
+            "care_robot_demand_pull = unmet_care_gap * willingness_to_pay — adds to robot production demand ~0.5-2M units/yr by mid-2030s (China gap dominates), accelerating fleet growth WITHOUT proportional displacement"
+          ],
+          "couplings": [
+            "physical_workers (2400M static pool): carve out care_workers as displacement-immune floor (~7% now, growing to ~9% by 2036) — robot displacement applies only to non-care physical labor; also makes the pool non-static via care_recruitment inflow",
+            "displacement RATE seen by society/politics layer: care churn absorbs displaced workers, subtracting ~0.3-0.8 pp/yr from effective attrition rate — keeps politics below the 4%/yr threshold LONGER than raw displacement implies (silent-absorption extender)",
+            "sentiment stock: care reallocation is a wage DOWNGRADE (~-35%); feed negative sentiment per absorbed worker even when attrition threshold not tripped — decouples measured-unemployment calm from sentiment decay",
+            "UBI transfer cap (15% GDP): effective_ubi_headroom = 15% - (fiscal_age_load - fiscal_age_load_2026); age load eats 1.5-4pp of headroom by 2036 and wins priority in crunch (contractual vs discretionary); 2032-33 US entitlement fight event should suppress UBI enactment probability for 1 election cycle",
+            "robot fleet (0.4M/yr 2032 median): add care_robot_demand_pull as second demand source — China's 10M-worker care gap is the earliest mass humanoid market, pulls fleet growth forward ~1-2yrs, but per-unit labor displacement in care is ~0.3x industrial (augmentation, Japan evidence)"
+          ]
+        },
+        "lessons_for_model": [
+          "Make the physical pool non-static: care demand alone adds ~55M worker-equivalents 2026-36 (185->240M) — a structural demand SINK worth ~2.3% of the 2400M pool, the single biggest displacement cushion in the window",
+          "Japan is the 20-year natural experiment and it says: physical-assist care robots DON'T deploy (7.6% facility adoption, >50% unused) while information/monitoring tech does (63%). Set care-task robot substitution to ~zero pre-2032 regardless of humanoid hype; the binding constraints are cost-effectiveness, staff training, and liability, not capability",
+          "Fiscal competition is asymmetric and time-locked: aging entitlements are contractual, UBI is discretionary; US OASI depletion FY2032 forces an entitlement fight precisely at median robot-acceleration year 2032 — model a 2032-33 political event that consumes fiscal bandwidth and delays UBI-scale transfers by ~1 election cycle in the US bloc",
+          "Care absorption is a sentiment trap, not a stability valve: gross openings run ~10x net growth, so displaced workers vanish into care churn below the 4%/yr political attrition threshold, but at ~35% pay cuts — the model should let measured displacement stay calm while the sentiment/labor-power stocks erode, setting up delayed, sharper political snap",
+          "Care gap is the robot demand pull, and it's China-shaped: 10M caregiver shortage vs 0.5M professionals, 78M disabled elderly by 2030 — China's care gap (not Western labor costs) is the earliest credible mass market for humanoids; couple unmet_care_gap to robot production demand but apply ~0.3x displacement-per-unit in care (augmentation regime, per Japan)",
+          "Bloc heterogeneity in fiscal headroom for UBI: EU has most room (reforms banked, +1.2pp by 2070), Japan least (SS already 56% of discretionary budget, 24% GDP by 2040), US mid but with the 2032 cliff — UBI cap of 15% GDP should be an effective cap of ~11-13% after age-load pre-emption, tightening ~0.25pp/yr"
+        ]
+      },
+      {
+        "topic": "Fertility responses to economic conditions and transfers: 2026 state, pronatal policy elasticities, insecurity effects, and lag structure for the AI-transition model",
+        "key_numbers": [
+          "Global TFR 2025: 2.2 (UN WPP 2024); replacement 2.1 projected reached globally ~2050; 131/237 countries (55%) below 2.1; ~71% of world population lives in below-replacement countries",
+          "South Korea TFR: 0.72 (2023, world record low) -> 0.75 (2024) -> 0.80 (2025); births +6.8% in 2025 (largest jump since 2007); rebound running ahead of govt optimistic path (0.75 in 2025, >1.0 by 2031); ~380T won (~$270B) spent 2006-2024; Seoul Economic Daily analysis: rebound largely demographic (large early-1990s echo cohort hitting age 30-34) + post-COVID marriage rebound, not policy",
+          "China: TFR ~1.0 (2023) -> ~1.2 (2024, zodiac Dragon-year + post-COVID catchup); births 9.54M (2024) -> 7.92M (2025, -17%, lowest in decades) — the 2024 uptick fully reversed; nationwide childcare subsidy from July 2025: 3,600 yuan (~$500)/child/yr to age 3, retroactive to Jan 2025; cost 90B yuan 2025 (~0.07% GDP), ~180B yuan 2026 (~0.13% GDP); benefits ~20M families; demographer consensus: too small to move TFR",
+          "US: TFR 1.57 (2025 provisional, record low); GFR 53.1/1,000 women 15-44 (lowest since records begin 1909, 23% below 2007 peak of 69.3); births 3,606,400 (-1% y/y); teen births 11.7/1,000 (record low); US TFR path 2.12 (2007) -> 1.64 (2020) -> 1.57 (2025) = no post-recession recovery, ~-0.03/yr",
+          "Hungary: 5-6% of GDP on family policy (top-5 OECD), the world's most expensive pronatal program; TFR 1.23 (2011) -> ~1.6 (2021) -> ~1.38-1.5 (2023-25, falling back); TFR plateaued after CSOK full rollout 2016; gains substantially tempo (birth-timing) effects; implied steady-state yield ~0.02-0.05 TFR per 1% GDP spent",
+          "Poland Family 500+: PLN 500/child/mo (~$130, ~1.5% GDP); modest short-term birth increase concentrated in older/higher-parity women; TFR 1.29 (2015) -> 1.45 (2017) -> 1.16 (2023): long-run net effect ~0",
+          "Nordic ceiling: Finland TFR 1.26 (2023, ~1.25-1.3 2024-25), Norway 1.40 — lowest ever despite the world's best-funded work-family reconciliation; Kela: 'we cannot any longer say good family policies explain Nordic fertility'; rising childlessness is the main driver -> generous-policy ceiling is real and low",
+          "Unemployment elasticity: +1pp unemployment -> completed (quantum, not just tempo) fertility -0.7% (Currie & Schwandt, PNAS 2014); alternative estimates: -1% births per +1pp local unemployment; TFR -0.027 per +1pp; Great Recession +3.22pp 5-yr unemployment -> ~427,000 permanently lost US births",
+          "Quasi-experimental transfer elasticities: Milligan 2005 Quebec baby bonus elasticity 0.107 (fertility wrt benefit size); Alaska PFD (~$1-2k/person/yr universal unconditional) raised fertility measurably (synthetic control, NBER w26712) — the closest existing UBI-fertility evidence, sign positive; Bergsvik et al. 2021 (Pop & Dev Review) systematic review: cash transfers give small positive, mostly-timing effects; cross-country rule of thumb ~+0.05-0.1 TFR per 1% GDP family spending with sharply diminishing returns",
+          "AI-anxiety channel: >70% of 2024 UK Tracker respondents concerned about AI-induced unemployment; 10-yr US trend study (CHI 2026) shows post-GenAI displacement fear is sustained, not transient; no direct AI-anxiety->births causal study exists yet as of mid-2026 — must be modeled by analogy to unemployment-expectation effects (narrative-uncertainty framework, Vignoli)",
+          "Lag structure: births in 2026 enter cognitive/physical worker pools ~2046 (age 20); ZERO labor-supply effect inside the 2026-2036 window; immediate effects: child-dependency costs (roughly $150-250k public+private per child to 18 in advanced economies), pension-solvency projections, and political salience of 'birth crisis' narratives"
+        ],
+        "base_rates": [
+          "Fertility-unemployment elasticity: -0.7% completed fertility per +1pp unemployment-equivalent (use displaced-and-not-reabsorbed share as the unemployment analog); in TFR terms ~-0.02 to -0.03 TFR per +1pp sustained",
+          "Perceived-risk (anxiety) channel: apply ~0.5x the realized-unemployment elasticity to the displacement RATE itself even below the 4%/yr political threshold (insecurity depresses births before politics reacts): TFR multiplier ~ (1 - 0.004 x displacement_rate_pct)",
+          "Transfer-to-fertility yield: +0.05 TFR per 1% GDP of cash transfers for the first ~2% GDP, decaying to ~+0.01-0.02 per additional % GDP; hard ceiling +0.2-0.3 TFR total (Hungary 5-6% GDP and Nordic evidence bound this); 40-60% of any response is tempo (pull-forward) that decays over ~5-8 yrs",
+          "UBI-scale transfers (model's 15% GDP cap): do NOT extrapolate linearly (would give absurd +0.75 TFR); cap fertility response at +0.15-0.25 TFR, onset lag 2-3 yrs after election-quantized enactment",
+          "Baseline secular drift: advanced-economy TFR -0.01/yr, China -0.01 to -0.02/yr, global TFR -0.015/yr (2.2 -> ~2.05 by 2036); East Asia floor observed ~0.7",
+          "Recession scarring: in below-replacement countries, downturn-induced fertility losses are ~100% permanent (US post-2008: zero recovery over 17 yrs) — treat displacement-driven birth losses as quantum, not tempo",
+          "False-rebound frequency: 1-2 yr TFR upticks of +0.05-0.1 occur from echo cohorts/marriage cycles/zodiac years (Korea 2024-25, China 2024) and reverse; require 3+ yrs before treating as trend",
+          "Fiscal: each 1% decline in annual births reduces near-term child-related public spending ~0.03-0.05% GDP (small tailwind inside window) while worsening 2050+ pension projections shown in headlines immediately"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "tfr_advanced, tfr_china, tfr_global (slow stocks, init 1.45 / 1.05 / 2.20, floor 0.7)",
+            "birth_cohort_pipeline (annual births stock-vector or aggregate 0-19 stock; init global births ~128M/yr; NEVER feeds worker pools inside 2026-2036 — flows out only post-2045)",
+            "child_dependency_burden (share of GDP, ~decays with falling births)",
+            "fertility_confidence (slow-adjusting expectations stock, 5-8 yr time constant, absorbs tempo effects and generates false rebounds)"
+          ],
+          "flows": [
+            "births = women_15_44 x TFR; TFR(t+1) = TFR(t) + secular_drift(-0.01/yr adv) - 0.025 x unemployment_analog_pp - 0.004 x displacement_rate_pct (anxiety channel) + transfer_yield(min(0.05 x transfer_pct_gdp_first_2, ...), cap +0.25, lag 2-3 yr, 50% tempo decay over 6 yrs)",
+            "pension_projection_gap flow: worsens with cumulative birth shortfall, feeds political pressure immediately (projection channel, not real cost)",
+            "pronatal_spending flow: competes inside the existing 15% GDP transfer cap with UBI (Hungary 5% GDP is the observed max; China 0.1% the timid default)"
+          ],
+          "couplings": [
+            "READS: displacement rate (existing society-layer variable, both above and below the 4%/yr threshold — fertility responds below it even when politics doesn't), sentiment stock (multiplier on fertility_confidence), UBI transfer scale (% GDP, election-quantized), labor_power (weak positive: bargaining security raises fertility_confidence)",
+            "WRITES: political instability / legitimacy pressure (birth-crisis salience term — adds pressure for transfers independent of displacement, i.e., a second route to UBI enactment), fiscal headroom (small positive inside window via lower child costs; large negative in projected/perceived pension solvency, which tightens the perceived 15% GDP cap), sentiment (birth decline as doom-narrative amplifier)",
+            "DOES NOT WRITE: cognitive_workers (950M) or physical_workers (2400M) pools within the 2026-2036 horizon — first coupling to labor supply is 2045+; expose birth_cohort_pipeline as an output series for post-horizon extrapolation only"
+          ]
+        },
+        "lessons_for_model": [
+          "Fertility is politics-and-fiscal-only inside the model window: leave the 950M/2400M worker pools untouched by births; the 20-year lag means even a doubling of TFR in 2027 changes labor supply zero before 2045 — but pension-projection deterioration and birth-crisis narratives hit legitimacy within 1-2 years",
+          "AI displacement depresses fertility through TWO channels with different thresholds: realized job loss (unemployment-analog, -0.7%/pp) and anticipatory anxiety (operates below the model's 4%/yr political-attrition threshold — fertility reacts to displacement politics ignores, creating a silent stock of demographic damage before any political response)",
+          "In below-replacement countries displacement-driven birth losses are permanent (US 2008 scarring: no recovery in 17 yrs) — model them as quantum losses to the cohort pipeline, not deferred births",
+          "The model's UBI (up to 15% GDP) is inadvertently the largest pronatal experiment in history; Alaska PFD evidence says sign is positive, Hungary/Nordic evidence says magnitude saturates: cap at +0.15-0.25 TFR with 2-3 yr lag and 50% tempo decay — UBI cannot fix demographics but does partially offset the displacement-anxiety drag",
+          "Pronatal spending competes with UBI inside the same fiscal cap (Hungary already at 5-6% GDP for ~+0.1-0.2 TFR vs counterfactual; China's 0.13% GDP is noise): in scenario space, governments facing displacement politics will choose UBI over pronatal spending because the constituency (displaced workers) votes now and babies don't",
+          "Build in false-rebound dynamics: Korea 2024-25 (+0.08 TFR from echo cohort + marriage cycle) and China 2024 (Dragon year, reversed -17% in 2025) show 1-2 yr upticks that mislead policy; the fertility_confidence stock with 5-8 yr time constant reproduces this and prevents the model rewarding transfers with instant TFR jumps",
+          "Calibration anchors for 2026 start: TFR US 1.57, Korea 0.80, China ~1.0-1.1 (post-Dragon reversion, 7.9M births), Finland ~1.25, global 2.2 drifting -0.015/yr; global births ~128M/yr declining ~1%/yr"
+        ]
+      },
+      {
+        "topic": "Demographics of first-wave AI displacement: exposure by age/gender/race/education (US BLS CPS 2025, Pew 2023, McKinsey MGI 2023, Brookings 2023-24, ILO 2023/2025, Stanford Canaries 2025, EU LFS/Eurofound/ECB)",
+        "key_numbers": [
+          "US BLS CPS 2025 median ages (all employed 42.1, 163.5M): software developers 38.6 (2.25M, 42% aged 20-34), customer service reps 37.0 (2.60M, 47% under 35), office clerks general 41.8 (1.44M), data entry keyers 42.8 (0.23M), paralegals 42.8 (0.49M), accountants 44.7 (1.77M), secretaries/admin ex-legal/med/exec 47.9 (1.49M, 34% aged 55+), bookkeeping clerks 49.8 (1.25M, 40% aged 55+) — high-exposure cognitive work is BIMODAL: young coders/CSRs + old clerical",
+          "Physical-wave comparators (robot displacement, 2030s): truck drivers median age 46.4 (3.58M), production occupations 42.5 (7.89M), construction laborers 40.0 (2.38M), cashiers 26.1 (2.49M)",
+          "Gender split of high-exposure occupations (BLS CPS 2025, % women): secretaries 91.9, receptionists 89.6, billing clerks 84.5, bookkeeping 82.7, paralegals 82.4, office clerks general 80.5, data entry 70.4, cashiers 68.5, customer service 64.8, accountants 59.1, office+admin support TOTAL 70.5% women (16.44M jobs); software developers only 20.3% women (39.8% Asian)",
+          "Race in exposed occupations (BLS 2025): customer service reps 17.7% Black / 22.5% Hispanic; office+admin support overall 14.9% Black / 20.0% Hispanic; software developers 5.4% Black / 6.1% Hispanic / 39.8% Asian",
+          "Pew 2023 (2022 data): 19% of US workers in most-AI-exposed jobs, 23% least, ~58% medium; women 21% vs men 17% most-exposed; Asian 24% > White 20% > Black 15% > Hispanic 13%; BA+ 27% vs HS-only 12% (2.25x); most-exposed jobs pay $33/hr vs $20/hr least-exposed",
+          "McKinsey MGI Jul-2023: ~12M US occupational transitions needed by 2030; women 1.5x more likely to need to change occupations; lowest-wage workers up to 14x; office support -3.7M jobs and customer service/sales -2.0M by 2030; Black workers overrepresented in 4 of top-5 shrinking categories (office support, production, food services, mechanical install/repair)",
+          "Brookings (Muro et al. 2023-24): >30% of workers could see >=50% of tasks disrupted by genAI, 85% see >=10%; genAI exposure skews FEMALE/college/urban/mid-high-wage — inverse of robotics exposure which skews male/non-college/rural-industrial",
+          "ILO Gmyrek et al. (WP96 2023, WP140 2025 refined index): clerical work 24% of tasks highly exposed + 58% medium (all other occupation groups: 1-4% high); globally 3.3% of employment in top exposure tier — female 4.7% vs male 2.4%; in HIGH-INCOME countries 9.6% of female employment vs 3.5% of male (2.7x gender skew); 1 in 4 jobs worldwide exposed to transformation",
+          "Stanford Canaries (Brynjolfsson/Chandar/Chen, ADP payroll data, Aug/Nov 2025): workers aged 22-25 in most-exposed occupations (software dev, customer service) saw 13% RELATIVE employment decline late-2022 to mid-2025 (~4-5%/yr), controlling for firm shocks; older workers in SAME occupations flat-to-growing; declines only where AI automates, not augments — displacement operates via HIRING FREEZE, not layoffs",
+          "EU: Eurofound EWCS 2024 self-reported AI exposure — clerical support workers 55%, technicians 49%, managers 47%, professionals 45%, EU avg 42%; top-exposure ISCO groups with high female shares: keyboard operators, general office clerks, client information workers, numerical clerks, secretaries; ECB WP (Albanesi et al.): 2011-2019 female employment share ROSE in AI-exposed occupations (pre-genAI era was complementary)",
+          "Union density (organization capacity for backlash): US office/admin+professional-services workers ~5-6% unionized vs transport/warehousing ~16%, manufacturing ~8%, public sector 33% — wave-1 victims are the least organized workforce segment"
+        ],
+        "base_rates": [
+          "Cohort exposure indices for cognitive pool (normalize mean=1.0): young 16-29 = 1.4 (entry-level task overlap + Canaries evidence), mid 30-49 = 1.0, old 50-65 = 0.9 nominal BUT effective political salience ~0.5 because exits route through retirement/attrition",
+          "Young-cohort displacement channel: hiring-rate suppression ~4-5%/yr of entry flow in exposed occupations (Canaries 13%/2.7yr); invisible to displacement-rate politics — accumulates in a blocked-entry stock instead",
+          "Old-clerical silent absorption capacity: median age 48-50 in secretarial/bookkeeping implies natural retirement attrition ~2.5-3.0%/yr of that sub-pool — consistent with model's 4%/yr threshold; US office/admin support already shrank ~0.5-1.0%/yr for a decade pre-genAI with zero political response (confirms threshold)",
+          "Gender skew of wave-1 displacement: 1.5x (McKinsey transition ratio) to 2.7x (ILO high-income top-tier F/M ratio); use 1.5x median, 2.7x tail",
+          "Education skew wave 1: BA+ exposure 2.25x HS-only (Pew 27% vs 12%); wage skew: exposed jobs pay 1.65x (33/20)",
+          "Race skew: wave 1 hits Asian/White > Black/Hispanic (24/20/15/13 Pew); wave 2 (robotics) reverses — Black/Hispanic overrepresented 1.2-1.5x in production/food-service/transport",
+          "Exposure tier distribution for cognitive pool: 19% high / 58% medium / 23% low (Pew, matches ILO clerical 24/58 task split)",
+          "Grievance concentration parameter: wave 1 (cognitive) ~0.3 — diffuse across all sectors/geographies/genders, unionization ~5% -> electoral channel; wave 2 (robotics) ~0.7 — geographically clustered (trucking corridors, manufacturing counties, China-shock analog), unionization 8-16% -> organized-backlash channel",
+          "US high-exposure clerical+CSR+bookkeeping+data-entry+secretarial pool ~ 16.4M office/admin support (10% of employment), of which ~70% female; scale globally per ILO: top-tier exposure ~9.6% of female and 3.5% of male employment in rich countries, ~2% in low-income"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "cognitive_young (0.25 x 950M, exposure idx 1.4)",
+            "cognitive_mid (0.45 x 950M, idx 1.0)",
+            "cognitive_old (0.30 x 950M, idx 0.9 nominal / 0.5 political)",
+            "blocked_entry_youth (graduates never hired; starts ~0, grows with hiring-freeze flow; long decay ~8yr)",
+            "grievance_diffuse (wave-1, feeds electoral realignment / UBI vote share)",
+            "grievance_concentrated (wave-2, feeds labor_power and organized backlash)"
+          ],
+          "flows": [
+            "hiring_freeze_flow: young displacement = 1.4 x cognitive_displacement_rate applied to entry flow, bypasses the 4% attrition threshold entirely (politically invisible), accumulates into blocked_entry_youth",
+            "layoff_flow_mid: 1.0 x rate, the ONLY flow that should count fully toward the politics displacement-rate trigger; per-capita grievance weight 1.5-2x (peak-earnings/mortgage losses)",
+            "retirement_absorption_flow: old cohort exits up to 2.5-3.0%/yr absorbed silently (this IS the microfoundation of the existing ~4% threshold); excess above it spills to grievance",
+            "youth_radicalization_flow: blocked_entry_youth -> sentiment with 3-5yr lag and higher volatility multiplier (youth movements, not strikes)",
+            "wave2_robot_displacement (existing robot fleet flow) -> grievance_concentrated with concentration 0.7 and male/non-college/Black-Hispanic skew"
+          ],
+          "couplings": [
+            "READS: cognitive displacement rate (existing), robot fleet displacement flow (existing), election timer (existing)",
+            "WRITES: society displacement-rate input should now = layoff_flow_mid + max(0, old_exits - retirement_capacity), NOT total displacement — this DELAYS political trigger 2-4 years vs current spec, then makes it sharper",
+            "WRITES: sentiment stock gets a second input from blocked_entry_youth (lagged); labor_power stock should be coupled to grievance_concentrated only (wave-1 victims are 5% unionized, they cannot strike)",
+            "WRITES: UBI/transfer politics: grievance_diffuse raises transfer-vote probability at elections (realignment channel); grievance_concentrated raises both transfer size AND regulation/pause pressure (organized channel)",
+            "Split static 950M cognitive pool 25/45/30 young/mid/old; 2400M physical pool skews male 60-70%, non-college, for wave-2 grievance targeting"
+          ]
+        },
+        "lessons_for_model": [
+          "Wave-1 (cognitive) displacement is demographically INVERTED vs all prior automation: hits women (1.5-2.7x), college graduates (2.25x), urban, Asian/White workers first. Historical backlash priors calibrated on male/non-college China-shock dynamics DO NOT transfer — the first victims are unorganized (5% union density) and dispersed, so response is electoral realignment, not strikes.",
+          "The existing 4%/yr attrition threshold is empirically well-founded (old-clerical retirement attrition runs 2.5-3%/yr and office-support employment fell for a decade with zero politics) BUT it is systematically too PERMISSIVE for wave 1: the two dominant early channels — hiring freezes on the young and retirements of the old — never register as 'displacement rate' at all. Model politics will trigger 2-4 years LATER than a naive total-displacement coupling, then discontinuously when mid-career layoffs begin (~when firms move from not-hiring to restructuring, roughly 2027-2029).",
+          "Blocked youth entry is a distinct stock, not a flow-through: 13% relative decline for 22-25yo in exposed occupations is already measured (2023-2025 actuals) while total employment in those firms grew — a cohort scarred at entry produces delayed, high-volatility political energy (3-5yr lag) rather than immediate labor-power. This is the mechanism most missing from the current society layer.",
+          "Grievance concentration switches sign between waves: wave 1 diffuse (concentration ~0.3) -> coalition formation is cross-class electoral realignment, favors broad UBI-type transfers (consistent with existing election-quantized transfer structure, argues cap pressure toward the 15% GDP limit late-decade); wave 2 robotics (2032+) concentrated (~0.7) in male/non-college/geographic clusters with 8-16% union density -> organized backlash, strike-channel, regulation-pause pressure. Keep two separate grievance stocks; do not average them.",
+          "Race skew reverses between waves (wave 1: Asian 24%/White 20% > Black 15%/Hispanic 13% exposure; wave 2: Black/Hispanic overrepresented 1.2-1.5x in shrinking production/food/transport) — this staggering fragments any unified displaced-worker coalition and supports keeping political response sub-linear in total displaced until wave overlap ~2030-2032.",
+          "Global scaling for the 950M cognitive pool: top-tier exposure is income-graded (9.6% of female / 3.5% of male employment in high-income countries vs ~2% in low-income, ILO 2025), so displacement and its politics concentrate in rich democracies first — consistent with modeling the society layer on OECD election cycles."
+        ]
+      },
+      {
+        "topic": "Compositional change x political coalition dynamics, OECD 2026-2040: projections, elasticities, model mechanics",
+        "key_numbers": [
+          "US (Census 2023 main series): non-Hispanic white share ~58% (2022) -> ~51% (2040); majority-minority crossover 2040-2050; foreign-born share 14% (2022) -> 17% (2060), i.e. ~+0.08pp/yr trend; white-NH share drift approx -0.35pp/yr",
+          "US policy shock override: CBO net migration +410k (2025), projected -220k (2026, first negative in ~50 yrs per Census/Brookings Jan-2026: 2025 range -295k to -10k); removals 310-315k in 2025 (DHS claims 3M); implication: US foreign-born share flat-to-falling 2026-2029, compositional-change RATE near zero under enforcement regime",
+          "EU: extra-EU-born 46.7M = 10.4% of pop (Jan 2025); total foreign-born 13.6% (2023) -> 14.1% (2024); EUROPOP2025: net migration is the ONLY positive growth factor for growing member states; historical drift +0.3-0.5pp/yr in foreign-born share, so ~17-19% by 2040 absent policy reversal",
+          "Halla-Wagner-Zweimueller (JEEA 2017, Austria, 2SLS): +1pp community immigrant share -> +0.4pp FPO vote share; 1 SD immigrant share -> 0.25 SD FPO share. Alternative community-level estimate: +0.16pp far-right per +1pp immigrant share",
+          "Sweden depopulation channel: 1% of municipal population out-migrating (2002-2018) -> +0.5pp Sweden Democrats vote share (decline itself is nativist fuel, no immigrants needed)",
+          "Fetzer (AER 2019) austerity: UKIP +3.5 to +11.9pp in exposed districts (central ~5-6pp); Leave vote -6pp (up to -9.5pp) counterfactual without 2010-15 welfare cuts -> Remain wins. Transfer CUTS are the highest-elasticity political lever found in this literature",
+          "Autor-Dorn-Hanson-Majlesi (AER 2020): China-shock exposed districts -> polarization + net rightward shift, higher GOP win probability, Fox share up; Frey et al. (2018) robots: MI+PA+WI flip to Clinton in counterfactual without 2012-2016 robot adoption growth -> Electoral College reversal on ~77k votes",
+          "Anelli-Colantone-Stanig (PNAS 2021): individual robot-exposure vulnerability -> radical-right support up, perceived economic condition + political self-efficacy down (Western Europe)",
+          "Timbro Authoritarian Populism Index 2024: European populist (L+R) mean vote share 26.9%, historic high but PLATEAUED ~5 consecutive years; radical-right rising while radical-left declines within the total; 2024-25: AfD #2 in Bundestag, RN 142 seats, FPO won Austria 2024",
+          "Hill-Hopkins-Huber (PNAS 2019, 26k precincts, 6 swing states): Hispanic/noncitizen influx 2012-2016 did NOT benefit Trump vs prior GOP, if anything helped Clinton -- CONTESTED against county-level studies finding %-change-Hispanic correlates with GOP shift; aggregation level drives the sign",
+          "Kaufmann/Goodwin diversity-wave meta-analysis (Soc Sci Research 2018): ethnic CHANGE -> threat is LINEAR; diversity LEVEL -> threat is NONLINEAR (contact dampens at high levels); halo effect confirmed in SE/FR/US: homogeneous districts adjacent to diverse ones show peak radical-right support",
+          "Interaction evidence: layoff-notice effect on radical-right vote amplified in high low-skill-immigrant-share areas; Sweden: visible-minority exposure raises SD support ONLY where unemployment high; BUT Munich + several regional studies find no significant interaction -- interaction term is real-but-fragile, treat multiplier as 1.0-2.0 prior",
+          "Welfare chauvinism (ESS): modal European position = benefits only after citizenship; diverse neighborhoods depress native support for transfers to migrants specifically (deservingness gap widens with diversity)"
+        ],
+        "base_rates": [
+          "Nativist vote elasticity to immigrant-share LEVEL: +0.16 to +0.4pp vote per +1pp immigrant share (prior mean 0.3, IV-based)",
+          "Nativist vote elasticity to compositional CHANGE rate: threat response linear in pp/yr change; use ~+0.5-1.0pp vote per additional +0.5pp/yr sustained change rate (derived, wide prior)",
+          "Transfer-cut elasticity: welfare cuts hitting bottom deciles -> +4 to +12pp anti-system vote in exposed regions over one electoral cycle (Fetzer); symmetric transfer EXPANSION dampening assumed weaker, ~one-third to one-half of cut effect (asymmetry: loss aversion)",
+          "Automation-shock -> rightward vote: 1 SD robot/trade exposure -> ~2-3pp radical-right/GOP shift; enough to flip elections decided by <1pp margins",
+          "Economic-anxiety x compositional-change interaction multiplier: 1.0-2.0 (median 1.4); only activates when unemployment/displacement is above local norm AND change rate >~0.3pp/yr",
+          "Compositional drift rates 2026-2040: EU +0.25-0.35pp/yr foreign-born share; US 0.0 to +0.1pp/yr through 2029 (enforcement regime), reverting to +0.15-0.3pp/yr 2030s conditional on election outcomes; white-NH share -0.3 to -0.4pp/yr (mostly births/deaths, robust to migration policy)",
+          "European populist vote share ceiling: logistic saturation ~30-35% national vote (26.9% mean, 5-yr plateau); country max observed ~30% (FPO, RN 1st-round)",
+          "Populist incumbency frequency: 5 of top-5 (HU, IT, FR, GR, PL) have populists in/near government; base rate of nativist party in governing coalition in OECD-Europe ~35-40% of country-years by 2025",
+          "Election frequency: modal OECD cycle 4 yrs; compositional grievance integrates between elections and discharges at election -- matches model's election quantization",
+          "Noncitizen share (transfer-ineligible under welfare-chauvinist UBI): US ~7% of pop, EU ~6% (extra-EU citizens ~4.4% + intra-EU movers); eligible-population fraction prior 0.90-0.94"
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "foreign_born_share (per bloc: US ~0.145, EU ~0.141, 2026 init) with policy-gated drift",
+            "nativist_coalition_strength (vote-share stock, init: EU 0.27, US latent 0.45-in-two-party; logistic ceiling 0.35 multiparty / 0.52 two-party)",
+            "compositional_grievance (integrates change-rate x anxiety between elections, discharges at election tick)",
+            "welfare_chauvinism_index (0-1, init 0.5; rises with diversity level + displacement)"
+          ],
+          "flows": [
+            "net_migration_flow: nativist-government -> negative-to-zero (US 2026: -220k); non-nativist -> +0.8-1.2M/yr US, +1.5-2M/yr EU; 1-election-cycle lag",
+            "compositional_drift: foreign_born_share += net_migration/pop; white-NH share -0.35pp/yr exogenous (births/deaths, unstoppable)",
+            "nativist_vote_flow: d(strength)/dt = 0.3 x d(immigrant_share) + 0.02-0.03 x displacement_rate_excess x interaction_mult(1.4 when both channels hot) + 0.05 x transfer_cut_event - decay 0.01/yr toward ceiling-bounded logistic"
+          ],
+          "couplings": [
+            "READS displacement RATE (the existing >4%/yr attrition threshold): displacement above threshold feeds nativist_vote_flow with multiplier 1.4x when compositional change rate >0.3pp/yr -- automation anxiety converts to NATIVIST vote, not redistributive vote (Autor/Frey/Anelli sign)",
+            "READS sentiment + labor-power stocks: low labor power + high displacement = Sweden-depopulation channel (+0.5pp nativist per 1% regional workforce out-migration/collapse)",
+            "WRITES election-flip probability: flip odds += 0.15-0.25 per election when compositional_grievance high AND displacement>threshold (robot counterfactual flipped 3 states); nativist win REDIRECTS the political response from transfers to border/eligibility policy",
+            "WRITES transfer-eligibility fraction: UBI coverage x (1 - noncitizen_share) x (1 - 0.3 x welfare_chauvinism_index penalty on recent citizens); effective transfer reach 0.85-0.94 of displaced pool -> residual excluded population feeds unrest/sentiment stock",
+            "WRITES transfer-cap politics: nativist governments prefer welfare-chauvinist transfers (citizens-only UBI politically CHEAPER to pass -- raises probability of hitting 15%-GDP cap for eligible pool while excluding 6-10%)",
+            "FEEDBACK LOOP (balancing, 1-election lag): nativist win -> migration cut -> compositional change rate -> 0 -> grievance decays -> nativist support erodes to economic-performance channel only; US 2025-26 is live evidence this loop operates within 1-2 years",
+            "WRITES to existing worker pools: net migration is the missing flow on the STATIC 950M/2400M pools -- OECD-bloc physical-worker pool should gain/lose 0.5-2M/yr from migration policy, same order as early robot displacement (0.4M units/yr 2032), so migration policy and robot fleet are COMPETING supply shocks on the same stock"
+          ],
+          "sources_note": [
+            "Census 2023 proj; CBO Demographic Outlook 2026-2056; Brookings Jan-2026; Eurostat EUROPOP2025; Halla-Wagner-Zweimueller JEEA 2017; Fetzer AER 2019; Autor-Dorn-Hanson-Majlesi AER 2020; Frey-Berger-Chen 2018; Anelli-Colantone-Stanig PNAS 2021; Hill-Hopkins-Huber PNAS 2019; Kaufmann-Goodwin SSR 2018 meta; Timbro API 2024"
+          ]
+        },
+        "lessons_for_model": [
+          "RATE not LEVEL is the threat variable: meta-analytic finding (change->threat linear, level->contact nonlinear) exactly mirrors the model's existing displacement-RATE attrition threshold -- use the same architectural pattern for compositional change: a silent-absorption threshold ~0.2-0.3pp/yr below which composition shifts are politically inert",
+          "SIGN-FLIP RISK in current model logic: the model assumes displacement rate -> political response -> UBI transfers. The empirical record (Autor, Frey, Anelli, Fetzer) says displacement shocks empower RIGHT-nativist coalitions that cut/restrict transfers and migration, not left-redistributive ones. Election-flip mechanic needs a branching outcome: P(redistributive response) vs P(nativist response), weighted by compositional_grievance -- high grievance steals the displacement shock's political energy away from UBI",
+          "Transfer CUTS are ~2-3x more politically explosive than transfer absence (Fetzer +4-12pp vs baseline drift): once UBI-scale transfers start, any retrenchment (fiscal crisis, cap binding) should produce an outsized nativist/anti-system spike -- ratchet asymmetry on the transfer stock",
+          "Welfare chauvinism makes transfers politically CHEAPER but socially leakier: citizens-only UBI passes earlier (lower effective cost, majority-preferred per ESS) but leaves 6-10% of population excluded -- model as eligible_fraction 0.90-0.94 multiplying transfer reach and add excluded-pool unrest feed",
+          "US and EU need different compositional parameterizations 2026-2032: US change rate ~0 (negative net migration 2025-26, first in 50 yrs) so US nativist energy must come from displacement + retrospective grievance; EU continues +0.3pp/yr so interaction term stays armed there",
+          "The nativist feedback loop is BALANCING with short lag: nativist governments demonstrably zero-out migration within 1-2 years (US 2025-26), removing their own fuel -- prevents runaway nativist locking unless displacement channel keeps firing; this makes the 2030s robot-displacement wave the dominant nativist fuel precisely when the migration fuel is exhausted",
+          "Migration is the missing flow on the static worker pools and is same order of magnitude as early robot displacement (0.5-2M workers/yr vs 0.4M robots/yr in 2032) -- until ~2034 migration policy noise can mask or mimic robot displacement in labor-market and political signals",
+          "Populist vote shows saturation: 5-yr plateau at 26.9% Europe -- use logistic not linear accumulation for nativist_coalition_strength, ceiling ~0.35 multiparty",
+          "Precinct-vs-county sign disagreement (Hill-Hopkins-Huber vs county studies) is UNRESOLVED -- keep compositional-change elasticity prior wide (0.1-1.0pp vote per pp/yr change) and mark it a top sensitivity-analysis target; halo effect implies national aggregation understates the political response to localized change",
+          "Depopulation/regional-collapse channel (Sweden: 1% out-migration -> +0.5pp SD) means robot-driven regional labor collapse generates nativist votes even with zero immigrants present -- couple regional decline directly to nativist_vote_flow, not only via the interaction term"
+        ]
+      }
+    ],
+    "design": "# Demography Layer Design — `demography.rs`\n\n**Design stance (Meadows):** demography enters this model as (a) a set of slowly-drifting sinks and sources on the two labor stocks, (b) a signal-filter between raw displacement and the political rate-detector in `society.rs`, and (c) two slow stocks (solidarity, blocked entrants) that determine *which* political channel fires and *how big* the transfer response can be. It is not a population model. Everything below couples to the existing structure (verified against `src/lib.rs` and `src/society.rs`: `attrition_threshold: 0.04`, `transfer_step: 0.04`, `transfer_cap: 0.15`, `transfer_trigger_rate: 0.02`, `election_period: 2`, `labor_power`, `physical_addressable: 0.65`, annual step, disp_rate = year-over-year delta of cumulative `cog_displacement`).\n\n---\n\n## 1. New stocks (5) and the pool conversion\n\nThe static `cognitive_workers_m: 950.0` and `physical_workers_m: 2400.0` move from `Params` to `DemographyState` and become dynamic via entry/retirement flows. That is a conversion, not a new stock. New stocks:\n\n| # | Stock | Init (2026) | Units | Dynamics |\n|---|-------|-------------|-------|----------|\n| D1 | `blocked_entrants_m` | 8.0 | M workers | in: hiring-freeze diversion; out: underemployment drain 0.6/yr → physical pool; slow scar decay 0.07/yr |\n| D2 | `care_demand_m` | 185.0 | M worker-equiv | grows 2.6 %/yr (80+ cohort demographics, exogenous) |\n| D3 | `care_workers_m` | 162.0 | M workers (subset of physical pool) | relaxes toward `care_demand_m`, supply growth capped 2 %/yr; absorbs displaced physical workers |\n| D4 | `migration_openness` | 0.35 | 0–1 policy stock | asymmetric ratchet: max −0.5/yr down, +0.05/yr up; election-quantized restriction events |\n| D5 | `solidarity` | 0.75 | 0–1 slow stock | pulled toward composition-implied level (0.80 cognitive-wave / 0.45 physical-wave); eroded by chauvinism ∝ transfer_share × perceived out-group |\n\nPool flows (per year, on the now-dynamic pools):\n\n```\ncog:  entry  = 0.026 * pool * (1 - freeze_frac)     // baseline grads absorbed\n      retire = r_ret_cog(t) * pool                   // 0.025 → 0.021 linearly 2026→2036\nphys: entry  = 0.026 * pool + 0.6 * blocked_entrants_m   // incl. underemployment spillover\n      retire = 0.018 * pool\n```\nNet drift with zero AI: cognitive +0.1 %/yr (defensibly ~static), physical +0.8 %/yr → ~2,600 M by 2036. The physical denominator was the material error in the static spec (+200 M over the decade).\n\n**Displacement split (the core filter).** Raw cognitive displacement demand `D_cog` (M/yr, from the AI layer) is routed:\n\n```\nfreeze      = min(D_cog, 0.7 * cog_entry_target)   // Dauth channel: entrants first\n→ blocked_entrants_m += freeze                      // never enters visible rate\nvisible_cog = (D_cog - freeze) / cog_pool           // this is what society.rs sees\n```\n\nPhysical: `visible_phys = max(0, robot_HEW_added − vacancy_gap(t) − care_absorption) / phys_pool`, with `vacancy_gap(t)` = 8 M/yr (2026) → 14 M/yr (2036) (aging-core working-age decline: China −5→−10 M/yr, EU −2→−2.5, JP/KR). At current fleet trajectory (0.4 M units/yr ≈ 1 M HEW/yr) this stays pinned at 0 until mid-2030s: robots fill vacancies before they displace.\n\n---\n\n## 2. Explicit couplings — existing parameters made endogenous\n\n| Existing parameter | Becomes | Formula | Rationale |\n|---|---|---|---|\n| `attrition_threshold` (0.04 const) | `attrition_threshold(t) = r_ret_cog(t) + 0.015` | 0.040 (2026) → 0.036 (2036) | Threshold = retirement absorption + churn slack. Reproduces current default at t₀; decays as the boomer wave (Peak-65 2024–27) passes — later trigger, sharper snap. **Double-count guard:** retirement absorption lives ONLY here; it is never also subtracted from `visible_cog`. |\n| displacement input to `society.rs` | `visible_cog + visible_phys` (not raw) | see split above | Hiring freezes and vacancy-filling robots produce zero layoffs; keying politics on raw displacement fires 2–4 yrs too early. |\n| `transfer_cap` (0.15) | `(0.15 − age_creep(t)) * (0.70 + 0.30*solidarity)` | age_creep = 0.0025/yr GDP | Alesina-Glaeser: −5pp GDP sustained ceiling at US-level heterogeneity; fiscal aging pre-empts 1.5–4pp headroom by 2036. Chronic cap ≈ 9.5–11% out-group-coded, 13–15% in-group-coded. |\n| `transfer_step` (0.04) | `0.04 * (0.5 + 0.5*solidarity)` | crisis mode (`crisis_rate` exceeded) bypasses both multipliers for 2 yrs | COVID evidence: heterogeneity penalizes the chronic ceiling, not crisis speed. |\n| `physical_addressable` (0.65) | `0.65 − care_workers_m / phys_pool` | 0.582 (2026) → ~0.56 (2036) | Care is the automation-resistant floor; Japan's 20-yr experiment: 7.6% facility adoption of transfer robots, >50% shelfware. |\n| robot fleet demand (`fleet_target`, lib.rs:790) | `+= 0.5 * unmet_care_gap_m / HEW_per_unit` | `unmet_care_gap = care_demand − care_workers − 0.3*care_robot_equiv` | China's 10M-caregiver gap is the earliest mass humanoid market; pull-forward ~1–2 yrs. Pulled units carry **0 displacement weight** (gap-filling, augmentation regime). |\n| `labor_power` update | `+ 0.005 * core_scarcity(t)` term; blocked_entrants contribute **zero** | core_scarcity ∝ vacancy_gap | Aging-core scarcity props wages until AI wins (~2030); blocked youth have no strike power — sentiment and labor_power must diverge (that divergence is what routes pressure to transfers instead of bargaining). |\n| election mechanics | restriction-first branch | at an election with transfer trigger armed, if `solidarity < 0.5` and `openness > 0.15`: fire restriction *instead of* transfer step — `openness −= 0.2`, `sentiment −= 0.05`, visible-rate mask −0.004 for 3 yrs | 1921/1930/1964/1973/2016–25: migration is always cut before transfers scale. Delays first transfer step 1–2 cycles; SF Fed +5.5pp vacancy per 1M/yr cut = mechanical displacement masking. |\n| sentiment inflows | + wage-downgrade drain: `0.35 * care_absorption/pool * sentiment_gain`; + retrenchment spike: any forced transfer cut adds sentiment at 2.5× the step that created it | | Care churn absorbs bodies at −35% pay (calm statistics, eroding sentiment); Fetzer: cuts are 2–3× more explosive than absence — ratchet asymmetry on the transfer stock. |\n| transfer trigger arming | armed if `visible_rate > transfer_trigger_rate` **OR** `blocked_share > 0.25` | | Blocked graduates are the constituency that makes UBI electorally viable with layoff rates still calm. |\n\nOne-off event: **2032–33 entitlement fight** (US OASI depletion, statutory 21–23% cut) — suppress transfer steps for one election cycle; sovereign-debt channel already exists (`gov_debt_gdp`), no new stock.\n\n---\n\n## 3. Parameter table\n\n| Parameter | Value | Justifying brief |\n|---|---|---|\n| `r_ret_cog` | 0.025/yr → 0.021 by 2036, linear | BLS exits 4.7%/yr gross, retirement-only ~2.5–3% in cognitive-core geographies, boomer crest 2026–30 (briefs 1, 2) |\n| `r_entry_cog` | 0.026/yr of pool | 40M grads/yr ≈ 4.2% of pool, ~62% historically absorbed into cognitive work → net +0.1%/yr (briefs 1, 3) |\n| `r_ret_phys` / `r_entry_phys` | 0.018 / 0.026 per yr | global blend; net +19M/yr, SSA +23M/yr entrants dominated (briefs 1, 2) |\n| `divert_max` (freeze cap) | 0.7 of entry flow | Dauth: 100% of robot incidence on entrants, zero incumbent displacement (briefs 2, 3, 8) |\n| `entry_automation_lead` | 1 yr ahead of mid-career | entry tasks are the routine ones; Canaries: 22–25yo −13% while older flat (briefs 3, 8) |\n| `youth_thresholds` | 0.18 apathy / 0.25 protest / 0.40 rupture on `blocked_share` | China 16–19% = suppressible lying-flat; Arab Spring 30–40% grad unemployment; Spain/Greece 40–50% → new-party rupture (brief 3) |\n| `blocked_share` window | blocked / (3 × annual entry cohort) | 3-yr scarring window, NY Fed cohort framing (brief 3) |\n| `youth_salience` | 2.5× per capita | educated unemployed 2–3× political potency (Tunisia 40% vs 24%) (brief 3) |\n| `rupture_lag` | 3-yr third-order delay, discharges at election ticks | Podemos/Syriza: 3–4 yrs from threshold to electoral rupture (brief 3) |\n| `underemploy_drain` | 0.6/yr of D1 → physical pool | 41.5% underemployed vs 5.7% unemployed ≈ 7:1 buffer (brief 3) |\n| `blocked_init` | 8 M | entry postings −35% since 2023 with near-zero layoffs; grad-unemployment inversion already observed (brief 3) |\n| `care_demand_growth` | 0.026/yr | 80+ cohort +3–4%/yr China, +3% OECD; 185→~240M WE by 2036 (brief 6) |\n| `care_supply_cap` | 0.02/yr growth | US: 9.7M gross openings vs 0.86M net — churn-limited (brief 6) |\n| `care_wage_penalty` | 0.35 | care median ≈ 60% of economy median (brief 6) |\n| `care_robot_effectiveness` | 0.3 × nominal; task cap 0 pre-2031 → 0.15 by 2040 | Japan: 7.6% adoption after decades of 50% subsidies, >50% unused (brief 6) |\n| `vacancy_gap(t)` | 8 → 14 M/yr, 2026→2036 | China −4.9→−10.1 M/yr, EU −2.0→−2.5, JP+KR −0.9→−1.4 (brief 1) |\n| `openness_init` | 0.35 | mid-restrictionist wave: US net migration negative 2025, UK −50% in one yr, EU Pact live June 2026 (briefs 4, 9) |\n| `openness_rates` | −0.5/yr max down, +0.05/yr max up | Germany 1973: closed in 5 weeks; Hart-Celler: 25-yr reopening — 10:1 asymmetry (brief 4) |\n| `restriction_trigger` | visible rate > 0.025 or sentiment > 0.35, election-quantized | restriction is the cheap first resort — deliberately below the 0.04 threshold (brief 4) |\n| `restriction_relief` | sentiment −0.05, visible-rate mask −0.004 for 3 yrs | one-cycle bump ≈ small transfer at 0% GDP; SF Fed vacancy evidence (brief 4) |\n| `solidarity_init` | 0.75 | wave-1 displaced are in-group-coded (college, majority-group, 1.5–2.7× female) (briefs 5, 8) |\n| `solidarity_targets` | 0.80 cognitive-dominant / 0.45 physical-dominant displaced mix; adjustment 0.05/yr | race/education skew reverses between waves (briefs 5, 8) |\n| `chauvinism_k` | 0.5/yr × transfer_share × perceived_outgroup (0.35 = 2.5× foreign-born 0.14) | perception runs 2–3× actual, immune to correction; makes sustained 15% GDP unstable at US heterogeneity by construction (briefs 5, 9) |\n| `cap_multiplier` | 0.70 + 0.30 × solidarity | −5pp GDP ceiling at US-vs-EU fractionalization gap (brief 5) |\n| `age_creep` | 0.0025 GDP-share/yr; +1pp shock 2032–33 | US SS+health 11.9→15.5% GDP; OASI depletion FY2032 (brief 6) |\n| `retrench_spike` | 2.5× | Fetzer: cuts +4–12pp anti-system vs weak expansion dampening (brief 9) |\n| `concentration_salience` | 0.4 wave-1 (diffuse), 0.7 wave-2 (clustered) — fixed multipliers on the two visible-rate sentiment inflows | rust-belt vs Japan asymmetry; wave-1 victims 5% unionized (briefs 2, 8) |\n| `care_pull_gain` | 0.5 gap→fleet-target coupling | China gap 10M now vs 0.5M professionals; pulled units displace ~0 (brief 6) |\n\n---\n\n## 4. The youth-blockage channel (separate sentiment inflow)\n\nTwo orthogonal political detectors, never averaged:\n\n```\n// Channel A — mid-career (existing, unchanged form, filtered input):\ninflow_A = sentiment_gain * attributability\n         * max(0, visible_rate - attrition_threshold(t)).powf(1.5)\n         * concentration_salience                    // 0.4 cognitive / 0.7 physical era\n\n// Channel B — youth blockage (NEW, stock-threshold, lagged):\nblocked_share = blocked_entrants_m / (3.0 * entry_cohort_m);\ninflow_B = youth_gain(=2.0) * youth_salience(2.5)\n         * max(0, blocked_share - 0.18).powf(1.5);   // delivered via 3-yr delay3\n// at blocked_share > 0.40: election-tick rupture event — inst_trust -0.05,\n// election outcome forced onto transfer/restriction branch (Podemos template)\n```\n\nChannel A is a *rate* with threshold 0.040→0.036/yr on **visible** displacement (fast, election-cycle salience). Channel B is a *stock share* with thresholds 0.18/0.25/0.40 and a 3-yr lag (slow, higher amplitude — the historically revolutionary variable). Signature difference the model must preserve: 2026–29 shows A silent while B loads; B writes to `sentiment`, `inst_trust`, and transfer-trigger arming but **never** to `labor_power`.\n\n---\n\n## 5. Validation contract — falsifiable predictions\n\n1. **Youth-first sequencing:** in baseline runs, `blocked_share` crosses 0.18 by 2027±1 while `visible_cog` stays under threshold until 2030–2033; the first sentiment escalation is Channel-B-driven. *Falsified if* observed politics 2026–29 are driven by layoff rates (JOLTS discharges rising >2pp) with grad-cohort indicators calm.\n2. **Restriction-first:** first migration restriction event precedes the first transfer step by 1–2 election cycles in ≥80% of Monte-Carlo runs; deleting the migration valve pulls the first transfer step 2–4 yrs earlier. *Falsified if* any OECD country legislates UBI-scale transfers before major migration restriction.\n3. **Silent physical decade:** `visible_phys` = 0 until robot HEW additions exceed ~10 M/yr (fleet ≳ 4 M units/yr, ≈2035–38 at trajectory). *Falsified by* organized anti-robot backlash (strike channel) anywhere in the aging core before ~2033.\n4. **Care pull magnitude:** unmet_care_gap adds 0.5–2 M units/yr to robot demand by mid-2030s; ablating the coupling cuts 2032–36 fleet growth 15–30%. *Falsified if* early humanoid deployments concentrate outside care/vacancy-gap markets.\n5. **Chronic-cap instability:** any run sustaining transfers >11% GDP with solidarity <0.5 retrenches within 2 election cycles, and the retrenchment sentiment spike ≥2× the original relief. *Falsified by* a high-heterogeneity polity sustaining >11% GDP universal transfers without chauvinist erosion.\n6. **Later-but-sharper:** vs the constant-threshold ablation, political trigger arrives 2–4 yrs later but peak sentiment slope is ≥1.5× (the Meadows delayed-feedback trap: masking suppresses the signal, then the threshold is crossed with a jump).\n7. **Pool arithmetic:** physical pool 2,580–2,620 M by 2036; denominator growth alone shaves ~0.1pp/yr off measured physical displacement rate vs the static 2400 M spec.\n8. **Entitlement collision:** runs with the 2032–33 event reach `transfer_cap` ~2 yrs later than runs without it; the event never *prevents* cap-hitting when displacement persists (contractual crowding delays, doesn't substitute).\n\n---\n\n## 6. What NOT to model, and why\n\n- **Fertility beyond a fiscal constant.** Births cannot touch either pool before 2045 (20-yr lag); TFR endogeneity to transfers saturates at +0.15–0.25 TFR — politics-side noise. Keep only the `age_creep` ramp (which already embodies the dependency trajectory). No TFR stock, no pronatal-spending competition (observed 0.07–0.13% GDP: below model resolution).\n- **Sub-national/spatial detail.** Concentration effects enter as the two fixed salience multipliers (0.4/0.7) — the published evidence (rust belt vs Japan; Sweden depopulation) supports an elasticity, not a geography, at this aggregation.\n- **Group stocks (race/gender/nativist parties).** Composition dynamics enter *only* as parameters: solidarity targets by displaced-wave mix, the 2.5× perception multiplier, chauvinism erosion, the restriction-first branch. Published elasticities (Alesina-Glaeser slope, Halla-Wagner-Zweimüller 0.16–0.4pp/pp, Fetzer 2–3× cut asymmetry) — no group narratives, no separate nativist-vote stock (its ceiling/plateau behavior is fully absorbed by the openness ratchet + branch probability, and a vote-share stock would double-count sentiment).\n- **Geographic pool buckets.** The core/periphery split folds into the drift rates and `vacancy_gap(t)`; society politics are already OECD-weighted. Two extra stocks would buy resolution the couplings never consume.\n- **Care-robot capability micro-modeling pre-2032.** Japan's 20-year natural experiment fixes substitution ≈ 0 regardless of capability assumptions; the binding constraints (liability, training, cost-effectiveness) are not in the model's state space.\n- **SSA premature-deindustrialization / migration-pressure dynamics.** Real and large (+23 M workers/yr meeting an AI-closed export ladder) but outside the OECD-election political core this model resolves; the periphery enters only through `r_entry_phys` and the openness stock. Flag as a scope limitation in `REPORT.md`, not a mechanism.\n\n**Double-counting guards (summary):** retirement absorption only in `attrition_threshold(t)`; hiring-freeze only in the visible/blocked split; care absorption subtracts from visible physical rate but pays a 0.35-weight sentiment toll; migration is politics/market-tightness only (pools are global aggregates — migration is reallocation, not global supply); solidarity gates cap/step and leaves `transfer_backlash_damp` untouched; care-pull robot units carry zero displacement weight.\n\n**Implementation:** new module `rust/singularity-econ/src/demography.rs` — `DemographyParams`, `DemographyState`, stepped once per year *before* `SocietyState::step`, consuming raw `D_cog`/robot HEW additions and emitting `DemographyOutputs { visible_cog_rate, visible_phys_rate, attrition_threshold_t, transfer_cap_eff, transfer_step_eff, physical_addressable_eff, robot_pull_units, youth_sentiment_inflow, cog_pool_m, phys_pool_m, restriction_fired }`; `lib.rs` swaps `p.cognitive_workers_m`/`p.physical_workers_m` reads (lines 186–187, 790, 812) for the state values and `p.physical_addressable` (line 247) for the effective value; `society.rs` takes the three endogenous overrides as per-step arguments rather than params, plus `inflow_B` as a second sentiment inflow and the trigger-arming OR-condition. Ablation switch `d_demography: f64` mirrors the existing loop switches; with it off, all outputs collapse to current constants (0.04/0.04/0.15/0.65, raw rates) — bit-identical legacy behavior for regression tests."
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Research"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Design"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "demo:cohort-projections",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a59d66613660eb5b7",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784983905380,
+      "queuedAt": 1784983902811,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Working-age population 2026-2040 by region (UN WPP 2024 med…",
+      "promptPreview": "You are feeding a Meadows systems-dynamics model of the 2026-2036 AI/robotics transition (Rust, annual steps). Existing relevant structure: cognitive workers 950M and physical workers 2400M (currently STATIC pools, global); a society layer where politics responds to the displacement RATE with an attrition threshold ~4%/yr below which job loss is silently absorbed; election-quantized UBI-scale tran…",
+      "lastProgressAt": 1784984195200,
+      "tokens": 44173,
+      "toolCalls": 15,
+      "durationMs": 289819,
+      "resultPreview": "{\"topic\":\"Working-age population 2026-2040 by region (UN WPP 2024 medium, 15-64 basis via OWID grapher; 20-64 levels ~0.93x aged regions / ~0.85x SSA, growth rates within 0.1pp) — cognitive vs physical workforce demographics for demography.rs\",\"key_numbers\":[\"LEVELS 15-64 (M), 2026|2031|2036|2040: World 5421|5647|5817|5916; China 990|966|915|860; India 1013|1062|1098|1118; US 224|226|228|230; Euro…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "demo:retirement-attrition",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "aef9d54f41936124f",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784983906003,
+      "queuedAt": 1784983902811,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Retirement/natural attrition as silent displacement absorpt…",
+      "promptPreview": "You are feeding a Meadows systems-dynamics model of the 2026-2036 AI/robotics transition (Rust, annual steps). Existing relevant structure: cognitive workers 950M and physical workers 2400M (currently STATIC pools, global); a society layer where politics responds to the displacement RATE with an attrition threshold ~4%/yr below which job loss is silently absorbed; election-quantized UBI-scale tran…",
+      "lastProgressAt": 1784984093155,
+      "tokens": 41195,
+      "toolCalls": 11,
+      "durationMs": 187151,
+      "resultPreview": "{\"topic\":\"Retirement/natural attrition as silent displacement absorption, 2026-2036, vs 1980s deindustrialization\",\"key_numbers\":[\"BLS 2024-34 projections: labor-force EXIT rate 4.7%/yr avg all US occupations + occupational-transfer rate 5.9%/yr = 10.6%/yr total permanent separations (bls.gov/emp occupational-separations tables)\",\"US Peak-65: record 4.1M Americans turn 65 EVERY year 2024-2027 (11,…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "demo:youth-blockage",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "ab75cd1b9605af884",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784984096979,
+      "queuedAt": 1784983902812,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Labor-market entry blockage (graduate ladder-lockout) as a …",
+      "promptPreview": "You are feeding a Meadows systems-dynamics model of the 2026-2036 AI/robotics transition (Rust, annual steps). Existing relevant structure: cognitive workers 950M and physical workers 2400M (currently STATIC pools, global); a society layer where politics responds to the displacement RATE with an attrition threshold ~4%/yr below which job loss is silently absorbed; election-quantized UBI-scale tran…",
+      "lastProgressAt": 1784984235706,
+      "tokens": 37850,
+      "toolCalls": 10,
+      "durationMs": 138727,
+      "resultPreview": "{\"topic\":\"Labor-market entry blockage (graduate ladder-lockout) as a distinct political flashpoint channel vs mid-career displacement\",\"key_numbers\":[\"US entry-level job postings: -35% Jan 2023 → mid-2025 (Revelio Labs); ≈ -13%/yr flow contraction\",\"Big Tech new-grad share of hires: 25% (2019) → 7% (2024), -50%+ vs pre-pandemic; startups 30% (2019) → <6% (2024) (SignalFire, 650M LinkedIn profiles)…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "demo:immigration-policy",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a0a8b6e5142358932",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784984200123,
+      "queuedAt": 1784983902812,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Immigration as a policy valve responding to labor shocks: 1…",
+      "promptPreview": "You are feeding a Meadows systems-dynamics model of the 2026-2036 AI/robotics transition (Rust, annual steps). Existing relevant structure: cognitive workers 950M and physical workers 2400M (currently STATIC pools, global); a society layer where politics responds to the displacement RATE with an attrition threshold ~4%/yr below which job loss is silently absorbed; election-quantized UBI-scale tran…",
+      "lastProgressAt": 1784984392534,
+      "tokens": 44208,
+      "toolCalls": 12,
+      "durationMs": 192410,
+      "resultPreview": "{\"topic\":\"Immigration as a policy valve responding to labor shocks: 100-year base rates, response elasticities, and automation-era blame dynamics\",\"key_numbers\":[\"US 1921 Emergency Quota Act: gross immigration 805k (1921) -> 310k (1922), -61% in 1 yr; passed ~12 months after 1920-21 depression (unemployment ~11.7%)\",\"US 1924 Johnson-Reed: permanent cap 153,714/yr vs pre-WWI ~1M/yr peak (1.285M in …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "demo:solidarity-transfers",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "accd03ffb339f7354",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784984257545,
+      "queuedAt": 1784983902812,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Heterogeneity and transfer-program politics: does diversity…",
+      "promptPreview": "You are feeding a Meadows systems-dynamics model of the 2026-2036 AI/robotics transition (Rust, annual steps). Existing relevant structure: cognitive workers 950M and physical workers 2400M (currently STATIC pools, global); a society layer where politics responds to the displacement RATE with an attrition threshold ~4%/yr below which job loss is silently absorbed; election-quantized UBI-scale tran…",
+      "lastProgressAt": 1784984450902,
+      "tokens": 40255,
+      "toolCalls": 11,
+      "durationMs": 193355,
+      "resultPreview": "{\"topic\":\"Heterogeneity and transfer-program politics: does diversity lower the UBI cap/speed, and who is eligible\",\"key_numbers\":[\"Alesina-Glaeser (2001/2004): US social spending ~14.6% GDP vs EU-15 ~25.5% (1998); ~50% of the ~11pp gap attributed to racial heterogeneity, ~50% to institutions (PR, centralization)\",\"Ethnic fractionalization: US ~0.49 vs core EU 0.10-0.30 (Alesina et al 2003 'Fracti…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "demo:care-economy",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a9a0398ad02db65ed",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784984398812,
+      "queuedAt": 1784983902812,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Care/eldercare labor demand vs age structure: shortage proj…",
+      "promptPreview": "You are feeding a Meadows systems-dynamics model of the 2026-2036 AI/robotics transition (Rust, annual steps). Existing relevant structure: cognitive workers 950M and physical workers 2400M (currently STATIC pools, global); a society layer where politics responds to the displacement RATE with an attrition threshold ~4%/yr below which job loss is silently absorbed; election-quantized UBI-scale tran…",
+      "lastProgressAt": 1784984600206,
+      "tokens": 43296,
+      "toolCalls": 13,
+      "durationMs": 201394,
+      "resultPreview": "{\"topic\":\"Care/eldercare labor demand vs age structure: shortage projections, care share of physical labor, Japan robotics reality check, dependency-ratio fiscal loads competing with UBI\",\"key_numbers\":[\"GLOBAL: WHO-revised health-worker shortage 10M by 2030 (down from 18M 2016 est). ILO: 381M care workers = 11.5% of global employment (123M education, 92M health/social work, 70M domestic). Non-edu…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 7,
+      "label": "demo:fertility-response",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a9bab9b2e55c88ea3",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784984456006,
+      "queuedAt": 1784983902812,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Fertility responses to economic conditions and transfers: 2…",
+      "promptPreview": "You are feeding a Meadows systems-dynamics model of the 2026-2036 AI/robotics transition (Rust, annual steps). Existing relevant structure: cognitive workers 950M and physical workers 2400M (currently STATIC pools, global); a society layer where politics responds to the displacement RATE with an attrition threshold ~4%/yr below which job loss is silently absorbed; election-quantized UBI-scale tran…",
+      "lastProgressAt": 1784984640976,
+      "tokens": 42848,
+      "toolCalls": 13,
+      "durationMs": 184970,
+      "resultPreview": "{\"topic\":\"Fertility responses to economic conditions and transfers: 2026 state, pronatal policy elasticities, insecurity effects, and lag structure for the AI-transition model\",\"key_numbers\":[\"Global TFR 2025: 2.2 (UN WPP 2024); replacement 2.1 projected reached globally ~2050; 131/237 countries (55%) below 2.1; ~71% of world population lives in below-replacement countries\",\"South Korea TFR: 0.72 …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 8,
+      "label": "demo:exposure-heterogeneity",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a9f68ab42bd4d1bf3",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784984604194,
+      "queuedAt": 1784983902813,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Demographics of first-wave AI displacement: exposure by age…",
+      "promptPreview": "You are feeding a Meadows systems-dynamics model of the 2026-2036 AI/robotics transition (Rust, annual steps). Existing relevant structure: cognitive workers 950M and physical workers 2400M (currently STATIC pools, global); a society layer where politics responds to the displacement RATE with an attrition threshold ~4%/yr below which job loss is silently absorbed; election-quantized UBI-scale tran…",
+      "lastProgressAt": 1784984860897,
+      "tokens": 46342,
+      "toolCalls": 20,
+      "durationMs": 256703,
+      "resultPreview": "{\"topic\":\"Demographics of first-wave AI displacement: exposure by age/gender/race/education (US BLS CPS 2025, Pew 2023, McKinsey MGI 2023, Brookings 2023-24, ILO 2023/2025, Stanford Canaries 2025, EU LFS/Eurofound/ECB)\",\"key_numbers\":[\"US BLS CPS 2025 median ages (all employed 42.1, 163.5M): software developers 38.6 (2.25M, 42% aged 20-34), customer service reps 37.0 (2.60M, 47% under 35), office …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 9,
+      "label": "demo:ethnic-political-dynamics",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "ae2adb3efe4e44119",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784984644703,
+      "queuedAt": 1784983902813,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Compositional change x political coalition dynamics, OECD 2…",
+      "promptPreview": "You are feeding a Meadows systems-dynamics model of the 2026-2036 AI/robotics transition (Rust, annual steps). Existing relevant structure: cognitive workers 950M and physical workers 2400M (currently STATIC pools, global); a society layer where politics responds to the displacement RATE with an attrition threshold ~4%/yr below which job loss is silently absorbed; election-quantized UBI-scale tran…",
+      "lastProgressAt": 1784984882744,
+      "tokens": 46184,
+      "toolCalls": 15,
+      "durationMs": 238041,
+      "resultPreview": "{\"topic\":\"Compositional change x political coalition dynamics, OECD 2026-2040: projections, elasticities, model mechanics\",\"key_numbers\":[\"US (Census 2023 main series): non-Hispanic white share ~58% (2022) -> ~51% (2040); majority-minority crossover 2040-2050; foreign-born share 14% (2022) -> 17% (2060), i.e. ~+0.08pp/yr trend; white-NH share drift approx -0.35pp/yr\",\"US policy shock override: CBO…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 10,
+      "label": "design:demography",
+      "phaseIndex": 2,
+      "phaseTitle": "Design",
+      "agentId": "a0cda466e2004ce55",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1784984890278,
+      "queuedAt": 1784984884253,
+      "attempt": 1,
+      "lastToolName": "Bash",
+      "lastToolSummary": "sed -n 120,260p /home/user/Amulet-Map-Editor/singularity_ec…",
+      "promptPreview": "You are a systems-dynamics architect (Meadows school). Synthesize these 9 demographic research briefs into ONE demography-layer design for the existing Rust model, minimal and non-double-counting.\n\nExisting structure you must couple to, not duplicate: society layer (sentiment keyed to displacement rate with attrition_threshold 0.04/yr; transfers staircase to 15% GDP cap; labor_power stock; electio…",
+      "lastProgressAt": 1784985230549,
+      "tokens": 76573,
+      "toolCalls": 6,
+      "durationMs": 340271,
+      "resultPreview": "# Demography Layer Design — `demography.rs`\n\n**Design stance (Meadows):** demography enters this model as (a) a set of slowly-drifting sinks and sources on the two labor stocks, (b) a signal-filter between raw displacement and the political rate-detector in `society.rs`, and (c) two slow stocks (solidarity, blocked entrants) that determine *which* political channel fires and *how big* the transfer…"
+    }
+  ],
+  "totalTokens": 462924,
+  "totalToolCalls": 126
+}
