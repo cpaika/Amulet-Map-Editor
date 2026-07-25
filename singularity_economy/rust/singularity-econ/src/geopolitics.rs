@@ -170,10 +170,27 @@ fn kind_fx(kind: ShockKind, year: i32, active: bool, years_since_end: i32) -> Ge
 /// Aggregate all shocks into one effect vector for `year`.
 pub fn effects_for_year(shocks: &[GeoShock], year: i32) -> GeoFx {
     let mut agg = GeoFx::default();
+    // Same-kind episodes must not stack multiplicatively (one embargo
+    // counted twice squares a single physical supply gate): only the
+    // first ACTIVE episode of each kind applies; tails dedupe likewise.
+    let mut active_seen = [false; 8];
+    let mut tail_seen = [false; 8];
     for s in shocks {
         let end = s.start_year as f64 + s.duration_years;
         let active = year >= s.start_year && (year as f64) < end;
         let since_end = year - end.ceil() as i32;
+        let idx = s.kind as usize;
+        if active {
+            if active_seen[idx] {
+                continue;
+            }
+            active_seen[idx] = true;
+        } else if (0..3).contains(&since_end) {
+            if tail_seen[idx] || active_seen[idx] {
+                continue;
+            }
+            tail_seen[idx] = true;
+        }
         // Pro-rate sub-year durations in the start year.
         let weight = if active {
             s.duration_years.min(1.0).min(end - year as f64).clamp(0.0, 1.0)
@@ -252,8 +269,9 @@ pub fn sample_shocks(rng: &mut GeoRng, start_year: i32, end_year: i32) -> Vec<Ge
                 squeezes_recent.push(year);
             }
         }
-        // S6 standalone: 30% early decaying to 20%.
-        let p_s6 = (0.30 - 0.02 * (year - start_year) as f64).max(0.20);
+        // S6 standalone: trimmed so total squeeze count (standalone +
+        // tit-for-tat) lands in the contract band E[count] in [2,4].
+        let p_s6 = (0.24 - 0.02 * (year - start_year) as f64).max(0.16);
         if rng.next_f64() < p_s6 {
             push(ShockKind::MineralsSqueeze, 0.35, &mut shocks);
             squeezes_recent.push(year);
@@ -297,7 +315,10 @@ pub fn sample_shocks(rng: &mut GeoRng, start_year: i32, end_year: i32) -> Vec<Ge
                 * tension
                 * if year > 2032 { 0.85f64.powi(year - 2032) } else { 1.0 };
             let r = rng.next_f64();
-            if r < p_s4 && escalation >= 3.0 {
+            // Invasions are overwhelmingly ladder-gated; a 10% surprise
+            // allowance covers bolt-from-blue (validation contract #3).
+            let surprise_ok = escalation >= 3.0 || rng.next_f64() < 0.10;
+            if r < p_s4 && surprise_ok {
                 push(ShockKind::TaiwanInvasion, 4.0, &mut shocks);
                 invaded = true;
                 if rng.next_f64() < 0.80 {

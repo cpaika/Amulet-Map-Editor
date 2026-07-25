@@ -135,7 +135,7 @@ impl Default for SocietyParams {
             sentiment_halflife: 7.0,
             sentiment_halflife_relieved: 2.5,
             transfer_trigger_rate: 0.02,
-            crisis_rate: 0.06,
+            crisis_rate: 0.02,
             transfer_step: 0.04,
             transfer_crisis_step: 0.08,
             transfer_cap: 0.15,
@@ -188,10 +188,15 @@ pub struct SocietyState {
     pub inst_trust: f64,       // S5
     pub consumer_trust: f64,   // S6
     pub gov_debt_gdp: f64,
+    /// Unrest intensity (0..1): rises under unremediated high sentiment
+    /// with low institutional trust; costs adoption and GDP (the design's
+    /// R5 consequence — trust collapse must not be pro-adoption).
+    pub unrest: f64,
     years_disp_hot: i32,
     years_s1_high: i32,
     incidents_seen: u32,
     trust_latched: bool,
+    emergency_fired: bool,
 }
 
 impl SocietyState {
@@ -206,10 +211,12 @@ impl SocietyState {
             inst_trust: sp.inst_trust_2026,
             consumer_trust: sp.consumer_trust_2026,
             gov_debt_gdp: sp.gov_debt_2026,
+            unrest: 0.0,
             years_disp_hot: 0,
             years_s1_high: 0,
             incidents_seen: 0,
             trust_latched: false,
+            emergency_fired: false,
         }
     }
 
@@ -245,9 +252,17 @@ impl SocietyState {
     }
 
     /// Multiplier on this year's adoption INCREMENT (never the level —
-    /// regulation slows the rate; it does not un-adopt).
+    /// regulation slows the rate; it does not un-adopt). Unrest adds its
+    /// own throttle: strikes and street pressure slow deployment even
+    /// without statutes (IMF: -15-30% activity effects for 2-3 years).
     pub fn adoption_rate_mult(&self, sp: &SocietyParams) -> f64 {
-        1.0 - sp.reg_adoption_penalty * self.reg_enforcement * sp.b6_regulation
+        (1.0 - sp.reg_adoption_penalty * self.reg_enforcement * sp.b6_regulation)
+            * (1.0 - 0.25 * self.unrest)
+    }
+
+    /// GDP cost of unrest (level effect, distinct from transition drag).
+    pub fn unrest_gdp_cost(&self) -> f64 {
+        0.01 * self.unrest
     }
 
     /// Consumer-trust ceiling on the adoption level (B10).
@@ -303,15 +318,22 @@ impl SocietyState {
         sp: &SocietyParams,
         disp_rate: f64,
         adoption: f64,
+        adoption_accel: f64,
         lagged_disp_rate: f64,
         election_year: bool,
         incident: bool,
         dread: bool,
     ) {
-        // ---- S1 sentiment: rate-triggered inflow, remediation-dependent decay
-        let inflow = sp.sentiment_gain
+        // ---- S1 sentiment: rate-triggered inflow with a 1-yr anticipation
+        // lead (WGA struck at ~0% realized displacement) and logistic-style
+        // saturation instead of a hard clamp (red-team round 3: the pinned
+        // 1.0 plateau was a saturation artifact, not a pulse).
+        let anticipation = 0.5 * adoption_accel.max(0.0);
+        let inflow = (sp.sentiment_gain
             * (disp_rate - sp.attrition_threshold).max(0.0).powf(1.5)
-            * sp.attributability;
+            * sp.attributability
+            + anticipation)
+            * (1.0 - self.sentiment);
         let halflife = if self.transfers_active() {
             sp.sentiment_halflife_relieved
         } else {
@@ -380,6 +402,13 @@ impl SocietyState {
                     sp.incident_s2_major
                 };
             }
+            // Emergency-powers throttle (design §3): a displacement-rate
+            // crisis >4pp/yr triggers executive action in WEEKS, bypassing
+            // the legislative calendar; ~30% of the step ratchets.
+            if disp_rate > 0.04 && !self.emergency_fired {
+                self.reg_stringency += 0.09;
+                self.emergency_fired = true;
+            }
             self.reg_stringency = self.reg_stringency.min(1.0);
             self.reg_enforcement +=
                 (self.reg_stringency - self.reg_enforcement) / sp.enforcement_tau;
@@ -389,6 +418,20 @@ impl SocietyState {
         self.labor_power = (self.labor_power + sp.organizing_gain * self.sentiment
             - sp.r6_erosion * lagged_disp_rate * self.labor_power * 4.0)
             .clamp(0.02, 1.0);
+
+        // ---- unrest (R5 consequence): unremediated grievance + low trust
+        // boils over; drains once transfers flow or sentiment cools.
+        let boiling = self.sentiment > 0.6
+            && !self.transfers_active()
+            && self.inst_trust < 0.35;
+        self.unrest = if boiling {
+            (self.unrest + 0.35).min(1.0)
+        } else {
+            self.unrest * 0.5
+        };
+        if self.unrest > 0.3 {
+            self.inst_trust = (self.inst_trust - 0.03).max(0.05);
+        }
 
         // ---- S5 institutional trust
         let mut dt = -0.005;

@@ -617,6 +617,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // before displacement does (GFC +4pp saving rate).
             demand_signal_growth -= soc.precautionary_drag(&p.society);
         }
+        let adopt_delta = (adopt - prev_adopt).max(0.0);
         prev_adopt = adopt;
         perceived_growth += p.perception_smoothing
             * (demand_signal_growth - perceived_growth);
@@ -753,6 +754,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
 
         // ---- robotics ----
         let mut robot_prod = 0.0;
+        // Price actually PAID this year (shock premia included); the
+        // Wright's-law learning state stays on the clean cost curve.
+        let mut robot_cost_paid = robot_cost;
         if year >= p.robotics_year {
             if component_capacity == 0.0 {
                 component_capacity = p.component_capacity_2028;
@@ -774,6 +778,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // (magnets 5-10% of humanoid BOM; copper elasticity 0.08).
             let robot_cost_eff =
                 robot_cost * gfx.comp_cost_mult * metals_index.powf(0.08);
+            robot_cost_paid = robot_cost_eff;
             let payback_years =
                 robot_cost_eff / (avg_phys_wage_k * p.robot_hew).max(1e-9);
             let econ_pull = (2.0 / payback_years.max(0.25)).clamp(0.0, 3.0);
@@ -831,8 +836,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             dc_infra: ai_capex * (1.0 - p.silicon_share_of_capex),
             power_equipment: p.power_equip_cost_per_gw * power_additions,
             electricity: used_power * 8760.0 * electricity_price / 1e6,
-            robots: robot_prod * robot_cost / 1e3,
-            robot_components: robot_prod * robot_cost / 1e3 * 0.55,
+            robots: robot_prod * robot_cost_paid / 1e3,
+            robot_components: robot_prod * robot_cost_paid / 1e3 * 0.55,
             robot_services: pd * p.physical_workers_m * avg_phys_wage * 0.35,
             it_services: casualty(p.it_services_pool, p.it_services_beta, 0.04),
             bpo: casualty(p.bpo_pool, p.bpo_beta, 0.03),
@@ -868,12 +873,21 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // Transfers offset part of transition drag (demand backstop);
         // compliance costs subtract (distinct channels, design doc §5.4).
         let drag_mult = if soc_on { soc.drag_multiplier(&p.society) } else { 1.0 };
-        let compliance = if soc_on { soc.compliance_cost(&p.society) } else { 0.0 };
+        // Compliance is a cost on the AI SECTOR's output, not the whole
+        // economy (red-team round 3: charging world GDP overstated the
+        // loss by the inverse of the sector share).
+        let compliance = if soc_on {
+            soc.compliance_cost(&p.society) * ai_share.min(0.2) * 5.0
+        } else {
+            0.0
+        };
+        let unrest_cost = if soc_on { soc.unrest_gdp_cost() } else { 0.0 };
         gdp *= 1.0
             + (p.base_gdp_growth + p.productivity_passthrough * ai_share * 0.5
                 - p.transition_drag * new_disp * (p.cognitive_wage_bill / gdp)
                     * drag_mult
-                - compliance);
+                - compliance
+                - unrest_cost);
 
         // ---- society stocks advance on this year's outcomes ----
         if soc_on {
@@ -894,6 +908,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 &p.society,
                 new_disp,
                 adopt,
+                adopt_delta,
                 lagged_rate,
                 election,
                 incident,
