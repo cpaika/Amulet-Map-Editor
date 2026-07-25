@@ -39,6 +39,35 @@ pub fn scenario_params() -> Vec<(&'static str, Params)> {
             max_displacement_rate: 0.05,
             ..Params::default()
         }),
+        // Red-team round 3: the geopolitics layer must be reachable from
+        // the trade book. Median severe path from the escalation ladder:
+        // a 2028 quarantine that escalates to a 2029 blockade with the
+        // near-certain minerals embargo, plus the standing energy shock.
+        ("taiwan_shock", Params {
+            geo_shocks: vec![
+                crate::GeoShock {
+                    kind: crate::ShockKind::TaiwanQuarantine,
+                    start_year: 2028,
+                    duration_years: 0.75,
+                },
+                crate::GeoShock {
+                    kind: crate::ShockKind::TaiwanBlockade,
+                    start_year: 2029,
+                    duration_years: 1.0,
+                },
+                crate::GeoShock {
+                    kind: crate::ShockKind::MineralsEmbargo,
+                    start_year: 2029,
+                    duration_years: 1.5,
+                },
+                crate::GeoShock {
+                    kind: crate::ShockKind::EnergyChokepoint,
+                    start_year: 2028,
+                    duration_years: 0.75,
+                },
+            ],
+            ..Params::default()
+        }),
     ]
 }
 

@@ -172,3 +172,34 @@ fn robotics_longs_do_not_clear_hurdle() {
         assert!(upside(&rows, t) < 0.2, "{t}: {}", upside(&rows, t));
     }
 }
+
+// Red-team round 3: geopolitics must be REACHABLE from the book — the
+// taiwan_shock scenario has to price real damage into Taiwan-exposed
+// names (TSM's shock-scenario fair value below its baseline fair value),
+// and it must carry nonzero probability weight.
+#[test]
+fn taiwan_shock_is_priced() {
+    use singularity_econ::valuation::SCENARIO_PROBS;
+    let w = SCENARIO_PROBS
+        .iter()
+        .find(|(n, _)| *n == "taiwan_shock")
+        .expect("taiwan_shock missing from scenario probabilities")
+        .1;
+    assert!(w >= 0.05, "taiwan tail weight collapsed: {w}");
+    let states = singularity_econ::scenarios::scenario_states();
+    let companies = singularity_econ::companies::universe();
+    let tsm = companies.iter().find(|c| c.ticker == "TSM").unwrap();
+    let ev = singularity_econ::valuation::evaluate(tsm, &states);
+    let base = ev.per_scenario.iter().find(|s| s.scenario == "baseline").unwrap();
+    let shock = ev
+        .per_scenario
+        .iter()
+        .find(|s| s.scenario == "taiwan_shock")
+        .unwrap();
+    assert!(
+        shock.upside < base.upside - 0.10,
+        "TSM shows no Taiwan damage: shock {} vs base {}",
+        shock.upside,
+        base.upside
+    );
+}

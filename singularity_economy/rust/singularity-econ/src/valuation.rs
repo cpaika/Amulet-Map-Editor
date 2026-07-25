@@ -14,12 +14,16 @@ pub const HORIZON: usize = 10;
 
 /// Thesis-conditional scenario probabilities (fizzle weight is the
 /// discipline; see REPORT.md for the unconditional-probability caveat).
-pub const SCENARIO_PROBS: [(&str, f64); 5] = [
-    ("baseline", 0.35),
-    ("fast_takeoff", 0.15),
-    ("delayed", 0.25),
-    ("friction", 0.15),
-    ("fizzle", 0.10),
+pub const SCENARIO_PROBS: [(&str, f64); 6] = [
+    // taiwan_shock carved proportionally out of the prior five (its 7%
+    // ≈ the sampler's cumulative quarantine->blockade probability mass
+    // landing in the valuation-relevant 2027-2031 window).
+    ("baseline", 0.325),
+    ("fast_takeoff", 0.14),
+    ("delayed", 0.2325),
+    ("friction", 0.1395),
+    ("fizzle", 0.093),
+    ("taiwan_shock", 0.07),
 ];
 
 /// Pools with a meaningful, stable 2026 revenue base — the ONLY pools that
