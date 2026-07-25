@@ -185,8 +185,15 @@ fn r2_off_no_more_robots() {
 
 #[test]
 fn r3_off_shallower_queues() {
-    let on = base();
-    let off = with_loops(Loops { r3_capex_momentum: 0.0, ..Loops::default() });
+    // Ablate with the society layer off: political feedback (sentiment ->
+    // precautionary demand drag) otherwise confounds the pure momentum
+    // mechanism this test isolates.
+    let on = with_loops(Loops { society_layer: 0.0, ..Loops::default() });
+    let off = with_loops(Loops {
+        r3_capex_momentum: 0.0,
+        society_layer: 0.0,
+        ..Loops::default()
+    });
     let peak = |v: &[YearState]| v.iter().map(|s| s.queue_ratio).fold(f64::MIN, f64::max);
     assert!(peak(&off) < peak(&on) + 1e-9);
 }

@@ -14,7 +14,10 @@ use serde::{Deserialize, Serialize};
 
 pub mod companies;
 pub mod scenarios;
+pub mod society;
 pub mod valuation;
+
+pub use society::{SocietyParams, SocietyState};
 
 // ---------------------------------------------------------------------------
 // Parameters
@@ -36,6 +39,10 @@ pub struct Loops {
     /// forging) still binds; cognitive work hidden inside construction
     /// timelines does not.
     pub r4_physical_acceleration: f64,
+    /// Society layer master switch: endogenous political economy
+    /// (sentiment, transfers, regulation, labor power, trust). With 0.0
+    /// the legacy constant-gain B2 behavior is exactly recovered.
+    pub society_layer: f64,
 }
 
 impl Default for Loops {
@@ -49,6 +56,7 @@ impl Default for Loops {
             r3_capex_momentum: 1.0,
             b4_credit: 1.0,
             r4_physical_acceleration: 1.0,
+            society_layer: 1.0,
         }
     }
 }
@@ -111,6 +119,12 @@ pub struct Params {
     pub max_displacement_rate: f64,
     pub backlash_gain: f64,
     pub afford_gain: f64,
+    /// Society-layer parameters (sentiment, transfers, regulation, trust).
+    pub society: society::SocietyParams,
+    /// MC-drawn shock: calendar year an AI incident lands (0 = none).
+    pub incident_year: i32,
+    /// Whether that incident is dread-class (TMI pattern) vs ordinary-major.
+    pub incident_dread: bool,
     pub cognitive_demand_elasticity: f64,
     pub ai_task_price_rel: f64,
     pub addressable_cognitive: f64,
@@ -206,6 +220,9 @@ impl Default for Params {
             max_displacement_rate: 0.22,
             backlash_gain: 2.0,
             afford_gain: 0.4,
+            society: society::SocietyParams::default(),
+            incident_year: 0,
+            incident_dread: false,
             cognitive_demand_elasticity: 1.35,
             ai_task_price_rel: 0.04,
             addressable_cognitive: 0.85,
@@ -388,6 +405,13 @@ pub struct YearState {
     pub capacity_glut: f64,
     pub ip_toll_margin: f64,
     pub gdp: f64,
+    // society layer (end-of-year stocks; neutral defaults when layer off)
+    pub sentiment: f64,
+    pub reg_enforcement: f64,
+    pub transfer_share: f64,
+    pub labor_power: f64,
+    pub inst_trust: f64,
+    pub consumer_trust: f64,
     pub pools: Pools,
     pub profits: Profits,
 }
@@ -429,6 +453,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut prev_disp = 0.0_f64;
     let mut prev_disp_macro = 0.0_f64;
     let mut prev_adopt = 0.08_f64;
+
+    // Society layer state (endogenous political economy).
+    let soc_on = l.society_layer > 0.0;
+    let mut soc = SocietyState::new(&p.society);
+    let mut prev_adopt_soc = 0.0_f64;
+    let mut dread_armed = false;
     let mut gw_per_unit = p.gw_per_compute_unit;
 
     let mut power_pipe = Pipeline::new(p.power_pipeline_stages, p.power_additions_2026);
@@ -476,7 +506,16 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         } else {
             0.0
         };
-        let friction = 1.0 + l.b2_backlash * p.backlash_gain * recent_disp_rate;
+        // B2 gain is endogenous when the society layer is on: a pulse
+        // shaped by sentiment, labor power, transfers, and trust —
+        // peaking with the displacement rate and fading after (design
+        // doc §5.1) — instead of a constant.
+        let soc_mult = if soc_on {
+            soc.backlash_multiplier(&p.society, recent_disp_rate)
+        } else {
+            1.0
+        };
+        let friction = 1.0 + l.b2_backlash * p.backlash_gain * recent_disp_rate * soc_mult;
 
         let btl_price = if let Some(prev) = out.last() {
             let b = prev.power_utilization.max(prev.chip_utilization);
@@ -488,7 +527,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let afford = 1.0 + l.b3_affordability * p.afford_gain * btl_price;
 
         let pre_ramp = (0.08 * 1.6_f64.powi(year - p.start_year)).min(0.28);
-        let adopt = if t_sing < 0 {
+        let adopt_raw = if t_sing < 0 {
             pre_ramp
         } else {
             let k = 3.0_f64.ln() / (p.adoption_halflife * friction);
@@ -496,6 +535,19 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 .max(pre_ramp)
                 .max(0.10)
         };
+        // Regulation slows the adoption RATE (GDPR: -25% at full
+        // enforcement) and consumer trust caps the LEVEL (B10); neither
+        // can un-adopt, so adoption stays a ratchet.
+        let adopt = if soc_on {
+            let capped = adopt_raw.min(soc.adoption_ceiling(&p.society));
+            (prev_adopt_soc
+                + (capped - prev_adopt_soc).max(0.0)
+                    * soc.adoption_rate_mult(&p.society))
+                .max(prev_adopt_soc)
+        } else {
+            adopt_raw
+        };
+        prev_adopt_soc = adopt;
 
         let ai_hew_raw = p.ai_hew_2026_m * compute_stock * algo_eff;
         let price_ratio = if t_sing >= 0 { p.ai_task_price_rel * afford } else { 0.25 };
@@ -531,6 +583,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         if t_sing >= 0 {
             demand_signal_growth += 1.6 * (adopt - prev_adopt).max(0.0) + 0.5 * adopt;
         }
+        if soc_on {
+            // Precautionary savings: elevated sentiment cuts consumption
+            // before displacement does (GFC +4pp saving rate).
+            demand_signal_growth -= soc.precautionary_drag(&p.society);
+        }
         prev_adopt = adopt;
         perceived_growth += p.perception_smoothing
             * (demand_signal_growth - perceived_growth);
@@ -546,9 +603,18 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             + 0.25 * last_capex)
             .max(0.05);
         let leverage = sector_debt / ai_revenue_proxy.max(1e-9);
+        // Society-layer injections into B4 (the ONLY financial channel):
+        // sovereign crowding-out from debt-financed transfers plus the R7
+        // regulatory-cost spiral (armed only by a dread incident).
+        let soc_credit = if soc_on {
+            soc.credit_injection(&p.society, dread_armed)
+        } else {
+            0.0
+        };
         let credit_mult = 1.0
-            / (1.0 + l.b4_credit * p.credit_gain
-                * (leverage - p.debt_revenue_tolerance).max(0.0));
+            / (1.0 + l.b4_credit
+                * (p.credit_gain * (leverage - p.debt_revenue_tolerance).max(0.0)
+                    + soc_credit));
 
         // ---- constraints ----
         let hw_cost_index = (1.0 - p.hw_cost_decline).powi(year - p.start_year);
@@ -753,9 +819,41 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let new_disp = (disp - prev_disp_macro).max(0.0);
         prev_disp_macro = disp;
         let ai_share = (ai_services + pools.robot_services) / gdp;
+        // Transfers offset part of transition drag (demand backstop);
+        // compliance costs subtract (distinct channels, design doc §5.4).
+        let drag_mult = if soc_on { soc.drag_multiplier(&p.society) } else { 1.0 };
+        let compliance = if soc_on { soc.compliance_cost(&p.society) } else { 0.0 };
         gdp *= 1.0
             + (p.base_gdp_growth + p.productivity_passthrough * ai_share * 0.5
-                - p.transition_drag * new_disp * (p.cognitive_wage_bill / gdp));
+                - p.transition_drag * new_disp * (p.cognitive_wage_bill / gdp)
+                    * drag_mult
+                - compliance);
+
+        // ---- society stocks advance on this year's outcomes ----
+        if soc_on {
+            let lag = p.society.erosion_lag as usize;
+            let lagged_rate = if out.len() >= lag + 1 {
+                (out[out.len() - lag].cog_displacement
+                    - out[out.len() - lag - 1].cog_displacement)
+                    .max(0.0)
+            } else {
+                0.0
+            };
+            let incident = p.incident_year == year;
+            if incident && p.incident_dread {
+                dread_armed = true;
+            }
+            let election = (year - p.start_year) % p.society.election_period == 0;
+            soc.step(
+                &p.society,
+                new_disp,
+                adopt,
+                lagged_rate,
+                election,
+                incident,
+                incident && p.incident_dread,
+            );
+        }
 
         last_capex = ai_capex.max(1e-6);
 
@@ -789,6 +887,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             capacity_glut,
             ip_toll_margin,
             gdp,
+            sentiment: soc.sentiment,
+            reg_enforcement: soc.reg_enforcement,
+            transfer_share: soc.transfer_share(),
+            labor_power: soc.labor_power,
+            inst_trust: soc.inst_trust,
+            consumer_trust: soc.consumer_trust,
             pools,
             profits,
         });

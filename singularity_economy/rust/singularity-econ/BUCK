@@ -3,9 +3,17 @@
 # (CLI, snapshot regression vs goldens, proptest) run under cargo — see
 # ../../BUILDING.md.
 
+SRCS = glob([
+    "src/lib.rs",
+    "src/valuation.rs",
+    "src/scenarios.rs",
+    "src/companies.rs",
+    "src/society.rs",
+])
+
 rust_library(
     name = "core",
-    srcs = glob(["src/lib.rs", "src/valuation.rs", "src/scenarios.rs", "src/companies.rs"]),
+    srcs = SRCS,
     crate = "singularity_econ",
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -14,7 +22,7 @@ rust_library(
 
 rust_test(
     name = "core_test",
-    srcs = glob(["src/lib.rs", "src/valuation.rs", "src/scenarios.rs", "src/companies.rs"]),
+    srcs = SRCS,
     crate = "singularity_econ_test",
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -32,6 +40,22 @@ rust_test(
     name = "book",
     srcs = ["tests/book.rs"],
     crate_root = "tests/book.rs",
+    edition = "2021",
+    deps = [":core"],
+)
+
+rust_test(
+    name = "backtest",
+    srcs = ["tests/backtest.rs"],
+    crate_root = "tests/backtest.rs",
+    edition = "2021",
+    deps = [":core"],
+)
+
+rust_test(
+    name = "society",
+    srcs = ["tests/society.rs"],
+    crate_root = "tests/society.rs",
     edition = "2021",
     deps = [":core"],
 )
