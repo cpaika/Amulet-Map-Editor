@@ -13,10 +13,12 @@
 use serde::{Deserialize, Serialize};
 
 pub mod companies;
+pub mod geopolitics;
 pub mod scenarios;
 pub mod society;
 pub mod valuation;
 
+pub use geopolitics::{GeoRng, GeoShock, ShockKind};
 pub use society::{SocietyParams, SocietyState};
 
 // ---------------------------------------------------------------------------
@@ -125,6 +127,9 @@ pub struct Params {
     pub incident_year: i32,
     /// Whether that incident is dread-class (TMI pattern) vs ordinary-major.
     pub incident_dread: bool,
+    /// MC-drawn geopolitical shock path (empty = deterministic baseline,
+    /// exactly unchanged — the tail-module regression guard).
+    pub geo_shocks: Vec<geopolitics::GeoShock>,
     pub cognitive_demand_elasticity: f64,
     pub ai_task_price_rel: f64,
     pub addressable_cognitive: f64,
@@ -223,6 +228,7 @@ impl Default for Params {
             society: society::SocietyParams::default(),
             incident_year: 0,
             incident_dread: false,
+            geo_shocks: Vec::new(),
             cognitive_demand_elasticity: 1.35,
             ai_task_price_rel: 0.04,
             addressable_cognitive: 0.85,
@@ -459,6 +465,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut soc = SocietyState::new(&p.society);
     let mut prev_adopt_soc = 0.0_f64;
     let mut dread_armed = false;
+
+    // Geopolitics: metals index is mean-reverting (half-life ~2.5yr);
+    // onshoring scares boost the supply response for 4 years.
+    let mut metals_index = 1.0_f64;
+    let mut onshoring_until = i32::MIN;
+    let mut invaded = false;
     let mut gw_per_unit = p.gw_per_compute_unit;
 
     let mut power_pipe = Pipeline::new(p.power_pipeline_stages, p.power_additions_2026);
@@ -481,6 +493,23 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut out: Vec<YearState> = Vec::new();
 
     for year in p.start_year..=p.end_year {
+        // ---- geopolitical shock effects for this year ----
+        let gfx = geopolitics::effects_for_year(&p.geo_shocks, year);
+        if gfx.chip_destruction > 0.0 {
+            chip_capacity *= 1.0 - gfx.chip_destruction;
+            ip_capacity *= 1.0 - gfx.chip_destruction * 0.5;
+            invaded = true;
+        }
+        if gfx.onshoring {
+            onshoring_until = onshoring_until.max(year + 4);
+        }
+        // Metals index chases the shock target, mean-reverts otherwise.
+        metals_index += if gfx.metals_target > metals_index {
+            0.8 * (gfx.metals_target - metals_index)
+        } else {
+            0.25 * (1.0 - metals_index) // half-life ~2.5yr
+        };
+        let onshoring_boost = if year <= onshoring_until { 1.5 } else { 1.0 };
         let t_sing = year - p.singularity_year;
 
         // ---- R1: recursive AI (saturating) ----
@@ -595,7 +624,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // B3 closure: bottleneck prices throttle desired capex growth.
         // Desire base avoids the absorbing zero-capex state (round-2 fix 2).
         let desire_base = last_capex.max(0.3 * last_desired);
-        let desired_capex = desire_base * (1.0 + (perceived_growth + herd) / afford);
+        let desired_capex = desire_base * (1.0 + (perceived_growth + herd) / afford)
+            * gfx.demand_mult;
         last_desired = desired_capex;
 
         // ---- B4: credit ----
@@ -614,7 +644,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let credit_mult = 1.0
             / (1.0 + l.b4_credit
                 * (p.credit_gain * (leverage - p.debt_revenue_tolerance).max(0.0)
-                    + soc_credit));
+                    + soc_credit
+                    + gfx.spread));
 
         // ---- constraints ----
         let hw_cost_index = (1.0 - p.hw_cost_decline).powi(year - p.start_year);
@@ -623,9 +654,16 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // deliver chip + ip capacity at the START of the year (same-year
         // convention as power); orders use last year's margins.
         let excess_margin = (silicon_margin - p.normal_margin).max(0.0);
-        let chip_growth = (p.chip_base_growth
-            + l.b1_supply_response * p.chip_supply_gain * excess_margin)
+        // Onshoring scares boost the supply response x1.5 for 4 years
+        // (China WFE localization tripled post-Oct-2022); post-invasion
+        // rebuild is EUV-capped at ~18%/yr regardless of price signal.
+        let mut chip_growth = (p.chip_base_growth
+            + l.b1_supply_response * p.chip_supply_gain * excess_margin
+                * onshoring_boost)
             .min(p.chip_growth_ceiling * ceiling_mult);
+        if invaded {
+            chip_growth = chip_growth.min(0.18);
+        }
         let chip_delivery = chip_pipe.step_accel(chip_capacity * chip_growth, speedup);
         chip_capacity += chip_delivery;
         // The IP toll's pace is strategic: a monopolist expands only under
@@ -636,7 +674,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let ip_delivery = ip_pipe.step(ip_capacity * ip_expand);
         ip_capacity += ip_delivery;
 
-        let chips_cap = chip_capacity / p.silicon_share_of_capex;
+        let chips_cap = chip_capacity * gfx.chip_mult / p.silicon_share_of_capex;
         if year > p.start_year {
             gw_per_unit *= 1.0 - p.power_efficiency_gain;
         }
@@ -644,7 +682,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                                   power_order_rate,
                                   1.0 + asi * p.asi_ceiling_boost * 0.5);
         power_order_rate = orders;
-        let power_additions = power_pipe.step_accel(orders, speedup);
+        // Shock haircut on energization (blockade: no GPUs to fill halls;
+        // the lost flow is destroyed, not deferred — war losses).
+        let power_additions = power_pipe.step_accel(orders, speedup) * gfx.power_mult;
         let power_headroom =
             (ai_power + power_additions - compute_stock * gw_per_unit).max(0.0);
         let power_cap = (power_headroom / gw_per_unit) * cost_per_unit;
@@ -730,8 +770,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
 
             let avg_phys_wage_k =
                 p.physical_wage_bill / p.physical_workers_m * 1e3;
+            // Minerals shocks pass through to delivered robot cost
+            // (magnets 5-10% of humanoid BOM; copper elasticity 0.08).
+            let robot_cost_eff =
+                robot_cost * gfx.comp_cost_mult * metals_index.powf(0.08);
             let payback_years =
-                robot_cost / (avg_phys_wage_k * p.robot_hew).max(1e-9);
+                robot_cost_eff / (avg_phys_wage_k * p.robot_hew).max(1e-9);
             let econ_pull = (2.0 / payback_years.max(0.25)).clamp(0.0, 3.0);
             let t_rob = (year - p.robotics_year) as f64;
             // ASI dissolves integration friction: the adoption midpoint moves
@@ -743,7 +787,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             let robot_demand = (fleet_target
                 - robot_fleet * (1.0 - p.robot_attrition))
                 .max(p.robot_prod_2028_m * 0.5);
-            robot_prod = robot_demand.min(component_capacity);
+            // A minerals embargo is a hard supply gate: ex-China magnet
+            // capacity caps western output regardless of price.
+            robot_prod = robot_demand.min(component_capacity * gfx.comp_supply_mult);
             let comp_utilization = robot_demand / component_capacity.max(1e-9);
             component_margin += p.price_adjustment
                 * (margin_from(comp_utilization.min(1.35), 0.8) - component_margin);

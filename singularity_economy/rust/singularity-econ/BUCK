@@ -9,6 +9,7 @@ SRCS = glob([
     "src/scenarios.rs",
     "src/companies.rs",
     "src/society.rs",
+    "src/geopolitics.rs",
 ])
 
 rust_library(
@@ -56,6 +57,14 @@ rust_test(
     name = "society",
     srcs = ["tests/society.rs"],
     crate_root = "tests/society.rs",
+    edition = "2021",
+    deps = [":core"],
+)
+
+rust_test(
+    name = "geopolitics",
+    srcs = ["tests/geopolitics.rs"],
+    crate_root = "tests/geopolitics.rs",
     edition = "2021",
     deps = [":core"],
 )
