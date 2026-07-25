@@ -177,6 +177,18 @@ pub struct Evaluation {
     pub per_scenario: Vec<ScenarioValue>,
 }
 
+/// Per-scenario discount rate: the flat 12% plus an equity-duration beta
+/// on the scenario's mean modeled long rate above the 4.5% anchor (B11).
+/// A high-transfer/high-debt scenario carries a higher discount than
+/// fizzle — compressing exactly the power/toll EVs where they win, which
+/// the flat-rate model silently ignored (gap-scan #1).
+fn scenario_discount(states: &[YearState]) -> f64 {
+    let n = states.len().max(1) as f64;
+    let mean_long: f64 = states.iter().map(|s| s.long_rate).sum::<f64>() / n;
+    const DR_BETA: f64 = 0.60;
+    DISCOUNT_RATE + DR_BETA * (mean_long - 0.045)
+}
+
 pub fn evaluate(
     c: &Company,
     scenario_states: &[(&'static str, Vec<YearState>)],
@@ -189,7 +201,8 @@ pub fn evaluate(
         } else {
             c.terminal_multiple
         };
-        let fair = pv(&path, tm, DISCOUNT_RATE);
+        let dr = scenario_discount(states);
+        let fair = pv(&path, tm, dr);
         per.push(ScenarioValue {
             scenario: name,
             fair_value_b: fair,

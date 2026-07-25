@@ -15,7 +15,7 @@
 //! Universal pattern: IP/toll rents (RCA patent pool, GE/Westinghouse,
 //! CUDA, x86, mineral royalties) outlasted every capacity rent, in all 12.
 
-use singularity_econ::{simulate, Params, YearState};
+use singularity_econ::{simulate, Loops, Params, YearState};
 
 fn base() -> Vec<YearState> {
     simulate(&Params::default())
@@ -205,8 +205,12 @@ fn rents_die_before_demand_saturates() {
 // -------------------------------------------------------------------------
 #[test]
 fn credit_crunch_requires_external_funding() {
+    // Isolate the AI-funding channel: hold rates exogenous (B11 off), else
+    // the sovereign-rate rise tightens B4 for internally-funded booms too
+    // (correct macro behavior, but not what this GPU-cycle test isolates).
     let internal = simulate(&Params {
         internal_funding_share: 0.85,
+        loops: Loops { b11_endogenous_rates: 0.0, ..Loops::default() },
         ..Params::default()
     });
     let min_internal = internal

@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 pub mod companies;
 pub mod demography;
 pub mod geopolitics;
+pub mod macrofin;
 pub mod scenarios;
 pub mod society;
 pub mod space;
@@ -22,6 +23,7 @@ pub mod valuation;
 
 pub use demography::{DemographyOutputs, DemographyParams, DemographyState};
 pub use geopolitics::{GeoRng, GeoShock, ShockKind};
+pub use macrofin::{MacroParams, MacroState};
 pub use society::{SocietyParams, SocietyState};
 pub use space::{SpaceParams, SpaceState};
 
@@ -57,6 +59,9 @@ pub struct Loops {
     /// (and orbital_effectiveness 0) the terrestrial-only legacy is
     /// exactly recovered.
     pub r5_launch_learning: f64,
+    /// B11: endogenous long rate / bond-market pricing of the transfer
+    /// ramp. With 0.0 rates stay exogenous (legacy flat 12% DCF world).
+    pub b11_endogenous_rates: f64,
 }
 
 impl Default for Loops {
@@ -73,6 +78,7 @@ impl Default for Loops {
             society_layer: 1.0,
             d_demography: 1.0,
             r5_launch_learning: 1.0,
+            b11_endogenous_rates: 1.0,
         }
     }
 }
@@ -150,6 +156,8 @@ pub struct Params {
     pub demography: demography::DemographyParams,
     /// Space-layer parameters (launch growth, orbital compute).
     pub space: space::SpaceParams,
+    /// Macro-finance parameters (endogenous rates, sovereign snowball).
+    pub macrofin: macrofin::MacroParams,
     /// MC-drawn shock: calendar year an AI incident lands (0 = none).
     pub incident_year: i32,
     /// Whether that incident is dread-class (TMI pattern) vs ordinary-major.
@@ -256,6 +264,7 @@ impl Default for Params {
             society: society::SocietyParams::default(),
             demography: demography::DemographyParams::default(),
             space: space::SpaceParams::default(),
+            macrofin: macrofin::MacroParams::default(),
             incident_year: 0,
             incident_dread: false,
             geo_shocks: Vec::new(),
@@ -467,6 +476,10 @@ pub struct YearState {
     /// spike-then-collapse. Regulatory-latency history (web->GDPR 23yr,
     /// social->acts 15yr, ChatGPT->AI Act 1.5yr) favors the thermostat.
     pub meltdown_ratio: f64,
+    // macro-finance layer
+    pub long_rate: f64,
+    pub gov_debt_gdp: f64,
+    pub debt_service: f64,
     // space layer
     pub orbital_gw_equiv: f64,
     pub launch_cost_per_kg: f64,
@@ -526,8 +539,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         &p.demography, p.cognitive_workers_m, p.physical_workers_m);
     let mut demo_out: Option<DemographyOutputs> = None;
 
-    // Space: launch learning + orbital compute (B11 rent-clipper).
+    // Space: launch learning + orbital compute.
     let mut space = SpaceState::new(&p.space);
+    // Macro-finance: endogenous long rate + sovereign snowball (B11).
+    let macro_on = l.b11_endogenous_rates > 0.0;
+    let mut macrost = MacroState::new(&p.macrofin);
+    let mut macro_out: Option<macrofin::MacroOutputs> = None;
 
     // Geopolitics: metals index is mean-reverting (half-life ~2.5yr);
     // onshoring scares boost the supply response for 4 years.
@@ -715,15 +732,22 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // Society-layer injections into B4 (the ONLY financial channel):
         // sovereign crowding-out from debt-financed transfers plus the R7
         // regulatory-cost spiral (armed only by a dread incident).
-        let soc_credit = if soc_on {
+        let soc_credit = if soc_on && !macro_on {
+            // when B11 is on, the sovereign-crowding channel lives in the
+            // macro layer's risk-free-rate injection (no double-count)
             soc.credit_injection(&p.society, dread_armed)
+        } else if soc_on {
+            // keep only the R7 regulatory-spiral part, not the crowding part
+            soc.credit_injection(&p.society, dread_armed) * 0.3
         } else {
             0.0
         };
+        let macro_credit = macro_out.as_ref().map_or(0.0, |m| m.credit_injection);
         let credit_mult = 1.0
             / (1.0 + l.b4_credit
                 * (p.credit_gain * (leverage - p.debt_revenue_tolerance).max(0.0)
                     + soc_credit
+                    + macro_credit
                     + gfx.spread));
 
         // ---- constraints ----
@@ -1072,6 +1096,26 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         }
         demo_out = this_demo;
 
+        // ---- macro-finance: bond market prices the transfer ramp (B11) ----
+        if macro_on {
+            let debt_share = 0.6; // transfers debt-financed early (society layer)
+            let ai_ig = (ai_capex * (1.0 - p.internal_funding_share) / gdp).max(0.0);
+            macro_out = Some(macrost.step(
+                &p.macrofin,
+                soc.transfer_share(),
+                debt_share,
+                ai_ig,
+                (p.base_gdp_growth + 0.02).max(0.0),
+            ));
+            // debt-service squeeze on the transfer cap (fiscal collision)
+            if let Some(m) = &macro_out {
+                let squeeze = m.transfer_cap_squeeze;
+                if squeeze > 0.0 {
+                    soc.throttle_transfer_cap(squeeze);
+                }
+            }
+        }
+
         last_capex = ai_capex.max(1e-6);
 
         out.push(YearState {
@@ -1125,6 +1169,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                     .max(1e-9),
             meltdown_ratio: new_disp.max(0.0)
                 / (soc.transfer_share() + soc.reg_enforcement + 0.02),
+            long_rate: macro_out.as_ref().map_or(0.048, |m| m.long_rate),
+            gov_debt_gdp: macro_out.as_ref().map_or(1.0, |m| m.gov_debt_gdp),
+            debt_service: macro_out.as_ref().map_or(0.048, |m| m.debt_service),
             orbital_gw_equiv: space.orbital_gw_equiv,
             launch_cost_per_kg: space.launch_cost_per_kg,
             launch_capacity_tpy: space.launch_capacity_tpy,

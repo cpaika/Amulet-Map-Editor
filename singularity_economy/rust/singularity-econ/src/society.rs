@@ -226,6 +226,14 @@ impl SocietyState {
         self.transfer_permanent + self.transfer_emergency
     }
 
+    /// B11 fiscal collision: when sovereign debt service tops ~4.5% of
+    /// GDP, the effective transfer cap erodes — the bond market squeezes
+    /// the fiscal room the displacement path requires.
+    pub fn throttle_transfer_cap(&mut self, squeeze: f64) {
+        let cap = (self.transfer_permanent - squeeze).max(0.0);
+        self.transfer_permanent = self.transfer_permanent.min(cap.max(0.02));
+    }
+
     fn transfers_active(&self) -> bool {
         self.transfer_share() > 0.03
     }

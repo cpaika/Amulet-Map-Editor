@@ -12,6 +12,7 @@ SRCS = glob([
     "src/demography.rs",
     "src/space.rs",
     "src/geopolitics.rs",
+    "src/macrofin.rs",
 ])
 
 rust_library(
@@ -91,6 +92,14 @@ rust_test(
     name = "land",
     srcs = ["tests/land.rs"],
     crate_root = "tests/land.rs",
+    edition = "2021",
+    deps = [":core"],
+)
+
+rust_test(
+    name = "macrofin",
+    srcs = ["tests/macrofin.rs"],
+    crate_root = "tests/macrofin.rs",
     edition = "2021",
     deps = [":core"],
 )
