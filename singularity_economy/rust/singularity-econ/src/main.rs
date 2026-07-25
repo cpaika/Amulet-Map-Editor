@@ -201,6 +201,27 @@ impl Draw {
             asi_delay_compression: self.uniform(0.15, 0.55),
             asi_ceiling_boost: self.uniform(0.2, 0.9),
             asi_integration_relief: self.uniform(0.2, 0.8),
+            // geopolitical shock path: escalation-ladder sampler (S1-S8),
+            // seeded from this run's RNG so paths stay reproducible
+            geo_shocks: {
+                let mut grng = singularity_econ::GeoRng::new(
+                    (self.uniform(0.0, 1.0) * u64::MAX as f64) as u64,
+                );
+                singularity_econ::geopolitics::sample_shocks(&mut grng, 2026, 2036)
+            },
+            // AI incident hazard ~10%/yr rising with deployment; dread
+            // conditional p=0.25 (society design §3)
+            incident_year: {
+                let mut y = 0;
+                for year in 2027..=2035 {
+                    if self.uniform(0.0, 1.0) < 0.10 + 0.02 * (year - 2027) as f64 {
+                        y = year;
+                        break;
+                    }
+                }
+                y
+            },
+            incident_dread: self.uniform(0.0, 1.0) < 0.25,
             ..Params::default()
         }
     }
