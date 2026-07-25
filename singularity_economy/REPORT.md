@@ -124,6 +124,16 @@ short case under v2 (even the thesis can't carry 145x through the endogenous
 component-pool path), though the squeeze-mechanics kill on the outright short
 stands.
 
+**R4 addendum (superintelligence-aggressive baseline):** on challenge, the
+model gained an R4 physical-acceleration loop — post-2027, ASI compresses
+construction pipelines, raises scaling ceilings, and dissolves robot
+integration friction (design: `meadows_design.md` §R4). Result: **power still
+binds in ~95% of runs and never normalizes in any draw** — the book's anchor
+conclusion survives ASI-speed construction, because acceleration feeds
+compute demand as fast as supply. Robot production rises ~25% at the 2032
+median (to ~0.4M/yr) — directionally toward the faster-robots view, still an
+order of magnitude short of making this decade a labor story.
+
 Full leverage-point analysis (Meadows' 12 points with empirical gains and
 three new monitorables): `leverage_points.md`. Build system: `BUILDING.md`
 (Buck2 + cargo, all suites green).

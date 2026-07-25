@@ -30,6 +30,12 @@ pub struct Loops {
     pub r2_robot_bootstrap: f64,
     pub r3_capex_momentum: f64,
     pub b4_credit: f64,
+    /// R4: post-singularity physical acceleration — ASI compresses
+    /// engineering/commissioning delays, raises scaling ceilings, and
+    /// dissolves robot-integration friction. Physics (materials, curing,
+    /// forging) still binds; cognitive work hidden inside construction
+    /// timelines does not.
+    pub r4_physical_acceleration: f64,
 }
 
 impl Default for Loops {
@@ -42,6 +48,7 @@ impl Default for Loops {
             r2_robot_bootstrap: 1.0,
             r3_capex_momentum: 1.0,
             b4_credit: 1.0,
+            r4_physical_acceleration: 1.0,
         }
     }
 }
@@ -134,6 +141,11 @@ pub struct Params {
     pub margin_ceiling: f64,
     pub target_utilization: f64,
     pub ai_services_margin: f64,
+    // R4 physical acceleration (post-singularity)
+    pub asi_diffusion_years: f64,
+    pub asi_delay_compression: f64,
+    pub asi_ceiling_boost: f64,
+    pub asi_integration_relief: f64,
     // capex behavior
     pub perception_smoothing: f64,
     pub momentum_gain: f64,
@@ -222,6 +234,10 @@ impl Default for Params {
             margin_ceiling: 0.62,
             target_utilization: 0.85,
             ai_services_margin: 0.35,
+            asi_diffusion_years: 2.0,
+            asi_delay_compression: 0.35,
+            asi_ceiling_boost: 0.5,
+            asi_integration_relief: 0.5,
             perception_smoothing: 0.5,
             momentum_gain: 0.5,
             demand_growth_base: 0.32,
@@ -251,6 +267,27 @@ impl Pipeline {
             std::mem::swap(slot, &mut carry);
         }
         carry
+    }
+
+    /// Advance one year with post-singularity acceleration: after the
+    /// normal step, pull `extra` (0..=1) of each stage's remaining material
+    /// forward one slot (the last stage's fraction is delivered). Conserving.
+    pub fn step_accel(&mut self, inflow: f64, speedup: f64) -> f64 {
+        let mut out = self.step(inflow);
+        let extra = (speedup - 1.0).clamp(0.0, 1.0);
+        if extra > 0.0 {
+            let n = self.stages.len();
+            for i in (0..n).rev() {
+                let mv = self.stages[i] * extra;
+                self.stages[i] -= mv;
+                if i == n - 1 {
+                    out += mv;
+                } else {
+                    self.stages[i + 1] += mv;
+                }
+            }
+        }
+        out
     }
 
     pub fn in_transit(&self) -> f64 {
@@ -360,17 +397,12 @@ pub struct YearState {
 // ---------------------------------------------------------------------------
 
 fn power_orders(p: &Params, power_margin: f64, perceived_growth: f64,
-                pipe: &Pipeline) -> f64 {
-    let current_rate = if pipe.stages.is_empty() {
-        p.power_additions_2026
-    } else {
-        pipe.first_stage()
-    };
+                current_rate: f64, ceiling_mult: f64) -> f64 {
     let excess = (power_margin - p.normal_margin).max(0.0);
     let growth = (p.power_base_growth
         + p.loops.b1_supply_response * p.power_supply_gain * excess
         + 0.3 * (perceived_growth - 0.3).max(0.0))
-        .min(p.power_growth_ceiling);
+        .min(p.power_growth_ceiling * ceiling_mult);
     current_rate * (1.0 + growth)
 }
 
@@ -407,6 +439,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut comp_pipe = Pipeline::new(p.component_pipeline_stages, 0.0);
 
     let mut silicon_margin = p.normal_margin + 0.10;
+    let mut prev_ip_util = 1.05_f64;
+    // the ordering RATE is its own stock — never read back from the pipeline,
+    // whose stages are mutated by acceleration (bug found via the fizzle>
+    // baseline capex anomaly)
+    let mut power_order_rate = p.power_additions_2026;
     let mut ip_toll_margin = p.normal_margin + 0.15;
     let mut power_margin = p.normal_margin + 0.08;
     let mut component_margin = p.normal_margin;
@@ -443,7 +480,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
 
         let btl_price = if let Some(prev) = out.last() {
             let b = prev.power_utilization.max(prev.chip_utilization);
-            (b - p.target_utilization).max(0.0) / (1.0 - p.target_utilization)
+            ((b - p.target_utilization).max(0.0) / (1.0 - p.target_utilization))
+                .min(1.5)
         } else {
             0.4
         };
@@ -476,6 +514,17 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         disp = disp.max(prev_disp);
         prev_disp = disp;
         human_cog_m = p.cognitive_workers_m * (1.0 - disp);
+
+        // ---- R4: physical acceleration factor (0 pre-singularity,
+        // ramping toward 1 as ASI diffuses into engineering practice) ----
+        let asi = if t_sing >= 0 {
+            l.r4_physical_acceleration
+                * (1.0 - (-((t_sing as f64) + 1.0) / p.asi_diffusion_years).exp())
+        } else {
+            0.0
+        };
+        let speedup = 1.0 + asi * p.asi_delay_compression;
+        let ceiling_mult = 1.0 + asi * p.asi_ceiling_boost;
 
         // ---- R3: capex desire from perceived demand ----
         let mut demand_signal_growth = p.demand_growth_base;
@@ -510,18 +559,26 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let excess_margin = (silicon_margin - p.normal_margin).max(0.0);
         let chip_growth = (p.chip_base_growth
             + l.b1_supply_response * p.chip_supply_gain * excess_margin)
-            .min(p.chip_growth_ceiling);
-        let chip_delivery = chip_pipe.step(chip_capacity * chip_growth);
+            .min(p.chip_growth_ceiling * ceiling_mult);
+        let chip_delivery = chip_pipe.step_accel(chip_capacity * chip_growth, speedup);
         chip_capacity += chip_delivery;
-        let ip_delivery = ip_pipe.step(ip_capacity * p.chip_base_growth);
+        // The IP toll's pace is strategic: a monopolist expands only under
+        // excess demand and never into slack (defending price is what market
+        // power means). ASI acceleration does not apply to it either.
+        let ip_expand = p.chip_base_growth
+            * ((prev_ip_util - 0.95) / 0.40).clamp(0.0, 1.0);
+        let ip_delivery = ip_pipe.step(ip_capacity * ip_expand);
         ip_capacity += ip_delivery;
 
         let chips_cap = chip_capacity / p.silicon_share_of_capex;
         if year > p.start_year {
             gw_per_unit *= 1.0 - p.power_efficiency_gain;
         }
-        let orders = power_orders(p, power_margin, perceived_growth, &power_pipe);
-        let power_additions = power_pipe.step(orders);
+        let orders = power_orders(p, power_margin, perceived_growth,
+                                  power_order_rate,
+                                  1.0 + asi * p.asi_ceiling_boost * 0.5);
+        power_order_rate = orders;
+        let power_additions = power_pipe.step_accel(orders, speedup);
         let power_headroom =
             (ai_power + power_additions - compute_stock * gw_per_unit).max(0.0);
         let power_cap = (power_headroom / gw_per_unit) * cost_per_unit;
@@ -565,6 +622,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let ip_utilization = (desired_capex * p.silicon_share_of_capex * 0.18
             / ip_capacity.max(1e-9))
             .min(1.35);
+        prev_ip_util = ip_utilization;
         let power_demand_gw = pre_stock * (1.0 - p.compute_deprec) * gw_per_unit
             + (desired_capex / cost_per_unit) * gw_per_unit;
         let power_utilization = (power_demand_gw
@@ -600,8 +658,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             let comp_growth = (p.component_base_growth
                 + l.b1_supply_response * p.component_supply_gain * comp_excess
                 + bootstrap * 0.2)
-                .min(comp_ceiling);
-            component_capacity += comp_pipe.step(component_capacity * comp_growth);
+                .min(comp_ceiling * ceiling_mult);
+            component_capacity +=
+                comp_pipe.step_accel(component_capacity * comp_growth, speedup);
 
             let avg_phys_wage_k =
                 p.physical_wage_bill / p.physical_workers_m * 1e3;
@@ -609,7 +668,10 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 robot_cost / (avg_phys_wage_k * p.robot_hew).max(1e-9);
             let econ_pull = (2.0 / payback_years.max(0.25)).clamp(0.0, 3.0);
             let t_rob = (year - p.robotics_year) as f64;
-            let deploy_ramp = logistic(0.9 * (t_rob - 4.0));
+            // ASI dissolves integration friction: the adoption midpoint moves
+            // from ~4 years toward ~2 as robots self-integrate.
+            let midpoint = 4.0 * (1.0 - p.asi_integration_relief * asi);
+            let deploy_ramp = logistic(0.9 * (t_rob - midpoint));
             let fleet_target = p.physical_workers_m * p.physical_addressable
                 * deploy_ramp * (econ_pull / 2.0).min(1.0);
             let robot_demand = (fleet_target

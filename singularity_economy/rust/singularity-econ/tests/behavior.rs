@@ -139,11 +139,15 @@ fn with_loops(loops: Loops) -> Vec<YearState> {
 }
 
 #[test]
-fn b1_off_rents_persist() {
+fn b1_off_rents_persist_longer() {
+    // Under the R4 (ASI-accelerated) baseline, even organic supply growth
+    // eventually catches throttled demand — so ablating B1 extends rent
+    // DURATION rather than making rents eternal. Compare cumulative rents.
     let on = base();
     let off = with_loops(Loops { b1_supply_response: 0.0, ..Loops::default() });
-    assert!(off.last().unwrap().silicon_margin
-            > on.last().unwrap().silicon_margin + 0.05);
+    let cum = |v: &[YearState]| v.iter().map(|s| s.silicon_margin).sum::<f64>();
+    assert!(cum(&off) > cum(&on) + 0.5,
+            "off {:.2} vs on {:.2}", cum(&off), cum(&on));
 }
 
 #[test]

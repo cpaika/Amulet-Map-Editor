@@ -197,6 +197,10 @@ impl Draw {
             momentum_gain: self.uniform(0.2, 1.2),
             backlash_gain: self.uniform(0.5, 4.0),
             afford_gain: self.uniform(0.3, 1.5),
+            asi_diffusion_years: self.uniform(1.0, 4.0),
+            asi_delay_compression: self.uniform(0.15, 0.55),
+            asi_ceiling_boost: self.uniform(0.2, 0.9),
+            asi_integration_relief: self.uniform(0.2, 0.8),
             ..Params::default()
         }
     }

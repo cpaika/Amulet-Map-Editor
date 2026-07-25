@@ -167,3 +167,31 @@ frame (the singularity worlds are demand-rich); it means `capacity_glut`
 measures supply-side overshoot specifically, and fizzle-driven demand
 recessions are outside this model's expressive range (they live in the v1
 scenario weights and the valuation layer's fizzle case).
+
+## R4 — Physical acceleration (added on challenge, superintelligence-2027 aggressive baseline)
+
+The strongest external critique of v2 was an internal-consistency one: the
+singularity multiplied algorithmic efficiency but left physical construction
+delays untouched — yet much of a construction timeline (engineering,
+commissioning, yield ramp, paperwork) is cognitive work in disguise. R4 fixes
+this: post-singularity, an ASI-diffusion factor (ramping over
+`asi_diffusion_years`) pulls material forward through every construction
+pipeline (`Pipeline::step_accel`, conserving), raises physical scaling
+ceilings (+50% at full diffusion; power gets half — turbine forging is
+metallurgy, not paperwork), and dissolves robot integration friction (the
+adoption midpoint moves from ~4 years toward ~2). Two deliberate exemptions:
+the IP-toll monopolist's expansion is strategic, not construction-bound — it
+now expands only under excess demand and never into slack (defending price is
+what market power means) — and B3's price signal is capped (2026 evidence:
+buyers keep ordering through scarcity; queues run >2x at rising prices).
+
+Post-R4 findings: power STILL binds in ~95% of runs and never normalizes
+within the horizon in any draw — the power conclusion survives ASI-speed
+construction because acceleration raises compute demand as fast as supply.
+Robot production rises ~25% at the 2032 median (0.40M/yr; p90 0.78M);
+displacement timing is essentially unchanged (adoption-gated, not
+supply-gated). Implementation note: the first R4 build contained an
+ordering-rate bug (the order-rate stock was read back from pipeline stages
+that acceleration mutates), which produced the diagnostic anomaly of fizzle
+out-building the singularity baseline — caught by scenario-ordering sanity
+checks before any test was adjusted to fit it.
