@@ -103,3 +103,36 @@ fn co_occurring_dread_takes_max_not_sum() {
     // but GDP drags DO sum (independent physical causes)
     assert!(fx.gdp_drag > bio_alone.gdp_drag, "gdp drags are additive");
 }
+
+// Biological transhumanism: in-horizon (2026-2036) embryo selection is
+// materially negligible (~2.5 IQ pts, "hundreds" of babies) — solidarity
+// must be ~unchanged vs the enhancement-off world. The stratification
+// bites only in the 2040s IVG discontinuity.
+#[test]
+fn enhancement_negligible_in_horizon_but_ivg_erodes_solidarity() {
+    use singularity_econ::BioParams;
+    let on = simulate(&Params {
+        bio: BioParams { bio_layer: 1.0, ..BioParams::default() },
+        end_year: 2050,
+        ..Params::default()
+    });
+    let ivg = simulate(&Params {
+        bio: BioParams { bio_layer: 1.0, ivg_breakthrough_year: 2042, ..BioParams::default() },
+        end_year: 2050,
+        ..Params::default()
+    });
+    let sol = |v: &[YearState], y: i32| v.iter().find(|s| s.year == y).unwrap().solidarity;
+    // in-horizon: IVG-off and IVG-on identical (breakthrough hasn't fired)
+    assert!(
+        (sol(&on, 2036) - sol(&ivg, 2036)).abs() < 1e-9,
+        "enhancement must be negligible in-horizon"
+    );
+    // 2040s: the IVG discontinuity erodes solidarity measurably below the
+    // no-breakthrough path (bio-caste stratification)
+    assert!(
+        sol(&ivg, 2050) < sol(&on, 2050) - 0.03,
+        "IVG breakthrough must erode solidarity: {} vs {}",
+        sol(&ivg, 2050),
+        sol(&on, 2050)
+    );
+}

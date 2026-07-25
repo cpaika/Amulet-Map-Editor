@@ -185,6 +185,7 @@ impl DemographyState {
         gdp_growth: f64,
         election_year: bool,
         phys_disp_level: f64,
+        enh_solidarity_erosion: f64,
     ) -> DemographyOutputs {
         let t = self.years as f64;
         self.years += 1;
@@ -250,7 +251,11 @@ impl DemographyState {
             + (dp.solidarity_target_phys - dp.solidarity_target_cog) * phys_wave;
         self.solidarity += dp.solidarity_adjust * (target - self.solidarity)
             - dp.chauvinism_k * transfer_share * dp.perceived_outgroup
-                * self.tension.max(0.2);
+                * self.tension.max(0.2)
+            // biological enhancement is the ultimate out-group coding —
+            // a heritable, purchasable, permanent advantage; its salience
+            // erodes redistributive solidarity beyond income inequality.
+            - 0.05 * enh_solidarity_erosion;
         self.solidarity = self.solidarity.clamp(0.2, 0.95);
 
         // ---- tension: inflow = migration-rate x economic-stress gated by

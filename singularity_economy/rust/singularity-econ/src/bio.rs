@@ -116,6 +116,22 @@ pub struct BioParams {
     /// (Stevenson's-Law says targets slip ~15-20x optimistic).
     pub bci_roadmap_haircut: f64,
 
+    // -- biological transhumanism / enhancement --
+    /// Embryo-screening adoption 2026 and 2050 (share of IVF births using
+    /// polygenic selection). Tiny base (hundreds/yr in 2025) rising slowly;
+    /// material cognitive-capital effect is ~0 (2-4 IQ pts/couple, Karavani
+    /// within-family ceiling) — the coupling is memetic/solidarity.
+    pub enh_adopt_2026: f64,
+    pub enh_adopt_2050: f64,
+    /// Enhancement is wealth-gated and reads as elite/eugenic: its salience
+    /// erodes solidarity FAR out of proportion to its material effect (the
+    /// designer-baby symbol channel). Erosion gain on the solidarity stock.
+    pub enh_solidarity_erosion: f64,
+    /// IVG / iterated embryo selection — THE discontinuity (multi-SD gains).
+    /// 0 = never in-horizon; a year >0 flips large-effect enhancement on
+    /// (2040s+ per Hayashi timeline; a shock/scenario knob, not a baseline).
+    pub ivg_breakthrough_year: i32,
+
     // loop / layer switches (0 = off, deterministic baseline unchanged)
     pub bio_layer: f64,
 }
@@ -149,6 +165,10 @@ impl Default for BioParams {
             bci_pool_2035_b: 8.0,
             bci_pma_year: 2029,
             bci_roadmap_haircut: 0.30,
+            enh_adopt_2026: 0.001,
+            enh_adopt_2050: 0.05,
+            enh_solidarity_erosion: 0.4,
+            ivg_breakthrough_year: 0, // off by default (2040s+ scenario knob)
             bio_layer: 0.0, // OFF by default: baseline exactly unchanged
         }
     }
@@ -228,6 +248,14 @@ pub struct BioOutputs {
     /// incident from a bio-source scandal (AI-drug clinical-failure or
     /// longevity reprogramming adverse event) — the caller draws it.
     pub dread_incident_pressure: f64,
+    /// Enhancement adoption share (embryo screening; ~0 material effect).
+    pub enhancement_adoption: f64,
+    /// Solidarity-erosion term routed to the demography solidarity stock —
+    /// the designer-baby symbol channel, disproportionate to material size.
+    pub enhancement_solidarity_erosion: f64,
+    /// True once IVG/iterated selection flips large-effect enhancement on
+    /// (2040s+; multi-SD gains — a genuine bio-caste stratification driver).
+    pub ivg_active: bool,
 }
 
 fn ramp(a: f64, b: f64, t: f64, span: f64) -> f64 {
@@ -298,6 +326,9 @@ impl BioState {
                 bio_materials_pool_b: 0.0,
                 frame_sentiment_delta: 0.0,
                 dread_incident_pressure: 0.0,
+                enhancement_adoption: 0.0,
+                enhancement_solidarity_erosion: 0.0,
+                ivg_active: false,
             };
         }
         let t = self.years as f64;
@@ -423,6 +454,27 @@ impl BioState {
         // bio/materials value routed to robots pool (capex/chips-gated)
         let bio_materials_pool_b = 20.0 * validated_cap * capex_gate;
 
+        // ---- biological transhumanism / enhancement ----
+        // Embryo screening: real but tiny (2-4 IQ pts/couple, Karavani
+        // within-family ceiling; "hundreds" of babies). Material cognitive
+        // effect ~0; the coupling is the wealth-gated designer-baby SYMBOL,
+        // whose SALIENCE erodes solidarity out of proportion to its size.
+        let t = self.years as f64;
+        let enhancement_adoption =
+            ramp(bp.enh_adopt_2026, bp.enh_adopt_2050, t, 24.0);
+        // IVG / iterated selection: the 2040s+ discontinuity (multi-SD gains
+        // -> genuine bio-caste stratification). Off unless a breakthrough
+        // year is set (scenario/shock knob, never the baseline).
+        let ivg_active = bp.ivg_breakthrough_year > 0 && year >= bp.ivg_breakthrough_year;
+        // salience is superlinear in adoption + elite framing, and steps up
+        // hard once IVG makes large-effect enhancement real (GATTACA regime).
+        let enh_salience = (enhancement_adoption.sqrt() * 3.0
+            + 0.3 * self.elite_longevity_frame)
+            .min(1.0)
+            * if ivg_active { 3.0 } else { 1.0 };
+        let enhancement_solidarity_erosion =
+            (bp.enh_solidarity_erosion * enh_salience).min(0.5);
+
         // open-weight share is passed through to the shock hazard via the
         // returned uplift; a higher share means a lower effective safeguard.
         let _ = open_weight_share;
@@ -437,6 +489,9 @@ impl BioState {
             bio_materials_pool_b,
             frame_sentiment_delta,
             dread_incident_pressure,
+            enhancement_adoption,
+            enhancement_solidarity_erosion,
+            ivg_active,
         }
     }
 }
