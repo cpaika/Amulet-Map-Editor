@@ -12,6 +12,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+pub mod bio;
 pub mod companies;
 pub mod demography;
 pub mod geopolitics;
@@ -21,6 +22,7 @@ pub mod society;
 pub mod space;
 pub mod valuation;
 
+pub use bio::{BioOutputs, BioParams, BioState};
 pub use demography::{DemographyOutputs, DemographyParams, DemographyState};
 pub use geopolitics::{GeoRng, GeoShock, ShockKind};
 pub use macrofin::{MacroParams, MacroState};
@@ -158,6 +160,12 @@ pub struct Params {
     pub space: space::SpaceParams,
     /// Macro-finance parameters (endogenous rates, sovereign snowball).
     pub macrofin: macrofin::MacroParams,
+    /// Bio/cyber-layer parameters (drug pool, hazards, shadow optionality).
+    pub bio: bio::BioParams,
+    /// MC-drawn bio/cyber dread shocks (empty = baseline unchanged).
+    pub dread_shocks: Vec<bio::shocks::DreadShock>,
+    /// Open-weight model share (erodes bio safeguard efficacy).
+    pub open_weight_share: f64,
     /// MC-drawn shock: calendar year an AI incident lands (0 = none).
     pub incident_year: i32,
     /// Whether that incident is dread-class (TMI pattern) vs ordinary-major.
@@ -265,6 +273,9 @@ impl Default for Params {
             demography: demography::DemographyParams::default(),
             space: space::SpaceParams::default(),
             macrofin: macrofin::MacroParams::default(),
+            bio: bio::BioParams::default(),
+            dread_shocks: Vec::new(),
+            open_weight_share: 0.3,
             incident_year: 0,
             incident_dread: false,
             geo_shocks: Vec::new(),
@@ -476,6 +487,10 @@ pub struct YearState {
     /// spike-then-collapse. Regulatory-latency history (web->GDPR 23yr,
     /// social->acts 15yr, ChatGPT->AI Act 1.5yr) favors the thermostat.
     pub meltdown_ratio: f64,
+    // bio/cyber layer
+    pub bio_hazard: f64,
+    pub cyber_hazard: f64,
+    pub drug_pool_b: f64,
     // macro-finance layer
     pub long_rate: f64,
     pub gov_debt_gdp: f64,
@@ -541,6 +556,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
 
     // Space: launch learning + orbital compute.
     let mut space = SpaceState::new(&p.space);
+    // Bio/cyber: drug pool, hazards, healthcare deflation, shadow pools.
+    let bio_on = p.bio.bio_layer > 0.0;
+    let mut biostate = BioState::new(&p.bio);
+    let mut bio_out: Option<BioOutputs> = None;
+
     // Macro-finance: endogenous long rate + sovereign snowball (B11).
     let macro_on = l.b11_endogenous_rates > 0.0;
     let mut macrost = MacroState::new(&p.macrofin);
@@ -578,6 +598,19 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             / (p.margin_ceiling - p.normal_margin))
             .clamp(0.0, 1.0);
         space.step(&p.space, year, power_rent_index, l.r5_launch_learning);
+
+        // ---- bio/cyber: drug pool, hazards, healthcare deflation ----
+        let prev_adopt_bio = out.last().map_or(0.08, |st| st.adoption_level);
+        let bfx = bio::shocks::effects_for_year(&p.dread_shocks, year);
+        if bio_on {
+            bio_out = Some(biostate.step(
+                &p.bio,
+                algo_eff,
+                prev_adopt_bio,
+                (last_capex / p.ai_capex_2026).min(3.0),
+                p.open_weight_share,
+            ));
+        }
 
         // ---- geopolitical shock effects for this year ----
         let gfx = geopolitics::effects_for_year(&p.geo_shocks, year);
@@ -748,7 +781,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 * (p.credit_gain * (leverage - p.debt_revenue_tolerance).max(0.0)
                     + soc_credit
                     + macro_credit
-                    + gfx.spread));
+                    + gfx.spread
+                    + bfx.spread));
 
         // ---- constraints ----
         let hw_cost_index = (1.0 - p.hw_cost_decline).powi(year - p.start_year);
@@ -1001,7 +1035,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 - p.transition_drag * new_disp * (p.cognitive_wage_bill / gdp)
                     * drag_mult
                 - compliance
-                - unrest_cost);
+                - unrest_cost
+                - bfx.gdp_drag);
 
         // ---- demography advances first: it filters what politics sees ----
         let election = (year - p.start_year) % p.society.election_period == 0;
@@ -1036,8 +1071,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             } else {
                 0.0
             };
-            let incident = p.incident_year == year;
-            if incident && p.incident_dread {
+            let incident = p.incident_year == year || bfx.incident;
+            if (incident && p.incident_dread) || bfx.arm_dread {
                 dread_armed = true;
             }
             // Demography rewires the political inputs: society sees the
@@ -1169,6 +1204,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                     .max(1e-9),
             meltdown_ratio: new_disp.max(0.0)
                 / (soc.transfer_share() + soc.reg_enforcement + 0.02),
+            bio_hazard: bio_out.as_ref().map_or(0.0, |b| b.bio_operational_uplift),
+            cyber_hazard: bfx.spread,
+            drug_pool_b: bio_out.as_ref().map_or(0.0, |b| b.ai_drug_pool_b),
             long_rate: macro_out.as_ref().map_or(0.048, |m| m.long_rate),
             gov_debt_gdp: macro_out.as_ref().map_or(1.0, |m| m.gov_debt_gdp),
             debt_service: macro_out.as_ref().map_or(0.048, |m| m.debt_service),

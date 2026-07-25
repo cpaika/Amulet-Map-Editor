@@ -1,0 +1,538 @@
+{
+  "summary": "Research bio capabilities/biorisk, cyber risk, drug discovery, longevity/LEV, and BCI for new model layers",
+  "agentCount": 7,
+  "logs": [],
+  "result": {
+    "briefs": [
+      {
+        "topic": "AI-enabled biorisk as a distinct shock class in the 2026-2036 early-singularity window: capability-uplift hazard function, historical/pandemic base rates, and a dread-class regulatory ratchet with differential market effect",
+        "key_numbers": [
+          "CAPABILITY UPLIFT — VCT (SecureBio, arXiv 2504.16137, 322 multimodal virology-troubleshooting Qs): expert virologists WITH internet score 22.1% in their OWN sub-area; OpenAI o3 = 43.8% (~2x experts, beats 94-95% of experts). Ladder: GPT-4o >53rd pct, Gemini 1.5 Pro >67th, Claude Sonnet 3.5 75th, o1 89th, o3 95th. Human-expert baseline CROSSED by frontier models ~early-2025 — the tacit/wet-lab knowledge gate that RAND-2024 called 'beyond the frontier' fell within ~12 months.",
+          "RAND red-team RCT (RRA2977-2, Jan 2024): teams planning a mass bio-attack with LLM+internet vs internet-only showed NO statistically significant uplift; LLM arm averaged a 0.22-point DECREASE in plan viability. Conclusion: 2024-gen bio-attack PLANNING lay beyond LLM assist frontier. (This is the 'no uplift' pole; VCT/Anthropic-2025 is the 'threshold crossed' pole.)",
+          "FRI / GovAI (46 bio experts + 22 superforecasters): median BASELINE annual risk of a human-caused epidemic killing >=100k = 0.3%/yr; rises to 1.5%/yr (5x) CONDITIONAL on LLMs matching a top virologist team on troubleshooting — this is the core hazard-multiplier prior. Active Site novice RCT (mid-2025): ACTUAL molecular-biology uplift = 5% vs forecast median 27% (forecasters 5x over-estimated near-term wet-lab uplift). Experts judged mitigations 'come close to negating' the AI-driven delta.",
+          "Anthropic: Claude Opus 4 (May 2025) triggered ASL-3 safeguards — first activation — 'more accurate and comprehensive on bioweapons topics vs 3.7, better advice in key weaponization steps, fewer critical-step mistakes.' ASL-3 threshold = can significantly help a basic-technical-background actor create/deploy CBRN incl. pandemic-class agents. OpenAI: Preparedness Framework v2 (Apr 15 2025); ChatGPT Agent (Jul 2025) and GPT-5 (Aug 2025 system card) treated as 'High' bio capability = meaningful counterfactual novice uplift; weaponization framed as weeks-to-months of sustained interaction, not one prompt.",
+          "DNA-SYNTHESIS SCREENING GAP: IGSC members screen ~80% of global commercial gene-synthesis capacity -> ~20% unscreened outside IGSC. Benchtop nucleic-acid synthesizers projected to reach 10-20% of total capacity within a decade with NO ongoing screening requirement (equipment becomes an unmonitored provider). US 2024 = first nation to require self-attested compliance with the Nucleic Acid Synthesis Framework, but ONLY as a federal-funding condition. IBBIS Common Mechanism = open-baseline screener, patchy adoption. Reported: AI can reformulate/paraphrase hazardous sequences to EVADE current screening.",
+          "HISTORICAL BIOINCIDENT BASE RATES: Aum Shinrikyo 1990-95: 17 known CBW attacks, 6 bio attempts (5 botulinum, 1 anthrax) -> ZERO bio casualties (used vaccine anthrax strain + failed aerosolization) despite ~$1B assets & PhD staff -> DISSEMINATION is the binding gate, not knowledge. (Their chemical sarin, Tokyo subway 1995, killed 13.) Amerithrax 2001 (state-lab insider, USAMRIID): 5 dead / 22 infected (~23% treated inhalational CFR) — worst US bio-attack. Net: ~0 successful MASS-casualty bioterror events historically across multiple serious attempts.",
+          "LAB-LEAK / LAI base rate: scoping review 2000-2024 = 712 reported human lab-acquired-infection cases across 250 reports (voluntary -> undercount, 'tip of iceberg'); a separate systematic count gives China 10,630 cases = 89% of a global total (single Brucella outbreak dominates). Trend DECLINING with improved BSL practice. Bacteria 58.6% / viruses 36.1% of incidents.",
+          "PANDEMIC ECONOMIC BASE RATES: COVID-19 -> world GDP -3.3 to -3.4% in 2020 (largest on record), ~$7.4T lost vs pre-pandemic 2020 forecast, ~$12.5T through 2024 (IMF); advanced economies -7%, EMDE -2.5%; ~7M reported deaths (excess est. ~18-27M). 1918 flu: ~50M deaths (2.1% of world pop); typical-country real per-capita GDP -6%, consumption -8%; US GDP only -1.5%. Annual probability of a COVID-scale pandemic = 2.5-3.3%/yr (1-in-33-to-50-yr), ~47-57% over 25y; some models (CGD/Gavi) put extreme-pandemic risk rising ~3x in coming decades.",
+          "DIFFERENTIAL MARKET PRECEDENT (COVID): broad S&P peak-to-trough -34% (Feb-Mar 2020) then full recovery within ~5 months; bio-defense names inverted — Moderna +434% in 2020, BioNTech/vaccine/diagnostics/PPE outperformers. This is the empirical template for the shock's cross-sectional dispersion: broad-beta hit + concentrated bio-name upside."
+        ],
+        "base_rates": [
+          "Baseline human-caused epidemic (>=100k deaths): h0 ~= 0.3%/yr (FRI median expert). Use as the pre-capability, pre-AI intercept of the deliberate/accidental-release hazard.",
+          "Natural COVID-scale pandemic (>=1M deaths OR ~ -3% world GDP): ~2.5-3.3%/yr, roughly independent of AI capability — this is the always-on background bio shock the AI channel rides on top of.",
+          "AI capability HAZARD MULTIPLIER at VCT/expert-team-crossing: ~5x on the 100k-death deliberate channel (0.3% -> 1.5%/yr), PRE-mitigation. Suggested functional form: h_bio(t) = h0 * exp(k*(Cap_bio(t)-Cap*)) * (1 - m_safeguard) * access_gate. Calibrate k so Cap crossing VCT-expert level yields the 5x; Cap* ~ VCT-expert-crossing already reached ~2025 for frontier, so multiplier is already partially 'on'.",
+          "Wet-lab NOVICE uplift elasticity (knowledge->operational): only ~5% measured (Active Site mid-2025 RCT) despite ~2x expert-level knowledge scores -> knowledge uplift is heavily DISCOUNTED by the dissemination/tacit gate. Recommend a translation coefficient of ~0.1-0.3 from VCT-style knowledge uplift to actual attack-capability uplift, decaying toward 1.0 as synthesis_access and agentic wet-lab automation improve over 2026-2036.",
+          "access_gate (DNA-synthesis + benchtop): start ~0.20 uncovered (IGSC ~80% screened), drift UP toward ~0.30-0.40 by mid-2030s as benchtop synth reaches 10-20% of capacity and AI evades sequence screening. This is a slow-eroding balancing gate that RATCHET regulation (mandatory universal screening) can re-close.",
+          "Safeguard efficacy m_safeguard: FRI experts ~ 'near-negates' AI delta (treat as 0.6-0.9 on closed frontier models); but OPEN-WEIGHT worst-case (arXiv 2508.03153) sets a floor — open-weights make m_safeguard ~0 for that slice, so effective m is a capacity-weighted blend of closed(high) and open(low) model share.",
+          "GDP magnitude distribution GIVEN a bio event: lognormal / fat-tailed. Modal event ~ Amerithrax (macro ~0). Median 'notable' outbreak: -0.3 to -1% world GDP transient. 90-95th pct: -3 to -4% (COVID-class). Tail (engineered high-CFR/high-R pandemic-potential pathogen): -8 to -12%+ and multi-year. GDP effect is MEAN-REVERTING (COVID recovered) — a transient LEVEL drop with ~1-3yr recovery, NOT a permanent path shift.",
+          "Dread-class regulatory step: AI-incident calibration is +0.55 stringency (existing incident_s2_dread). A mass-casualty ENGINEERED-pandemic event is a stronger dread archetype (invisible, involuntary, catastrophic-potential) -> propose +0.6 to +0.8 on the bio/AI-bio stringency channel, arming dread_armed (R7 credit-spiral) with high confidence; a contained scare (Amerithrax-scale) -> +0.15 to +0.25, may not arm R7.",
+          "Cross-sectional dispersion (differential): bio-defense pool earnings/multiple shock ~ +100% to +400% peak (Moderna template, decaying over 2-4y); broad-market beta shock ~ -20 to -35% drawdown with fast partial recovery — net a temporary widening of pool dispersion, not a permanent re-rating."
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "bio_capability_uplift (LEVEL, 0..1): derived from R1 capability stock via a VCT-style knowledge-uplift map, then multiplied by a knowledge->operational translation coefficient (~0.1-0.3, rising). This is the accessible-knowledge level that scales the deliberate-release hazard.",
+            "synthesis_access_gate (LEVEL, 0..1 uncovered fraction): starts ~0.20, erodes up with benchtop diffusion + AI screening-evasion; re-closable by a mandatory-universal-screening regulatory step. Slow stock.",
+            "bio_gdp_drag (transient stock): set on event from the lognormal severity draw, mean-reverts over 1-3yr toward 0 (COVID-recovery shape). Applies to GDP as a LEVEL drop, not a rate.",
+            "bio_defense_pool (new EmergingPool in valuation): earnings/multiple stock that jumps on event (Moderna template) and decays; paired with a broad-market beta hit.",
+            "cumulative_bio_incidents (counter): drives habituation on trust hits and 'nth-event' regulatory escalation."
+          ],
+          "loops": [
+            "R-ACCESS (reinforcing hazard): frontier capability up + open-weight diffusion + benchtop synthesis -> synthesis_access_gate erodes -> h_bio up. Largely bypasses closed-lab safeguards (open-weight floor).",
+            "B-RATCHET (balancing, dread): bio event -> dread_armed + reg_stringency step (+0.6-0.8) -> (a) mandatory universal synthesis screening closes synthesis_access_gate, (b) gain-of-function / model-release restrictions slow bio_capability_uplift deployment -> h_bio down. Ratchet is a permanent LEVEL step (does not decay); enforcement follows rate-limited by enforcement_tau.",
+            "B-TRUST (balancing, adoption): event -> sentiment/consumer-trust down -> adoption penalty (society layer) -> slows capability-gated deployment. Habituation dampens repeat hits.",
+            "R7-SPIRAL (reinforcing, existing): dread_armed + high enforcement -> regulatory-cost spiral -> credit_injection contraction -> drags valuation/investment. Bio event is a strong arming trigger.",
+            "DIFFERENTIAL (dispersion): event -> bio_defense_pool earnings up WHILE broad pool_beta/market down -> transient dispersion widening; feeds valuation cross-section, not the index level permanently.",
+            "DEMOGRAPHY spillover: severe event mortality -> physical-labor-floor + care-economy demand spike (couples to demography layer age_creep/care-demand channels)."
+          ],
+          "couplings": [
+            "READS R1 recursive AI-capability stock -> maps to bio_capability_uplift (Cap_bio) driving the hazard exponent.",
+            "READS society sentiment + consumer_trust + adoption penalty (capability is adoption-gated, so regulatory/trust hits bite via deployment, not raw capability).",
+            "WRITES reg_stringency: additive LEVEL step (+0.6-0.8 mass-casualty / +0.15-0.25 contained), ratcheted min(1.0), mirroring incident_s2_dread=0.55 path in society.rs.",
+            "WRITES reg_enforcement indirectly via enforcement_tau rate-limit (LEVEL target set by stringency step; RATE of approach fixed by tau).",
+            "SETS dread_armed = true on mass-casualty draw -> arms R7 credit_injection/regulatory-cost spiral in lib.rs.",
+            "WRITES incident trust/sentiment hits through society.rs incident path (with dread x1.5 multiplier + habituation).",
+            "WRITES GDP: transient bio_gdp_drag (mean-reverting), separate from geopolitics/AI-incident GDP channels.",
+            "WRITES valuation: new EmergingPool::BioDefense (positive) + negative broad pool_beta/market shock (differential).",
+            "NEW SHOCK SAMPLER: add a bio shock class alongside geopolitics ShockKind — mirror the hazard-table + severity-draw MC pattern (geopolitics.rs draw_path), but hazard is capability-INDEXED (rises with bio_capability_uplift x synthesis_access_gate) rather than a fixed table, and it is a DISTINCT class from AI incidents (different regulatory target: biotech/GoF/synthesis, with spillover into AI-model-release rules).",
+            "COUPLES to demography: mortality tail feeds physical-labor floor + care-economy demand."
+          ]
+        },
+        "contested": [
+          "Whether current LLMs give MEANINGFUL bioweapon uplift: RAND-2024 (no, -0.22 pt) vs Anthropic/OpenAI-2025 (yes, ASL-3/'High' thresholds crossed) vs FRI Active-Site RCT (only 5% actual wet-lab uplift). Reconcilable if you separate KNOWLEDGE uplift (real, large, VCT) from OPERATIONAL/attack uplift (small, dissemination-gated) — but the labs and RAND are effectively measuring different variables.",
+          "Whether VCT/knowledge benchmarks even measure real bioweapon risk: Epoch AI argues lab biorisk evals may not track actual bioweapon-DEVELOPMENT capability; VCT is troubleshooting Q&A, not end-to-end weaponization. Treat the 5x FRI multiplier as an upper-ish bound on the knowledge channel, discounted by the translation coefficient.",
+          "Dissemination-gate durability: Aum shows knowledge+resources != mass casualties (aerosolization/tacit skills bind). Contested whether AI agentic wet-lab automation + cloud labs + benchtop synth erodes this gate fast (2026-2030) or it holds through 2036. This is the single biggest swing variable in the hazard.",
+          "Safeguard efficacy: FRI 'near-negates' the AI delta on CLOSED models, but open-weight worst-case (arXiv 2508.03153) makes safeguards ~irrelevant for that slice. Effective m_safeguard depends on the open-vs-closed capability-share trajectory — itself contested (couples to the open-source subsystem, gap-scan #22).",
+          "Pandemic annual probability: 2.5-3.3%/yr and the '~3x rising' claim are model-dependent (CGD/Metabiota-style fits to a short catalog with fat tails); wide error bars.",
+          "COVID death count: 7M reported vs ~18-27M excess — a >3x range that changes the implied severity->GDP and severity->regulation mapping.",
+          "Whether a bio event helps or hurts AI-name valuations: differential says bio-defense (incl. AI-drug-discovery) benefits while broad market falls, but a bio event ARMED by AI could also trigger AI-model-release restrictions that hit AI-services pool — sign on the AI-services pool is ambiguous and regime-dependent."
+        ],
+        "lessons_for_model": [
+          "Model biorisk as a hazard that is CAPABILITY-INDEXED, not a fixed geopolitics-style table: h_bio = h0(0.3%/yr) * exp(k*(Cap_bio-Cap*)) * (1-m_safeguard) * synthesis_access_gate, with the 5x FRI multiplier pinning k at the VCT-expert crossing (already ~partially on in 2026).",
+          "Insert a knowledge->operational TRANSLATION COEFFICIENT (~0.1-0.3, slowly rising) between the R1/VCT knowledge-uplift signal and actual attack-capability. This is what reconciles the 'no uplift' (RAND/Active-Site 5%) and 'threshold crossed' (VCT/ASL-3) evidence and encodes the Aum dissemination gate. It is the highest-leverage single parameter — expose it for sensitivity.",
+          "Keep biorisk a DISTINCT shock class from AI incidents: different hazard driver (bio capability x synthesis access, not deployment share), different regulatory target (GoF/synthesis/biotech with SPILLOVER into AI-model-release rules), and a stronger dread step (+0.6-0.8 vs 0.55).",
+          "Enforce LEVEL vs RATE discipline: an EVENT produces (a) a TRANSIENT, mean-reverting GDP LEVEL drop (1-3yr recovery, COVID shape) and (b) a PERMANENT reg_stringency LEVEL ratchet; the R7 credit spiral it arms is a RATE drag that persists while enforcement stays high. Rising CAPABILITY moves the RATE (dh/dt), not the level, until an event fires.",
+          "Wire the DIFFERENTIAL explicitly via a new EmergingPool::BioDefense (+100..+400% Moderna-template, decaying) plus a broad-beta drawdown (-20..-35%, fast recovery). Net effect is transient dispersion widening, so it should NOT permanently re-rate the index — only redistribute within the cross-section.",
+          "Use a fat-tailed (lognormal) GDP-severity draw: median event near-zero macro (Amerithrax modal), 90-95th pct COVID-class (-3.4%), tail engineered-pandemic (-8 to -12%+). Do not use a point estimate — the distribution's tail is where the model's biorisk contribution to expected loss actually lives.",
+          "Add an ACCESS-diffusion reinforcing loop (open-weights + benchtop synthesis erode synthesis_access_gate from ~0.20 toward ~0.35), and make the B-RATCHET loop's mandatory-universal-screening step the specific mechanism that re-closes it — this gives the model a genuine mitigation lever tied to a real policy (US 2024 funding-conditional framework -> potential universal mandate).",
+          "Couple the mortality tail to the DEMOGRAPHY layer (physical-labor floor + care-economy demand spike) so a severe engineered event doesn't only hit GDP but also perturbs the labor pools already in the model.",
+          "Guard against double-counting the dread ratchet: bio and AI-incident classes both write reg_stringency and both can arm dread_armed/R7 — ensure per-year arming is idempotent (existing lib.rs dread_armed latch pattern) so co-occurring shocks don't super-add the credit spiral."
+        ]
+      },
+      {
+        "topic": "AI drug discovery as a profit pool (ai_drug_discovery) + healthcare-cost-deflation coupling into demography.age_creep, for the 2026-2036 Meadows model",
+        "key_numbers": [
+          "PRECLINICAL PRODUCTIVITY (the real, LEVEL-shift win): target-to-preclinical-candidate compresses from traditional 3-5 yr to AI 13-18 months (~30-50% time compression); preclinical discovery cost -25% to -50% (some claims to -70% on early hit-discovery). Hit-discovery/target-ID timelines -30% to -70%.",
+          "PHASE-TRANSITION PROBABILITIES: AI-discovered molecules Phase 1 success 80-90% vs traditional ~52% (range 40-65%). BUT Phase 2 success AI ~40% vs traditional ~37% = statistically INDISTINGUISHABLE. Overall approval probability stays at industry baseline ~8-12%. ~90% of candidates entering clinic still fail. This is the load-bearing number: AI moves the front end, not the clinical attrition that dominates NPV.",
+          "INSILICO rentosertib (ISM001-055 / INS018_055), TNIK inhibitor for IPF: first AI-discovered-target + AI-designed-molecule to reach clinic, target-to-Phase-2 in <3 yr. Phase IIa (Nature Medicine, Jun 2025): +98.4 mL FVC at 12 wk (60mg QD arm). Phase III initiated Jul 7 2026, 320 pts / 47 centers / China. Discovery cost cited ~$6M vs $100-200M / 6-8 yr traditional (discovery-only, excludes clinical spend).",
+          "RECURSION (RXRX): 5 clinical-stage assets, guided 7 clinical readouts within ~18 months. REC-4881 (FAP) Phase 2: -43% polyp burden wk13, deepening to -53% wk25, 40% of pts improved Spigelman stage. REC-617 (CDK7), REC-1245 (RBM39 degrader). Sanofi + Roche partnerships >$500M milestones banked. Q1 2026 revenue miss, still cash-burning.",
+          "ISOMORPHIC LABS: first internal AI-designed candidate expected into Phase 1 by END 2026 (slipped from 2025 target); oncology + immunology. IsoDDE engine (Feb 2026) ~2x AlphaFold3 on a protein-ligand generalization benchmark. Raised $600M (Thrive-led, Mar 2025). NOT publicly investable (Alphabet/DeepMind subsidiary).",
+          "DEAL / CAPTURE ECONOMICS: Lilly-Insilico = $115M upfront, ~$2.75B total incl. milestones + tiered royalties. Insilico-SK Bio ~$2.5B; Insilico-Qilu ~$120M. Structural pattern: upfront modest ($18M-$115M), milestones ~70% of headline value (contingent), royalties single-digit %. Forbes framing: an emerging ~$10B pharma royalty market being contested.",
+          "MARKET-SIZE DISPERSION (~10x, methodology-dependent): narrow 'AI-in-drug-discovery tooling' TAM ~$1.2-2.9B (2025) -> ~$12-16.5B (2035) at 15-26% CAGR. Broad definitions $19.9B (2025) -> $160B (2035) at ~23% CAGR. REALIZED captured profit pool in 2026 ~= near zero: every AI-native platform is pre-approval and mostly cash-negative.",
+          "EROOM'S LAW: approvals per $B R&D halved ~every 9 yr since 1950; cost per launched asset >$2B; ~90% clinical failure. Bull claim: AI cutting cost-per-approved-drug from ~$2.6B to <$1.5B (marketing-grade, not peer-reviewed). As of Apr 2026 NO end-to-end-AI-discovered drug has FDA approval.",
+          "HEALTHCARE-SPEND STRUCTURE (kills the naive age_creep-relief story): pharmaceuticals are only ~10-14% of US health spend, and R&D is a fraction of drug cost; the bulk of health fiscal load is care-economy LABOR + hospitals. Even halving pharma R&D deflates <1% of total health spend, and pass-through of R&D savings to drug PRICES is a market/political decision, not automatic."
+        ],
+        "base_rates": [
+          "Traditional clinical LOA (Phase 1 -> approval): ~8-12%, use 10% as prior. Phase transitions: P1->P2 ~52%, P2->P3 ~29-37%, P3->approval ~55-60%.",
+          "AI-discovered prior (as of 2026, small-n): P1 success 0.80-0.90 (elevated, but measures tolerability not efficacy; selection bias, n too small to power stats); P2 success ~0.40 (NOT distinguishable from ~0.37 traditional). So model AI uplift as a Phase-1 gate multiplier only, ~1.6x, with 1.0x (no uplift) on Phase 2/3.",
+          "Preclinical time-compression elasticity: AI adoption -> preclinical cycle time x0.5-0.7 (30-50% faster). Preclinical cost multiplier x0.5-0.75. Treat as adoption-gated: >40% of pharma had NOT materially adopted AI in discovery as of 2025.",
+          "Deal-structure priors: upfront ~4-8% of headline, milestones ~65-75% (risk-contingent, apply LOA), royalties 3-9% single-digit on partner net sales. Realization of milestone $ ~ overall LOA (~10%).",
+          "AI-drug-discovery TAM growth: ~20-26% CAGR central; realized-profit lag ~ first material AI-native royalties not before ~2029-2031 (Insilico Phase III readout + filing is the earliest catalyst).",
+          "Health-spend pass-through elasticity of pharma R&D deflation to total health fiscal load: very low, ~0.05-0.15 (drugs ~12% of spend x R&D share x weak, slow price pass-through). Use this to keep the age_creep coupling second-order."
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "ai_drug_discovery (NEW EmergingPool): realized profit pool, ~$0-2B in 2026 (tooling/SaaS only, e.g. Schrodinger software), ramping to a central ~$12-16B tooling pool + NPV-weighted royalty option by 2035; keep realized clinical-royalty contribution near-zero until >=2029.",
+            "drug_pipeline_nce_stock: cumulative AI-originated candidates in clinical development (flow = preclinical_throughput gated by adoption; drains via Phase attrition using base-rate LOA).",
+            "hc_rd_cost_index (LEVEL): index of drug-development cost per PCC, driven DOWN by AI adoption (x0.5-0.75); feeds a small, lagged healthcare_deflation signal."
+          ],
+          "loops": [
+            "R (weak, front-end): capability -> cheaper/faster preclinical -> more shots-on-goal per $ -> more candidates -> more partnership milestones -> capital back to platforms. Gated by clinical attrition (does NOT compound because Phase 2/3 probability is unchanged).",
+            "B (attrition clamp): pipeline_stock -> clinical failures at ~90% -> caps realized royalty pool regardless of front-end speed. This is the dominant balancing loop and why the pool stays small/deferred.",
+            "B (fiscal relief, second-order): AI adoption -> hc_rd_cost_index down -> healthcare_deflation -> reduces effective age_creep -> transfer_cap_eff erodes more slowly -> UBI/transfer fiscal collision weakens. Keep gain SMALL."
+          ],
+          "couplings": [
+            "READS R1 capability stock -> preclinical productivity multiplier (adoption-gated, not capability-gated: multiply by adoption_share ~0.5-0.6 rising).",
+            "READS capital/valuation pool for platform funding; WRITES new EmergingPool::AiDrugDiscovery into Pools (parallels ai_services/robots).",
+            "WRITES capture tuples (EmergingPool::AiDrugDiscovery, share, margin): Schrodinger/SDGR share ~0.10-0.15 at ~70-75% SaaS gross margin (recurring, 1,600+ researcher installed base) + royalty optionality; Recursion/RXRX share modest, negative near-term margin; XtalPi/Insilico via HK listings; Isomorphic NOT capturable (route value to Alphabet/GdpIndex). Milestones weighted x LOA(~0.10), royalties single-digit.",
+            "WRITES into demography.age_creep: replace age_creep with age_creep_eff = age_creep * (1 - kappa * healthcare_deflation), kappa small (~0.10-0.20) and lagged 3-5 yr. Given transfer_cap_eff = (0.15 - age_creep*t).max(0.08), a lower age_creep_eff raises the transfer ceiling -> weakens the UBI-vs-aging fiscal collision, but only marginally.",
+            "OPTIONAL WRITE to society dread-incident / regulatory-stringency: a high-profile AI-designed-drug clinical failure or safety event could act as a dread-incident shock (regulatory stringency step), symmetric to the existing +0.55 class."
+          ]
+        },
+        "contested": [
+          "EROOM REVERSAL: bulls (marketing/vendor sources) claim AI has 'officially reversed' Eroom's law, cost-per-drug $2.6B->$1.5B; skeptics (Scannell, npj Drug Discovery, MDPI Pharmaceuticals) argue front-end speed does not touch the clinical attrition/biology that drives Eroom, and no AI-native drug is approved yet. Model as UNRESOLVED; default to NO clinical-probability uplift.",
+          "PHASE-1 80-90% SUCCESS: real but confounded - Phase 1 measures tolerability not efficacy, cohorts are young/small, and selection bias (only best candidates advanced). Do NOT propagate as improved overall LOA.",
+          "$6M rentosertib COST: discovery-only figure; excludes multi-year clinical spend. Not comparable to the >$2B all-in cost-per-approved-drug.",
+          "MARKET SIZE: ~10x dispersion across research firms ($8.5B to $160B by 2035) from scope differences (tooling-only vs AI-touched-pipeline value). Pick the narrow tooling TAM for the realized pool; treat pipeline value as option, not revenue.",
+          "PRICE PASS-THROUGH: whether lower R&D cost lowers drug PRICES (and thus health spend) is contested - pharma may retain savings as margin. This is the crux of the age_creep coupling and should be a tunable, skeptical parameter.",
+          "DEAL HEADLINE VALUE: ~70% of announced $B deal values are contingent milestones realized only at ~LOA rates; headline biobucks overstate captured value ~10x."
+        ],
+        "lessons_for_model": [
+          "Distinguish LEVEL from RATE sharply here: AI delivers a LEVEL down-shift in preclinical cost/time and a RATE increase in preclinical throughput (shots-on-goal per $), but NO RATE change in the Phase 2/3 success probabilities that dominate expected NPV. The profit pool is therefore throughput-rich but attrition-clamped - model it as a big front-end flow feeding a stock that mostly drains to failure.",
+          "The ai_drug_discovery pool's REALIZED value in 2026-2028 is near-zero (all clinical-stage, cash-negative, no approvals); its value is option-like and back-loaded (first AI-native Phase III readouts ~2028-2031 via Insilico). Do not let the pool contribute meaningful earnings before ~2029 unless a bull scenario fires.",
+          "Adoption-gating applies twice: capability is adoption-gated (>40% of pharma not materially using AI in 2025), AND clinical value is attrition-gated. Two serial gates keep the pool small even under fast capability growth - consistent with the model's existing 'capability is adoption-gated' stance.",
+          "The healthcare-deflation -> age_creep coupling should be deliberately WEAK and LAGGED: drugs are ~10-14% of health spend, R&D a fraction of that, and price pass-through is uncertain. The fiscal-collision-with-UBI relief is a real but second-order channel; a large kappa would be unjustified and would wrongly rescue the transfer-cap trajectory.",
+          "Value capture is bifurcated: the best-validated platform (Isomorphic) is not investable (route to Alphabet), while investable pure-plays (RXRX, XtalPi, Insilico-HK) carry clinical-stage volatility and cash burn. The cleanest public capture is the SaaS+royalty hybrid (Schrodinger/SDGR): recurring high-margin software now, royalty option later - lower beta on the pool than the pure-plays.",
+          "A high-profile AI-designed-drug clinical failure or safety scandal is a plausible NEW dread-incident shock feeding the existing society regulatory-stringency step (+0.55 class) - the pool is a source of downside social shocks, not only upside profit."
+        ]
+      },
+      {
+        "topic": "Longevity / lifespan-extension / longevity-escape-velocity (LEV): 2024-26 science state, in-horizon (2026-2036) vs later effects, and coupling into the Meadows AI-transition model as (a) a low-probability demography shock, (b) a valuation pool, (c) a memetic/political accelerationist frame.",
+        "key_numbers": [
+          "Altos Labs: $3B launch capital (2022, largest-ever biotech seed); backers Bezos/Milner/ARCH. First human safety testing reportedly began Aug 2025; Joan Mannick hired as CMO 2025 (pivot pre-clinical->clinical). First indications are DISEASE (idiopathic fibrosis, neurodegeneration), NOT 'aging.'",
+          "Retro Biosciences (Sam Altman-backed, $180M seed): raising ~$1B Series A at ~$5B val; later round pre-money ~$1.8B led by 4P Capital; 8VC put $90M in 2025. Explicit stated goal: +10 years healthy lifespan. First human trial slated Australia end-2025.",
+          "GPT-4b micro (OpenAI+Retro, Aug 2025): AI-redesigned Yamanaka/OSK proteins gave a claimed ~50x boost in reprogramming efficiency + improved DNA repair. CONTESTED magnitude; shows AI<->longevity coupling but is in-vitro/preclinical.",
+          "Longevity biotech funding 2025: ~$5.72B across ~170 deals; avg round $44.3M but MEDIAN only $19.0M (headline deals overstate the environment). Sector still below prior peak; tracks broader biotech downturn, not longevity-specific enthusiasm. BioAge $170M Series C; Gordian $57M Series B; Elevian $46M Series B.",
+          "Olshansky et al., Nature (Oct 2024) 'Implausibility of radical life extension in humans in the 21st century': life expectancy gains averaged only +6.5 years 1990-2019 across studied long-lived populations, with DECELERATING rate. Direct empirical rebuttal to near-term LEV.",
+          "LEV timeline claims: Kurzweil ~2029-2030; de Grey ~50/50 within 12-15 yrs (i.e. ~2037-2040); AI-trajectory boosters 2030-2032. Skeptics (Olshansky) say maximal lifespan ~120-150 effectively unmovable this century. Wide, unfalsifiable spread.",
+          "PEARL trial (rapamycin, n~114, 48 wk, AgelessRx/UC): SAFE at intermittent low dose; some body-composition/pain benefit in women; NO significant epigenetic-clock change. First large decentralized human aging RCT. Net: safety yes, aging-reversal no.",
+          "TAME (metformin): 3,000 adults 65-79, 6-yr composite endpoint (CV/cancer/dementia/death); chronically underfunded; results 'late 2020s.' Its real payload is REGULATORY: FDA-accepted design that treats aging-composite endpoints as approvable = pathway precedent (LEVEL shift in institutional legitimacy, ~2028-2030 at earliest).",
+          "Longevity 'economy' (broad 50+ consumption) ~$8T now, projected $12-27T by 2030 (definition-dependent; mostly NOT new tech). Narrow anti-aging/longevity-tech market only ~$62-67B by 2030-2035 at ~9-10% CAGR — small vs AI-services/robots pools in the model.",
+          "Old-age dependency ratio 2030: ~30% US, ~40% UK/France, ~45-50% Germany/Japan (persons 65+ per 100 aged 15-64). This is DEMOGRAPHICALLY LOCKED regardless of longevity science; any LEV relief lands 2040s+, essentially out of the 2026-2036 horizon.",
+          "50+ cohort already generates 43% of US GDP (~$12.5T, 2024) — the labor-force-participation channel (healthier older workers staying employed) is the ONLY longevity channel that can move macro variables before 2036, and only marginally.",
+          "Bryan Johnson: ~$2M/yr personal protocol; launched $1M/yr 'Immortals' 3-slot program (2026); public claim 'immortality by 2039.' Pure elite-frame signal, zero population effect."
+        ],
+        "base_rates": [
+          "Drug/therapy development lag: a therapy in Phase I human safety in 2025 (Altos/Retro) reaches broad market, if successful, in ~2033-2038 at the earliest; base success rate Phase I->approval for novel biologics ~7-10%. So probability of ANY reprogramming therapy with population-scale healthspan effect before 2036 is low, ~5-15%.",
+          "Historical life-expectancy elasticity: +6.5 yrs per ~30 yrs in best populations = ~0.2 yr/yr trend, DECELERATING. Use as prior: absent a discontinuity, LE adds <2 years over 2026-2036 in developed economies — too small to move dependency ratio meaningfully.",
+          "Retirement-age / labor-participation elasticity: each +1 yr of healthy working life at older ages offsets a small fraction of dependency load; healthspan (not lifespan) is what moderates the GDP-growth drag from aging. Realistic in-horizon effect: participation-rate nudge of low single-digit percentage points among 60-70s IF a healthspan drug ships, which itself is <15% likely pre-2036.",
+          "Longevity-tech market CAGR ~9-10%/yr (narrow) — grows but stays 2-3 orders of magnitude below AI-services/robots pools; as a valuation pool it is optionality, not a driver.",
+          "Funding cyclicality: longevity VC is beta ~1.5-2x to broad biotech/risk appetite; it rises with AI-capital abundance and falls in rate/risk shocks. Couple its inflow to the model's capital-abundance / valuation regime, not to an independent longevity signal.",
+          "Memetic/political frame contagion: elite longevity framing (Thiel/Altman/Bezos/Johnson) correlates with deregulatory-accelerationist coalition; base rate that this measurably shifts NATIONAL regulatory stringency before 2036 is low, but it reliably raises salience/dread on the anti-side (backlash) — asymmetric, backlash-heavy."
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "longevity_TRL (0..1 technology-readiness / clinical-maturity stock; slow integrator, inflow gated by longevity_funding and AI-bio productivity, ~15-25 yr time-constant to population impact). Keep it a SHADOW stock that mostly does nothing before 2036.",
+            "longevity_pool_value ($T emerging valuation pool; tiny base ~$0.06T, high-beta optionality tail).",
+            "elite_longevity_frame (0..1 memetic salience stock; fast-charging, feeds BOTH accelerationist-coalition strength AND public dread/backlash).",
+            "OPTIONAL healthspan_participation_bonus (LEVEL adjustment to effective older-worker labor supply; ~0 until a shock flips it, 2040s+ for real effect)."
+          ],
+          "loops": [
+            "R (weak, out-of-horizon): AI capability -> AI-for-bio productivity (GPT-4b-micro-style) -> longevity_TRL up -> more funding -> more compute demand. Real but latency ~decade; keep gain low pre-2036.",
+            "B (in-horizon, dominant): elite_longevity_frame up -> dread/backlash up -> society.sentiment + reg_stringency up (esp. via existing dread-incident class if a reprogramming trial produces a scandal/death) -> longevity_funding + frame damped. This is the ONLY strongly-active longevity loop before 2036.",
+            "B (demographic relief, LATENT): longevity_TRL -> healthspan -> older-worker participation -> eases demography.age_creep fiscal drag & care_demand. Effectively zero before ~2040; wire it but mask it inside horizon."
+          ],
+          "couplings": [
+            "valuation.rs EmergingPool: add a Longevity pool (small base, high-beta capture) OR fold into existing AiServices as an AI-for-bio capture line for a couple of names; do NOT let it move index-level value.",
+            "society.rs: elite_longevity_frame writes into `sentiment` and can trigger the existing dread-incident stringency step (incident_s2_dread, +0.55 class) if a longevity trial scandal fires; also nudges `inst_trust` down on the 'immortality-for-billionaires' inequality frame.",
+            "demography.rs: longevity relief would READ into `age_creep` (fiscal load) and `care_demand_growth` and add a retirement-age / participation term to `r_ret_phys`/cognitive pool retirement flows — but gate all of these to ~0 within 2026-2036 (LEVEL effect deferred).",
+            "macrofin: longevity_funding inflow should be a FUNCTION of the capital-abundance/valuation regime (beta ~1.5-2x biotech), i.e. a sink on capital in boom, first to cut in a rate/risk shock — not an independent driver."
+          ]
+        },
+        "contested": [
+          "LEV timing: de Grey/Kurzweil (~2030-2040, 50/50) vs Olshansky Nature 2024 ('implausible this century,' LE decelerating). The model should side with the empirical decelerating base rate for the 2026-2036 horizon and treat fast-LEV as a low-probability tail, not a scenario spine.",
+          "GPT-4b-micro '50x reprogramming efficiency': company/OpenAI-reported, preclinical, not peer-validated at population relevance. Real as a proof that AI compresses bio-design cycles; overstated if read as near-term therapy.",
+          "Partial-reprogramming safety: OSK(M) rejuvenation vs teratoma/cancer risk if timing imperfect — unresolved in humans; a high-profile adverse event is a plausible DREAD-shock trigger, which matters more to the model than the upside before 2036.",
+          "Whether the 'longevity economy' ($8-27T) is longevity SCIENCE at all — mostly it's ordinary 50+ consumption; conflating them inflates the valuation pool. Use the narrow ~$60-67B tech market for the pool.",
+          "Direction of the political frame: accelerationists read longevity as pro-tech/deregulation; critics read elite-immortality as an inequality/dread accelerant. Net regulatory effect is sign-ambiguous but the model's dread machinery makes BACKLASH the higher-probability in-horizon output."
+        ],
+        "lessons_for_model": [
+          "Longevity is almost entirely OUT-OF-HORIZON for the demography layer. The dependency-ratio and retirement-age relief is a 2040s+ LEVEL shift; within 2026-2036 it should contribute ~0 to age_creep/care_demand. Do NOT let it relieve the fiscal drag inside the run — that is the single biggest modeling error to avoid.",
+          "The only demography channel with any 2026-2036 traction is healthSPAN -> older-worker labor-force PARTICIPATION (a small RATE nudge), and even that is conditional on a <15%-likely therapy shipping. Model it as a low-probability, small-magnitude participation bonus, not a mortality/lifespan change.",
+          "As a valuation pool, longevity is OPTIONALITY, not a driver: ~$60-67B narrow market by 2035 is 2-3 orders below AI-services/robots. Wire it as a small high-beta emerging pool or an AI-for-bio capture line on 1-2 names (Retro<->OpenAI/Altman, Nvidia/AI-compute pull-through), never as index-moving.",
+          "The ACTIVE in-horizon channel is memetic/political: the elite longevity frame couples to the society layer's dread/sentiment/trust machinery. Highest-probability output is BACKLASH (inequality + reprogramming-scandal risk feeding the existing +0.55 dread-incident stringency step), not deregulation. This is a RATE effect on sentiment and a possible LEVEL step on reg_stringency.",
+          "Couple longevity FUNDING to the capital-abundance/valuation regime (beta ~1.5-2x biotech): it swells in AI-capital booms and is first-cut in rate/risk shocks — a capital sink, a shock-amplifier, not an independent input. This also creates a small R-loop back into AI compute demand via AI-for-bio, but at low gain given the ~decade latency.",
+          "Keep an explicit longevity_TRL shadow stock so the model can represent a LOW-PROBABILITY discontinuity tail (fast partial-reprogramming success) that only starts mattering right at/after the 2036 boundary — useful for scenario branching without contaminating the base case."
+        ]
+      },
+      {
+        "topic": "Brain-computer interfaces (Neuralink et al.) 2024-2036: optionality valuation pool + memetic input, not an in-horizon labor factor",
+        "key_numbers": [
+          "Neuralink PRIME: 21 human N1 implants as of 2026-01-28 across 4 countries, 26 by 2026-06-22. N1 = 1,024 electrodes on 128 flexible threads in motor cortex. Roadmap (aspirational): 3,000 channels/implant 2026, 25,000 by 2028.",
+          "Neuralink valuation: ~$9B on a $600M raise (May 2025); some sources cite $9.6B and a $650M Series E (Apr 2026). Total primary funding ~$1.85B since 2016. Up from $3.5B late-2023 (>150% in 18mo). CONTESTED exact figures.",
+          "Synchron Stentrode (endovascular, no craniotomy): COMMAND EFS n=6 severe-paralysis patients, 12mo with no serious brain/vascular adverse events, met primary safety endpoint. Series D $200M (Nov 2025, Double Point Ventures), valuation ~$1B, total ~$345M. Backers incl. Bezos, Gates. Pivotal trial starts 2026.",
+          "Precision Neuroscience Layer 7: FDA 510(k) clearance 2025-03-30 (K242618) — surface (non-penetrating) 1,024-microelectrode film, cleared for up to 30-day implant, intraoperative mapping. Tested in ~37 patients via research partnerships. FIRST cleared high-channel-count cortical BCI array.",
+          "Paradromics Connexus: first-in-human implant June 2025 (U-Michigan, MND/ALS patient, temporal lobe). 420 penetrating microelectrodes. Claimed 200+ bits/sec info-transfer in preclinical models (~25x Neuralink's cited 8 bps cursor record). FDA IDE for Connect-One study granted Nov 2025.",
+          "BCI market size: ~$2B (2023) → $6.2-6.5B by 2030 at ~17-18% CAGR (consensus); bull case to ~$12.4B. Implantable-only neural-interface segment ~$2.66B by 2030. Speculative consumer-neurotech TAM $20-100B+ by 2035.",
+          "First US PMA (prescription implant for paralysis) plausible window 2028-2030; Neuralink analyst PMA estimates 2027-2028, commercial for severe paralysis ~2028. Class III device: ~2yr pivotal + FDA review.",
+          "Bandwidth reality check: human conscious thought throughput ~10 bits/sec (Neuron, 2025); ~86B neurons total, current arrays sample ~10^2-10^3 units. Addressable severe-paralysis population = tens of thousands (US), i.e. ~10^4-10^5 vs ~1.6x10^8 US labor force."
+        ],
+        "base_rates": [
+          "Electrode-count scaling (Stevenson's Law): simultaneously-recorded neurons historically double every ~6-7 years. Neuralink's 1,024→3,000 (2026)→25,000 (2028) roadmap implies ~5x/2yr — roughly 15-20x faster than the historical curve. Treat aspirational channel targets with a 0.2-0.4 realization haircut.",
+          "Class III implantable-BCI approval hazard: near-zero before 2028; model a regime-switch with ~50-70% cumulative probability of first US PMA by 2030, ~85%+ by 2033. RAND forecasting community puts able-bodied (non-medical) FDA approval by 2030 at low probability (<15%).",
+          "In-horizon labor elasticity of BCI ≈ 0. Even at aggressive rollout, cumulative implants 2026-2036 plausibly ~10^3-10^5 (surgical-throughput + reimbursement gated), <0.1% of any labor pool. BCI does NOT relax the physical-labor floor or cognitive-wage displacement inside 2036.",
+          "Adoption gate is surgical/regulatory/reimbursement, not capability: implant requires neurosurgery + Class III approval + payer coverage. Ramp is bounded by trained-surgeon-hours and OR capacity, not device performance — same adoption-gating logic already in the model.",
+          "Consumer/'merge' bandwidth demand elasticity is low: if conscious cognition is ~10 bits/s, marginal utility of >10^3-channel input BCI for able-bodied users is weak in-horizon; the merge thesis is a >2035 optionality/memetic story, not a demand driver. CONTESTED by transhumanist camp.",
+          "BCI valuation multiples behave like biotech/deep-tech optionality: pre-revenue, milestone-driven step-revaluations on trial/FDA events, high beta, wide dispersion. Model as lognormal payoff with a small probability of a large 2030s terminal, not a compounding revenue base in-horizon."
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "bci_optionality (valuation pool $): long-dated, near-zero 2026 base, revalues on regulatory-milestone step events; mirror the existing space-module optionality treatment, NOT a ratio pool",
+            "bci_clinical_maturity (0-1 LEVEL): composite of channel-count realization, cumulative implants, and trial-stage; gates whether the optionality pool can be marked up",
+            "transhumanist_merge_frame (0-1 memetic LEVEL): salience of the human-AI-merge narrative; a societal-sentiment input stock, decays like other frames"
+          ],
+          "loops": [
+            "B (regulatory gate): higher society.regulatory_stringency -> slower BCI clinical maturity -> delayed PMA regime switch -> optionality pool stays discounted. RATE effect on maturity accrual.",
+            "R (milestone reflexivity, weak): FDA/trial milestone -> bci_optionality step-up -> capital inflow to neurotech -> faster next-gen device -> next milestone. Bounded by surgical-throughput ceiling.",
+            "R (memetic): visible BCI demos (Neuralink telepathy/wheelchair) -> transhumanist_merge_frame + -> feeds both AI dread AND techno-optimism sentiment; ambivalent sign, routes into existing dread-incident vs optimism balance.",
+            "B (bandwidth realism damper): merge_frame growth checked by the ~10 bits/s cognition ceiling meme -> caps consumer-BCI demand expectations."
+          ],
+          "couplings": [
+            "READS society.regulatory_stringency (gates clinical maturity accrual rate) and society public sentiment (funding availability).",
+            "WRITES transhumanist_merge_frame into the society sentiment layer as a distinct memetic input — pairs with the pending Memetics layer (task #26); until then, route as a small additive sentiment/optimism term.",
+            "WRITES bci_optionality into valuation as an EmergingPool-style optionality mark (like space), captured only by explicitly-tagged pure-play names; do NOT map to human_cognitive_wages or human_physical_wages.",
+            "Does NOT couple to bottleneck accounting (power/chips) materially — BCI compute demand is negligible vs AI datacenter load in-horizon.",
+            "Public-exposure coupling: nearly all pure-plays are PRIVATE (Neuralink, Synchron, Precision, Paradromics) — investable exposure is indirect (see contested), so the pool's public-market beta is low/proxied."
+          ]
+        },
+        "contested": [
+          "Neuralink channel roadmap (25,000 by 2028) — CONTESTED as aspirational vs Stevenson's-Law historical doubling (~6-7yr). High risk of slippage; treat as a scenario knob, not a base case.",
+          "The human-AI 'merge' / high-bandwidth thesis — CONTESTED by the ~10 bits/s conscious-throughput finding (Neuron 2025) and 86B-neuron sampling gap. Musk/Diamandis/Kurzweil bullish; neuroscientists skeptical. Model as memetic optionality, not capability.",
+          "Consumer neurotech TAM $20-100B by 2035 — highly speculative, wide range, mostly non-invasive wearables not implants; do not treat as in-horizon implant revenue.",
+          "Public/pre-public exposure — ALL leading implant BCIs are private. 'BCI stocks' marketed to retail (pre-IPO Synchron/Neuralink SPV markups on Forge/Hiive/Nasdaq Private Market) are illiquid secondaries, not clean exposure. Indirect public proxies (Nvidia via Holoscan/Chiral, Apple via native BCI-HID integration, Blackrock Neurotech's owners) are de-minimis to those parents. No high-purity public pure-play exists in-horizon.",
+          "First able-bodied (non-medical) FDA approval by 2030 — low-probability per forecasters; the 'enhancement' use case is likely post-2032 and regulation-gated.",
+          "Whether Neuralink's $9B/$9.6B mark reflects fundamentals vs Musk-halo/private-round optics — CONTESTED; revenue is ~zero."
+        ],
+        "lessons_for_model": [
+          "Model BCI as a LEVEL of optionality (a slowly-charging pool gated by a regulatory regime switch), not a RATE contributor to output or labor. Its 2026-2036 EPS/GDP contribution is ~0; its value is a tail-payoff mark.",
+          "Keep BCI OUT of the labor-displacement and bottleneck subsystems entirely in-horizon — its only in-horizon channels are (a) a valuation optionality pool and (b) a memetic input to sentiment.",
+          "Use the existing space-module optionality machinery as the template for bci_optionality (long-dated, milestone-stepped, low base) rather than the ratio-pool machinery.",
+          "The primary in-horizon signal is regulatory: first US PMA in the 2028-2030 window is the key step-event; before it, discount the pool heavily. Tie its accrual rate to society.regulatory_stringency.",
+          "Feed the transhumanist/merge frame into the (pending) memetics layer as a distinct contagion strain with AMBIVALENT sign — it amplifies both techno-optimism and AI-dread depending on incident context.",
+          "Public-market exposure is effectively unhedgeable/unbuyable at purity in-horizon; if the trade book wants BCI beta, it must accept private-secondary illiquidity or heavily-diluted proxies — flag this explicitly rather than implying a clean long.",
+          "Add a 'bandwidth-realism' damper so the merge frame cannot runaway-inflate consumer BCI demand: the ~10 bits/s cognition ceiling is a structural cap on the able-bodied use case within the horizon."
+        ]
+      },
+      {
+        "topic": "AI cyber offense/defense economics as a shock class + cybersecurity profit pool + reflexive-financing coupling (2024-26 evidence)",
+        "key_numbers": [
+          "OFFENSE CAPABILITY DEMOS: DARPA AIxCC found 54 real vulns in ~4 hrs compute (2025). AISLE autonomous system found 12/12 CVEs in Jan-2026 OpenSSL coordinated release plus historical bugs. Google Big Sleep found real zero-days in OSS. XBOW (autonomous pentester) hit #1 on HackerOne US (Q2 2025) and later #1 global with ~1,060 vulns/12mo (54 critical, 242 high, 524 medium, 65 low in Q2), raised $75M.",
+          "FIRST AI-ORCHESTRATED CAMPAIGN: Anthropic disrupted GTG-1002 (Chinese state-sponsored), detected mid-Sept 2025, disclosed Nov 14 2025. ~30 high-value targets (tech, finance, chemical mfg, govt). Claude Code executed ~80-90% of the operation autonomously; human involvement capped ~20 min per phase across 6 phases vs several hours of agent work. Full autonomy still blocked by hallucinations (CONTESTED whether 80-90% figure overstates true autonomy).",
+          "TRANSITION-WINDOW GAP: vuln-discovery-to-exploit window narrowed to HOURS; enterprise patch cycles run 30-60 days (test/stage/rollback) -> structural offense window. 42% YoY increase (2025) in zero-days exploited prior to public disclosure.",
+          "RANSOMWARE COST: global damage ~$57B/yr projected 2025 (~$156M/day; CONTESTED Cybersecurity-Ventures promotional figure incl. downtime/recovery/legal/reputation, not ransom alone). Avg ransom demand ~$2.2M (2024). Sophos 2025: median ransom demand $1.32M (down from $2M), mean recovery cost ex-ransom $1.53M (down from $2.73M 2024). 28% of attacks target critical infrastructure. IBM 2025: critical-infra breach avg $4.82M. CNI median ransom payment rose to $2.54M (41x prior-year $62,500); mean $3.225M.",
+          "SYSTEMIC-OUTAGE PRECEDENT (CrowdStrike, Jul 2024): ~$5.4B direct loss to Fortune 500 (revenue+gross profit, ex-secondary); 8.5M Windows machines crashed; 125 of Fortune 500 (25%) hit. Sector split: healthcare $1.938B, banking $1.149B, airlines $860M. Insured loss only $540M-$1.1B (Parametrix); cyber insurance covered just 10-20% of losses -> large uninsured/uncovered tail.",
+          "CYBER INSURANCE MARKET: direct premiums written ~$7.5B (2025) vs $7.1B (2024), but 2024 saw first-ever premium DECLINE (-2.3%) since 2015; ~50% of premiums ceded to reinsurers. Accumulation/correlated-tail risk (cloud outage, mass-exploited CVE, CNI attack) is the core underwriting fear -> capacity is thin and fragile precisely for systemic events.",
+          "CYBERSECURITY (DEFENSE) MARKET: ~$255B (2025) -> ~$580B (2031), CAGR ~14.7% (Arizton); alt: $219B (2025) -> $699B (2034), 13.8% (Fortune Business Insights). GenAI defense already shipping: MSFT Security Copilot, CrowdStrike Charlotte AI, Palo Alto Cortex XSIAM."
+        ],
+        "base_rates": [
+          "OFFENSE-DEFENSE SIGN IS CAPABILITY- AND ACTOR-DEPENDENT, NOT CONSTANT. CSET (2025): historically attacker-favored (defender secures whole surface, attacker needs one hit), but AI on balance has helped defenders via scaling. Formal result: when total investment is LOW, marginal investment favors the attacker; when total investment is HIGH, marginal investment favors the defender. => net offense-tilt during early/underinvested transition window, trending defense-favored as defensive AI spend and maturity accumulate.",
+          "ASYMMETRIC INCIDENCE: 'Uplifted attackers, human defenders' (arXiv 2508.15808) — frontier/well-resourced orgs are net defense-advantaged; trailing-edge orgs (SMBs, municipal, water/utility, healthcare) are net offense-exposed because they cannot deploy defensive AI at scale. Hazard concentrates in the long tail, not the frontier.",
+          "HAZARD(capability): probability of a large-scale AI-orchestrated incident is ~superlinear/sigmoid in agentic-coding capability, crossing a usable-autonomy threshold ~2025 (first documented incident Nov 2025). Below threshold AI only uplifts unsophisticated actors ('help script-kiddies start faster'); above it, it collapses the cost of end-to-end campaigns (recon->vuln->exploit->exfil).",
+          "RANSOMWARE FREQUENCY/SEVERITY: chronic, high-frequency low-per-event drag (median ~$1.3M demand) punctuated by fat-tailed CNI events (mean CNI $3.2M, 41x YoY jump). Model as steady RATE tax + occasional LEVEL shock.",
+          "SYSTEMIC-OUTAGE ELASTICITY: a single vendor/update fault can hit ~25% of Fortune 500 simultaneously (CrowdStrike) — cyber losses are strongly CORRELATED across policyholders, defeating insurance diversification; insured share only ~10-20% => most of the loss lands directly on corporate P&L and confidence, not on risk-transfer buffers.",
+          "DEFENSE-SPEND ELASTICITY: cybersecurity market compounding ~14% CAGR, structurally accelerated by each visible incident and by regulatory mandates -> incidents are pro-cyclical REVENUE for defensive names (countercyclical to broad equities)."
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "cyber_offense_overhang: exploitable-surface x offense-capability; charged by R1 capability stock and by installed vuln_debt, discharged by defender patch/mitigation throughput. Drives per-tick incident hazard.",
+            "defender_ai_maturity: accumulated defensive-AI capability (autonomous detect/patch/triage). Integral of cyber defense spend; lags offense because attackers need one success, defenders must generalize. Sets the offense-defense sign.",
+            "vuln_debt (unpatched/latent surface): inflow = new vulns discovered (AI-accelerated, ~superlinear in capability); outflow = patch throughput (cap 30-60 day cycle unless autonomous-patching raises it). The vuln-to-exploit(hours) vs patch(weeks) gap is the transition-window offense driver.",
+            "cyber_insurance_capacity: risk-transfer buffer; depleted by correlated tail losses, thin for systemic events (~50% ceded to reinsurers). Low capacity => more loss lands directly on GDP/confidence.",
+            "cyber_profit_pool: valuation stock for defensive names (CrowdStrike, Palo Alto, Zscaler, Fortinet, Cisco, MSFT, SentinelOne + AI-native XBOW/AISLE); grows with spend and, countercyclically, with each incident/mandate."
+          ],
+          "loops": [
+            "R1 (dread/regulatory): capability up -> offense_overhang up -> incident hazard up -> visible cyber-dread incident -> steps regulatory stringency (member/sibling of existing dread-incident shock class, ~+0.55 step) and cuts consumer_trust/sentiment. Reinforces caution.",
+            "B1 (defensive catch-up, LAGGED): incident -> cyber defense spend up -> defender_ai_maturity up + vuln_debt outflow up -> hazard down. Lag is the crux: if patch/autonomous-defense throughput outpaces AI vuln-discovery, sign flips defense-favored.",
+            "R2 (reflexive-financing coupling): systemic/correlated incident -> credit-spread up + confidence down -> dampens reflexive AI-financing (couples into existing valuation/confidence machinery). Conversely, a benign regime lets the cyber_profit_pool rally feed capital inflow — a within-valuation hedge that partly offsets broad drawdowns.",
+            "B2 (insurance buffer erosion): losses -> premiums up / capacity withdrawn (already -2.3% premium contraction, correlated-tail aversion) -> less effective risk transfer -> larger direct GDP/confidence hit per future incident -> more dread. Buffer thins exactly when needed.",
+            "R3 (geopolitics coupling): rising capability lowers cost of state-sponsored campaigns (GTG-1002 precedent) -> raises geopolitics shock-class probability and cross-couples cyber hazard with interstate escalation."
+          ],
+          "couplings": [
+            "READS R1 recursive capability stock (single driver of both offense_overhang AND defender_ai_maturity — same capability arms both sides; sign set by which integrates faster).",
+            "WRITES regulatory_stringency via the existing dread-incident shock class (+~0.55 step) — cyber incident should be a member or explicit sibling of that class; NOTE dual sign: it also mandates defensive spend, growing cyber_profit_pool.",
+            "WRITES society-layer consumer_trust and sentiment (incident = trust/confidence drag).",
+            "WRITES credit_spread + confidence in the reflexive-financing/valuation machinery (correlated-tail systemic events are the transmission channel; RATE spike that decays).",
+            "ADDS cyber_profit_pool (defensive names) to valuation profit pools — countercyclical to incidents; ALSO couples NEGATIVELY to reinsurers/cyber-insurers as a losing pool on systemic events.",
+            "COUPLES to geopolitics shock classes (state-sponsored offense) and to demography/critical-infra exposure (water/grid/healthcare = trailing-edge, highest hazard).",
+            "GDP: chronic RATE drag from ransomware/downtime (~0.1-0.3% GDP-order tax) PLUS episodic LEVEL shock from systemic outage (~$5.4B/CrowdStrike-class, mostly transient flow loss + decaying confidence hit)."
+          ]
+        },
+        "contested": [
+          "Net offense- vs defense-DOMINANT is genuinely unresolved. Anthropic/CSET/Black Hat-EU 2025 lean defense-advantaged (AI patches/detects at scale); RAND human-uplift study says current tools do NOT reliably enable full sophisticated attacks by low-skill actors (only 'start faster'). Do NOT hardcode a constant sign — model it as time-varying, set by defender_ai_maturity vs offense_overhang.",
+          "The Anthropic GTG-1002 '80-90% autonomous' claim is disputed — skeptics argue hallucinations, human key-decision points, and marketing incentive inflate the autonomy figure; it may be a semi-autonomous force-multiplier, not true autonomy.",
+          "$57B/yr global ransomware damage (Cybersecurity Ventures) is a promotional/contested aggregate mixing downtime, recovery, legal, reputational; harder audited figures are per-event ($1.3-4.8M) — use the micro numbers for elasticities, treat the macro as an upper-bound scenario.",
+          "Whether AI meaningfully uplifts SOPHISTICATED/state actors (who already had the capability) vs merely democratizing to mid-tier actors — matters for whether hazard rises smoothly with diffusion or steps at capability thresholds.",
+          "Insured-share and capacity numbers imply insurance is NOT a reliable systemic buffer, but bulls argue reinsurance/cat-bond capacity will scale; contested whether correlated cyber tail is insurable at all at systemic scale."
+        ],
+        "lessons_for_model": [
+          "Arm BOTH sides from the SAME R1 capability stock; the offense-defense sign is an emergent race between defender_ai_maturity (B1) and offense_overhang, not an exogenous constant. Expect a net-offense TRANSITION WINDOW (~2025-late-2020s) while patch throughput lags AI vuln-discovery, flipping defense-favored as autonomous-patching matures and defensive spend (14% CAGR) compounds.",
+          "The load-bearing structural variable is the vuln-to-exploit window (HOURS) vs patch cycle (30-60 DAYS). Hazard scales with this gap; the gap collapses only when defender_ai_maturity enables autonomous patching. Make this ratio an explicit driver.",
+          "Distinguish LEVEL vs RATE: systemic outage (CrowdStrike-class) = transient RATE flow loss (~$5.4B) + decaying LEVEL hit to confidence/credit-spread; chronic ransomware = steady RATE GDP tax; rising capability shifts the baseline hazard LEVEL (raises the whole distribution), not just triggers events.",
+          "Wire cyber as a member of the existing dread-incident shock class (reuse the +0.55 stringency step) but give it a DUAL sign: it also mandates defensive spend, so a cyber-dread event simultaneously dampens broad sentiment AND pumps the cyber_profit_pool — a partial hedge inside valuation.",
+          "Reflexive-financing coupling fires only on CORRELATED/systemic events (not routine ransomware): insurance covers ~10-20% and ~50% is ceded to fragile reinsurance, so systemic cyber loss transmits nearly undiluted to credit spreads and confidence. Route the coupling through a correlation/aggregation gate, not per-incident.",
+          "Hazard concentrates in the TRAILING EDGE (SMB, municipal water/grid, healthcare) — couple cyber exposure to critical-infra/demography layers, not to frontier labs. Frontier is net-defended; the tail is net-exposed. Beneficiary names for the profit pool: CrowdStrike, Palo Alto Networks, Zscaler, Fortinet, Cisco, Microsoft (Security Copilot), SentinelOne, plus AI-native XBOW/AISLE; the negative-sign pool is cyber-insurers/reinsurers on systemic events."
+        ]
+      },
+      {
+        "topic": "Wet-lab automation / self-driving labs (SDLs) as the mechanism for recursive AI to accelerate PHYSICAL (bio/materials) discovery — R1-extension coupling + discovery-acceleration base rate, cycle-time-floored",
+        "key_numbers": [
+          "Berkeley A-Lab (Nature, Nov 2023): 21 experiments/day, ran 17 days autonomously, attempted 58 targets, produced 41 'new' inorganic compounds = 71% success rate; targets drawn from ~355 computationally-screened compositions (Materials Project + DeepMind GNoME).",
+          "SDL literature median ACCELERATION FACTOR (AF) ~= 6x vs conventional optimization; AF increases with dimensionality of the search space (Adesiji et al. benchmarking review, Digital Discovery 2026).",
+          "Acceleration/enhancement factor PEAKS at 10-20 experiments per dimension, then marginal returns collapse as coverage saturates and random-search baselines catch up. This is the returns ceiling.",
+          "ECL / CMU Cloud Lab (first university cloud lab, opened 2024): >100 experiments run simultaneously and continuously, 24/7 remote/programmatic execution.",
+          "Coscientist (CMU + ECL, Nature Dec 2023): GPT-4 driven; autonomously designed+executed 6 task classes incl. reaction-optimizing Pd-catalyzed Suzuki/Sonogashira cross-couplings from a plain-language prompt.",
+          "Ginkgo Bioworks Foundry: 'thousands of prototypes in weeks'; parallel high-throughput screening of thousands of genetic designs; ~25% YoY success-rate improvement attributed to generative-AI design shift (2024, post-Zymergen + Google Cloud models).",
+          "Flow/microfluidic SDLs: >=10x (order-of-magnitude) improvement in data-acquisition efficiency vs prior state-of-art fluidic SDLs (CdSe quantum-dot dynamic-flow work; NC State 2025 'collect at least 10x more data at record speed').",
+          "Informal materials-discovery timeline compression: candidates in 'months or weeks rather than years' (~10x claimed, poorly rigorized).",
+          "Physical cycle-time floor evidence: one ALD precursor degraded within ~2 days (fresh prep every 2 days); SDLs run ~1 month continuous before cleaning/reset. Synthesis + real-world validation, not compute, is the named bottleneck."
+        ],
+        "base_rates": [
+          "Well-posed optimization-campaign speedup from an AI-in-the-loop SDL: ~5-10x (median 6x), the usable base-rate for the R1->physical spillover in FAST-cycle domains (soluble chemistry, formulation, colloids, flow).",
+          "Speedup is per-campaign optimization AF, NOT end-to-end discovery->validated->deployed. Apply a validation haircut: A-Lab '41 new' shrank materially under scrutiny (see contested).",
+          "Diminishing returns kick in hard at 10-20 experiments/dimension — reinforcing loop saturates fast; do not model unbounded compounding of AF with more compute.",
+          "Throughput multiplier from 24/7 + parallel robotics: roughly 3-10x over an 8h human-run bench (one-time LEVEL jump per lab, not compounding).",
+          "Slow-cycle physical domains cap realized acceleration near 1-2x regardless of AI capability: battery aging/cycling (weeks-months), drug efficacy/clinical (months-years), long-term-stability materials, animal models, plant growth. Physics/biology sets the floor.",
+          "Ginkgo-style generative-design success-rate lift ~+25%/yr is a RATE improvement on hit-rate, distinct from throughput.",
+          "R1(software)->physical-discovery spillover coefficient should be << 1 and saturating: recursive software self-improvement improves experiment DESIGN quality but cannot shrink the physical experiment clock."
+        ],
+        "proposed_structure": {
+          "stocks": [
+            "physical_discovery_capability (bio/materials) — a second capability stock parallel to R1, but its growth is gated by automated experiment throughput and floored by cycle time, NOT by software capability",
+            "automated_experiment_capacity — installed cloud-lab/foundry robotic fleet (experiments/day); grows with capital+chips deployment",
+            "validated_discovery_backlog — proposed-but-not-yet-physically-confirmed discoveries; drains at rate set by the cycle-time floor (this is where AI 'gets ahead of' physical reality)"
+          ],
+          "loops": [
+            "R+ (design loop): R1 software capability -> better AI experiment proposer/active-learning -> higher discovery-per-experiment -> physical_discovery_capability up. REINFORCING but capped by cycle-time floor and by the 10-20-exp/dimension saturation.",
+            "R+ (data flywheel): automated_experiment_capacity -> more experiments/day -> more training data -> better proposer models -> feeds R1 spillover. One-time LEVEL boost per lab, saturating.",
+            "B- (cycle-time floor): physical experiment cycle time -> caps drain of validated_discovery_backlog -> BALANCING loop that ceilings both reinforcing loops. In slow-cycle domains this dominates.",
+            "B- (validation haircut): reported discoveries -> scrutiny/replication failure -> writes down realized physical_discovery_capability (A-Lab novelty-inflation dynamic)."
+          ],
+          "couplings": [
+            "READS R1 recursive capability stock: multiply by a saturating spillover coefficient (<<1) to drive physical_discovery_capability — recursive software gains do NOT translate 1:1 to physical science.",
+            "READS capital bottleneck (robot/instrument capex) and chips+power bottleneck (compute for the proposer model) to grow automated_experiment_capacity.",
+            "WRITES profit pools: boosts robots pool and warrants a NEW bio/materials/drug-discovery pool; feeds ai_services (design-as-a-service, cloud-lab revenue).",
+            "WRITES demand: novel materials/molecules open new product demand (a slow, lagged LEVEL add).",
+            "WRITES physical-labor floor / demography: lab-tech and bench-scientist displacement (cloud labs remove physical lab presence).",
+            "WRITES society layer: bio-discovery acceleration is a plausible dread-incident/regulatory-stringency trigger (biosafety), coupling into the existing +0.55 stringency shock class."
+          ]
+        },
+        "contested": [
+          "A-Lab NOVELTY strongly contested: a 2024 critique (Palgrave/Leeds + others) found most of the 41 'new' compounds already exist in the ICSD, and several XRD assignments were wrong (amorphous material, mixtures, or known phases mislabeled). Nature issued an Author Correction 2026-01-19. Treat '41 new compounds' as an upper bound; realized novel-validated count is materially lower. This is the single biggest reason to apply a validation haircut.",
+          "Median AF=6 is drawn from PUBLISHED SDL campaigns => survivorship/publication bias; real-world open-ended discovery AF is likely below 6.",
+          "AF is measured on well-posed OPTIMIZATION landscapes (known objective, bounded parameter space), not open discovery of what to even make — the harder, higher-value regime where SDLs are least proven.",
+          "Whether recursive AI compresses physical CYCLE TIME at all, vs merely raising throughput and per-experiment info gain. Consensus in the sources: it does NOT compress the physical clock; synthesis+validation remains the bottleneck.",
+          "'Months/weeks vs years' ~10x discovery-compression claims are largely un-rigorized marketing-adjacent framing, not benchmarked end-to-end."
+        ],
+        "lessons_for_model": [
+          "Keep physical discovery ADOPTION/THROUGHPUT-gated AND CYCLE-TIME-FLOORED, consistent with the model's existing 'adoption-gated not capability-gated' stance. The floor is the load-bearing constraint: it converts an in-principle-unbounded recursive loop into a bounded 5-10x (fast-cycle) down to 1-2x (slow-cycle) realized acceleration.",
+          "Set the R1->physical spillover coefficient WELL BELOW 1 and saturating. Software self-improvement is not physical self-improvement; do not let R1 recursion leak uncapped into bio/materials output.",
+          "Distinguish LEVEL vs RATE explicitly: (a) 24/7 + parallel-robot THROUGHPUT is a one-time LEVEL step (~3-10x per lab) — do NOT compound it; (b) AI-in-the-loop DESIGN quality is a RATE effect on discovery-per-experiment that co-moves with R1 but saturates at 10-20 exp/dimension; (c) physical cycle time is a hard LEVEL floor that ceilings the RATE.",
+          "Segment physical discovery by cycle-time class: fast (flow chem/formulation, days) gets ~5-10x; medium (solid-state synthesis, weeks) ~2-5x; slow (battery aging, drug efficacy, clinical, biology, ~months-years) ~1-2x. A single blended coefficient will overstate slow domains and understate fast ones.",
+          "Apply a VALIDATION HAIRCUT to reported discovery counts (A-Lab lesson): realized validated discoveries << AI-proposed/robot-executed candidates. Model validated_discovery_backlog as a stock that drains slowly and loses mass to replication failure.",
+          "The value channel is real but lagged and capex-heavy: route it to the robots pool + a new bio/materials/drug pool, gated by capital and chips/power bottlenecks — the same constraints already in the accounting, so SDLs compete for the same power/chips/capital, not free upside."
+        ]
+      }
+    ],
+    "design": "The module compiles and the deterministic baseline is intact. Here is the synthesis.\n\n---\n\n# Bio + Cyber layers — implementation-ready design\n\nTwo modules, both inert by default (`bio_layer = 0.0`, empty shock vecs) so the deterministic baseline is byte-identical — same regression discipline as `geopolitics.rs`. Written to `rust/singularity-econ/src/bio.rs` (compiles clean against the crate; `pub mod bio;` added to `lib.rs`). Module A is the bio economy + R1-physical extension + optionality; Module B is the two dread shock classes (`bio::shocks`).\n\n## (1) Minimal stocks / pools\n\n**Module A — `BioState` (bio.rs):**\n| Stock | Type | Role |\n|---|---|---|\n| `physical_discovery_cap` | 0..1 | R1→physical-science (SDL) extension; spillover ≪1, cycle-time-floored, validation-haircut |\n| `drug_pipeline` | count | candidates-in-clinic; inflow = adoption-gated preclinical throughput, drains ~90% to attrition |\n| `hc_rd_cost_index` | LEVEL 1.0→ | drug-dev cost/candidate falling with AI adoption; feeds healthcare-deflation |\n| `bio_knowledge_uplift` | 0..1 | VCT-style knowledge from R1 (already elevated at 2026) |\n| `synthesis_access_gate` | 0.20→0.35 | uncovered synthesis fraction; slow erosion, re-closable by mandate |\n| `cumulative_bio_incidents` | counter | habituation / nth-event ratchet |\n| `longevity_trl`, `bci_maturity` | 0..1 | SHADOW stocks, ~0 in-horizon |\n| `elite_longevity_frame`, `merge_frame` | 0..1 | memetic, feed society sentiment (backlash-heavy) |\n| pools `ai_drug_pool_b`, `longevity_pool_b`, `bci_pool_b` | $B | valuation cross-section marks |\n\n**Module B — `bio::shocks`:** `DreadShockKind{BioPandemic, CyberSystemic}`, drawn into `Params` mirroring `geo_shocks`; no new persistent stocks — the cyber offense/defender race indices are computed from the existing R1 track.\n\n## (2) Hazard functions vs capability + magnitude distributions\n\n**Biorisk** (rides ON TOP of the always-on natural pandemic; do not double-count):\n```\nh_bio = h0·exp(k·(cap_op − cap*))·(1 − m_safeguard) + h_natural\n  h0=0.003/yr (FRI 100k-death), h_natural=0.028/yr, cap*=0.03 (VCT crossing ~2025),\n  k=5 (pins the FRI 5× multiplier at crossing), m_safeguard=0.75·(1−open_weight_share)\n  cap_op = bio_knowledge_uplift · translation_coeff(0.15→0.35) · synthesis_access_gate\n```\n`translation_coeff` is the load-bearing Aum-gate parameter that reconciles RAND \"no uplift\" (5% actual) with VCT \"threshold crossed\" (2× expert) — expose it for sensitivity. Severity = lognormal: median event macro ≈0 (Amerithrax), 90-95th pct −3 to −4% (COVID), tail −8 to −12%. Mass-casualty (>3% drag) → +0.70 stringency, arms R7 + screening mandate; contained → +0.20.\n\n**Cyber** (systemic/correlated only; chronic ransomware is a separate steady RATE tax, not this shock):\n```\nh_cyber = h_c0·sigmoid(6·(offense − defender))·autonomy_gate(year≥2025)\n```\nSign is **emergent**: net-offense transition window ~2025–late-2020s (patch cycle 30-60d ≫ exploit hours), flips defense-favored as `defender` compounds (14% CAGR). Severity modal ~$5.4B ≈ 0.02% world GDP transient; DUAL-sign — pumps the cyber profit pool while denting broad beta. Systemic step +0.30 (weaker than bio — cyber is familiar, lower dread).\n\n## (3) Couplings to EXISTING structure (double-count guards)\n\n| Writes to | Mechanism | Guard vs existing AI-incident |\n|---|---|---|\n| `reg_stringency` (society.rs) | additive ratcheted step, mirrors `incident_s2_dread=0.55` | **`effects_for_year` takes MAX across co-occurring dread classes, not sum** — three dread events one year ≠ 3× |\n| `dread_armed` (lib.rs:1041) | single idempotent latch → R7 credit spiral | spiral is a FIXED 0.15 injection gated on latch+enforcement; already non-additive — AI+bio+cyber cannot super-add |\n| `credit_injection` / spread | systemic bio/cyber inject into same `gfx.spread` channel | gated to mass-casualty/systemic only; distinct physical cause from geo |\n| GDP | transient mean-reverting LEVEL drop (1-3yr recovery), separate from geo chip/power/demand channels and from the chronic ransomware RATE tax | no overlap with geo `demand_mult` |\n| `age_creep` (demography.rs:302) | `age_creep_eff = age_creep · (1 − κ·healthcare_deflation)`, κ=0.15, lag 4yr; deflation = rd_drop·pharma_share(0.12)·passthrough(0.10) | second-order by construction — raises `transfer_cap_eff` marginally |\n| R1 | READS `algo_eff` → knowledge_uplift + physical_discovery (×spillover 0.15) | frontier capability, not adoption — cyber arms BOTH sides from same stock |\n| valuation pools | new `ai_drug`/BioDefense/cyber/longevity/BCI marks; differential = redistribution | does NOT re-rate the index; broad-beta hit transient |\n| society sentiment | frame_sentiment_delta (net negative) + low-rate bio-scandal dread draw | distinct from generic AI incident (different regulatory target: GoF/synthesis/model-release) |\n\nThe generic `incident_year` stays as the AI product-safety/misalignment class; bio and cyber are **distinct drivers and regulatory targets** that co-occur with it.\n\n## (4) Parameter table (from briefs, in `BioParams::default()` + `shocks`)\n\n`r1_phys_spillover=0.15` · `sdl_accel_ceiling=4.0` (fast≈6-10×, slow≈1-2×) · `validation_haircut=0.40` (A-Lab) · `drug_pool 2026=$1.5B→2035=$14B` (narrow tooling TAM) · `preclinical_cost_mult=0.65` · `pharma_adoption 0.55→0.85` · `phase1_gate=1.6, phase2/3=1.0, clinical_loa=0.10` · `royalty_first_year=2029` · `pharma_share_of_health=0.12` · `price_passthrough=0.10` · `age_creep_kappa=0.15, lag=4` · `translation_coeff 0.15→0.35` · `synth_gate 0.20→0.35, reclose=0.06` · `longevity_pool_2035=$64B` · `bci_pool_2035=$8B, pma_year=2029, roadmap_haircut=0.30`. Shocks: `h0=0.003, h_natural=0.028, cap*=0.03, k=5, m_safeguard=0.75·closed_share, h_c0=0.05`.\n\n## (5) Validation contract (falsifiable)\n\n1. **Regression:** empty shock vecs + `bio_layer=0` → baseline byte-identical (holds; tests pass).\n2. **Bio hazard already partially on:** E[h_bio(2026)] ∈ [1.2×,2×]·h0, rising to ~5× by ~2030 pre-mitigation.\n3. **Translation coeff dominates:** sweeping 0.1→0.3 moves E[bio tail-loss] >2×, exceeding k-sensitivity.\n4. **Fat tail:** median drawn bio event |ΔGDP|<0.3%; 90th pct ≤−3%; ≥1-in-~200 paths ≤−8%.\n5. **Mean reversion:** bio/cyber GDP recovers within 1% of counterfactual in ≤3yr UNLESS the reg ratchet + R7 spiral persist.\n6. **Cyber sign flip:** net-offense ≤2029 (hazard rising), defender ≥ offense in ≥50% of paths by ~2033 (hazard declining).\n7. **Ratchet idempotency:** co-occurring AI+bio+cyber dread in one year → same R7 spiral magnitude as a single event; combined stringency step ≤ max class step.\n8. **age_creep second-order:** drug layer ON vs OFF → `transfer_cap_eff(2036)` differs <0.5pp; longevity/BCI contribute exactly 0 to age_creep in-horizon.\n9. **Cyber countercyclical:** systemic-cyber year → cyber pool earnings up while gdp_index down; dispersion widens, index level unchanged.\n\n## (6) What NOT to model (strict)\n\n- **Longevity/BCI dependency-ratio or retirement relief in-horizon = ZERO.** Dependency ratios are demographically LOCKED; LEV relief is 2040s+. Letting longevity relieve `age_creep` inside the run is the single biggest error to avoid — `bci_maturity`/`longevity_trl` are shadow stocks masked to 0 impact.\n- **No lifespan/mortality change** (LE +<2yr, decelerating — Olshansky). Only healthspan→participation, itself <15% likely; not wired to labor.\n- **BCI out of labor + bottleneck subsystems entirely** (cumulative implants 10³–10⁵ ≪ 0.1% of labor). Merge-frame capped by the ~10 bits/s cognition ceiling.\n- **No clinical-probability uplift from AI drug discovery** — Phase 2/3 stay ~37-40%, overall LOA ~10%. Only Phase-1 gate ×1.6 + preclinical cost/time. No Eroom reversal. Pool realized ≈0 before 2029.\n- **No physical-cycle-time compression** — AI raises throughput + design quality, never the physical clock; spillover ≪1, saturating at 10-20 exp/dim; A-Lab-style counts get the validation haircut.\n- **Don't double the natural-pandemic base rate** — the AI channel rides on top.\n- Optionality pools never move the index (~$64B/$8B, 2-3 orders below AI-services/robots).\n\n## Trade-book honesty — in-horizon vs out-of-horizon\n\n**IN-HORIZON (moves the book 2026-2036):**\n- **Cyber shock + cyber profit pool** — the most trade-relevant addition. Active now (first AI-orchestrated campaign Nov 2025), countercyclical DUAL-sign hedge. Names: CRWD, PANW, ZS, FTNT, MSFT, S; negative-sign on cyber-insurers/reinsurers on systemic events.\n- **Biorisk pandemic shock** — partially ON now (VCT crossed); moves left-tail/expected-loss and the differential (BioDefense +100-400% Moderna template vs broad beta −20-35%). A tail hedge + dispersion widener, not a base-case earnings driver.\n- **Bio/cyber dread → reg_stringency → R7 credit spiral** — systemic-risk channel that can drag valuation broadly.\n- **`ai_drug_discovery` pool** — marginally in: Schrödinger (SDGR) SaaS is real recurring revenue now (cleanest, lowest-beta capture, SaaS+royalty hybrid); royalty option back-loaded ≥2029; RXRX/XtalPi = clinical-stage volatility; **Isomorphic not investable (route to Alphabet)**.\n- Wet-lab-automation R1-extension → bio/materials + robots pool: modest, capex/chips-gated (competes for the same bottlenecks, not free upside).\n\n**OUT-OF-HORIZON OPTIONALITY (does not move the base case):**\n- **Longevity pool / LEV** — 2040s+ payoff; only in-horizon channel is memetic backlash (dread), not upside.\n- **BCI optionality** — first US PMA 2028-2030 is the only in-horizon signal; **all pure-plays are PRIVATE** (Neuralink/Synchron/Precision/Paradromics) — no clean public long exists at purity; flag illiquid secondaries / diluted proxies explicitly.\n- **Healthcare-deflation → age_creep relief** — real but second-order and lagged; does not move the fiscal trajectory enough to trade.\n\nFiles: `/home/user/Amulet-Map-Editor/singularity_economy/rust/singularity-econ/src/bio.rs` (module A + `bio::shocks` module B); `lib.rs` line 15 (`pub mod bio;`). Remaining wiring to activate (currently inert): call `bio.step(algo_eff, adopt, capex_gate, open_weight_share)` in the year loop after R1; multiply `p.demography.age_creep` by `age_creep_mult`; add pool fields to `Pools`/`EmergingPool` for the three marks; draw `bio::shocks::sample_dread_shocks` in main.rs MC and apply `effects_for_year` alongside `gfx` (GDP drag, spread, `dread_armed |=`, `arm_screening`, stringency MAX-merge into the society incident path)."
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Research"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Design"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "bio:biorisk",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a3d6fdb4786c6a92e",
+      "model": "claude-opus-4-8",
+      "state": "done",
+      "startedAt": 1784992084103,
+      "queuedAt": 1784992082095,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "AI-enabled biorisk as a distinct shock class in the 2026-20…",
+      "promptPreview": "Feeding a Meadows systems-dynamics model of the 2026-2036 AI transition. Existing structure: bottleneck accounting (power/chips/capital/demand), R1 recursive AI capability stock, society layer (sentiment, dread-incident shock class already stepping regulatory stringency +0.55, consumer trust, transfers), demography (care-economy demand + age_creep fiscal load + physical-labor floor), geopolitics (…",
+      "lastProgressAt": 1784992348098,
+      "tokens": 50530,
+      "toolCalls": 17,
+      "durationMs": 263995,
+      "resultPreview": "{\"topic\":\"AI-enabled biorisk as a distinct shock class in the 2026-2036 early-singularity window: capability-uplift hazard function, historical/pandemic base rates, and a dread-class regulatory ratchet with differential market effect\",\"key_numbers\":[\"CAPABILITY UPLIFT — VCT (SecureBio, arXiv 2504.16137, 322 multimodal virology-troubleshooting Qs): expert virologists WITH internet score 22.1% in th…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "bio:drug-discovery",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a2ab1c0fd9229ef4a",
+      "model": "claude-opus-4-8",
+      "state": "done",
+      "startedAt": 1784992084039,
+      "queuedAt": 1784992082095,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "AI drug discovery as a profit pool (ai_drug_discovery) + he…",
+      "promptPreview": "Feeding a Meadows systems-dynamics model of the 2026-2036 AI transition. Existing structure: bottleneck accounting (power/chips/capital/demand), R1 recursive AI capability stock, society layer (sentiment, dread-incident shock class already stepping regulatory stringency +0.55, consumer trust, transfers), demography (care-economy demand + age_creep fiscal load + physical-labor floor), geopolitics (…",
+      "lastProgressAt": 1784992283573,
+      "tokens": 59960,
+      "toolCalls": 20,
+      "durationMs": 199534,
+      "resultPreview": "{\"topic\":\"AI drug discovery as a profit pool (ai_drug_discovery) + healthcare-cost-deflation coupling into demography.age_creep, for the 2026-2036 Meadows model\",\"key_numbers\":[\"PRECLINICAL PRODUCTIVITY (the real, LEVEL-shift win): target-to-preclinical-candidate compresses from traditional 3-5 yr to AI 13-18 months (~30-50% time compression); preclinical discovery cost -25% to -50% (some claims t…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "bio:longevity-lev",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a0719e9fa600dafae",
+      "model": "claude-opus-4-8",
+      "state": "done",
+      "startedAt": 1784992287491,
+      "queuedAt": 1784992082095,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Longevity / lifespan-extension / longevity-escape-velocity …",
+      "promptPreview": "Feeding a Meadows systems-dynamics model of the 2026-2036 AI transition. Existing structure: bottleneck accounting (power/chips/capital/demand), R1 recursive AI capability stock, society layer (sentiment, dread-incident shock class already stepping regulatory stringency +0.55, consumer trust, transfers), demography (care-economy demand + age_creep fiscal load + physical-labor floor), geopolitics (…",
+      "lastProgressAt": 1784992444196,
+      "tokens": 44938,
+      "toolCalls": 16,
+      "durationMs": 156704,
+      "resultPreview": "{\"topic\":\"Longevity / lifespan-extension / longevity-escape-velocity (LEV): 2024-26 science state, in-horizon (2026-2036) vs later effects, and coupling into the Meadows AI-transition model as (a) a low-probability demography shock, (b) a valuation pool, (c) a memetic/political accelerationist frame.\",\"key_numbers\":[\"Altos Labs: $3B launch capital (2022, largest-ever biotech seed); backers Bezos/M…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "bio:bci-neuralink",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "ac81ca1d1cca3f454",
+      "model": "claude-opus-4-8",
+      "state": "done",
+      "startedAt": 1784992352586,
+      "queuedAt": 1784992082095,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Brain-computer interfaces (Neuralink et al.) 2024-2036: opt…",
+      "promptPreview": "Feeding a Meadows systems-dynamics model of the 2026-2036 AI transition. Existing structure: bottleneck accounting (power/chips/capital/demand), R1 recursive AI capability stock, society layer (sentiment, dread-incident shock class already stepping regulatory stringency +0.55, consumer trust, transfers), demography (care-economy demand + age_creep fiscal load + physical-labor floor), geopolitics (…",
+      "lastProgressAt": 1784992483547,
+      "tokens": 43348,
+      "toolCalls": 13,
+      "durationMs": 130960,
+      "resultPreview": "{\"topic\":\"Brain-computer interfaces (Neuralink et al.) 2024-2036: optionality valuation pool + memetic input, not an in-horizon labor factor\",\"key_numbers\":[\"Neuralink PRIME: 21 human N1 implants as of 2026-01-28 across 4 countries, 26 by 2026-06-22. N1 = 1,024 electrodes on 128 flexible threads in motor cortex. Roadmap (aspirational): 3,000 channels/implant 2026, 25,000 by 2028.\",\"Neuralink valua…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "bio:cyber-risk",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "aa53247a5a00280aa",
+      "model": "claude-opus-4-8",
+      "state": "done",
+      "startedAt": 1784992448446,
+      "queuedAt": 1784992082095,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "AI cyber offense/defense economics as a shock class + cyber…",
+      "promptPreview": "Feeding a Meadows systems-dynamics model of the 2026-2036 AI transition. Existing structure: bottleneck accounting (power/chips/capital/demand), R1 recursive AI capability stock, society layer (sentiment, dread-incident shock class already stepping regulatory stringency +0.55, consumer trust, transfers), demography (care-economy demand + age_creep fiscal load + physical-labor floor), geopolitics (…",
+      "lastProgressAt": 1784992619397,
+      "tokens": 39158,
+      "toolCalls": 10,
+      "durationMs": 170951,
+      "resultPreview": "{\"topic\":\"AI cyber offense/defense economics as a shock class + cybersecurity profit pool + reflexive-financing coupling (2024-26 evidence)\",\"key_numbers\":[\"OFFENSE CAPABILITY DEMOS: DARPA AIxCC found 54 real vulns in ~4 hrs compute (2025). AISLE autonomous system found 12/12 CVEs in Jan-2026 OpenSSL coordinated release plus historical bugs. Google Big Sleep found real zero-days in OSS. XBOW (auto…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "bio:wetlab-automation",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "ac5721ae9114f4bac",
+      "model": "claude-opus-4-8",
+      "state": "done",
+      "startedAt": 1784992487345,
+      "queuedAt": 1784992082095,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Wet-lab automation / self-driving labs (SDLs) as the mechan…",
+      "promptPreview": "Feeding a Meadows systems-dynamics model of the 2026-2036 AI transition. Existing structure: bottleneck accounting (power/chips/capital/demand), R1 recursive AI capability stock, society layer (sentiment, dread-incident shock class already stepping regulatory stringency +0.55, consumer trust, transfers), demography (care-economy demand + age_creep fiscal load + physical-labor floor), geopolitics (…",
+      "lastProgressAt": 1784992611271,
+      "tokens": 38835,
+      "toolCalls": 11,
+      "durationMs": 123926,
+      "resultPreview": "{\"topic\":\"Wet-lab automation / self-driving labs (SDLs) as the mechanism for recursive AI to accelerate PHYSICAL (bio/materials) discovery — R1-extension coupling + discovery-acceleration base rate, cycle-time-floored\",\"key_numbers\":[\"Berkeley A-Lab (Nature, Nov 2023): 21 experiments/day, ran 17 days autonomously, attempted 58 targets, produced 41 'new' inorganic compounds = 71% success rate; targ…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 7,
+      "label": "design:bio-cyber",
+      "phaseIndex": 2,
+      "phaseTitle": "Design",
+      "agentId": "ab054b167e648b47b",
+      "model": "claude-opus-4-8",
+      "state": "done",
+      "startedAt": 1784992628225,
+      "queuedAt": 1784992621826,
+      "attempt": 1,
+      "lastToolName": "Bash",
+      "lastToolSummary": "cd /home/user/Amulet-Map-Editor/singularity_economy/rust/si…",
+      "promptPreview": "Systems-dynamics architect (Meadows school). Synthesize into TWO minimal modules for the existing Rust model: (A) a bio.rs (drug-discovery pool + healthcare-cost deflation coupling into society age_creep + longevity/BCI as bounded optionality pools + wetlab-automation as an R1-physical-science extension) and (B) shock classes added to the geopolitics/shock machinery (biorisk pandemic shock + cyber…",
+      "lastProgressAt": 1784993088416,
+      "tokens": 127703,
+      "toolCalls": 19,
+      "durationMs": 460190,
+      "resultPreview": "The module compiles and the deterministic baseline is intact. Here is the synthesis.\n\n---\n\n# Bio + Cyber layers — implementation-ready design\n\nTwo modules, both inert by default (`bio_layer = 0.0`, empty shock vecs) so the deterministic baseline is byte-identical — same regression discipline as `geopolitics.rs`. Written to `rust/singularity-econ/src/bio.rs` (compiles clean against the crate; `pub …"
+    }
+  ],
+  "totalTokens": 404472,
+  "totalToolCalls": 106
+}

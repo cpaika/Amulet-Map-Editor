@@ -13,6 +13,7 @@ SRCS = glob([
     "src/space.rs",
     "src/geopolitics.rs",
     "src/macrofin.rs",
+    "src/bio.rs",
 ])
 
 rust_library(
@@ -100,6 +101,14 @@ rust_test(
     name = "macrofin",
     srcs = ["tests/macrofin.rs"],
     crate_root = "tests/macrofin.rs",
+    edition = "2021",
+    deps = [":core"],
+)
+
+rust_test(
+    name = "bio",
+    srcs = ["tests/bio.rs"],
+    crate_root = "tests/bio.rs",
     edition = "2021",
     deps = [":core"],
 )
