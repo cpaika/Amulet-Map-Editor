@@ -79,14 +79,26 @@ fn rent_duration_by_supply_gain_matches_commodity_vs_franchise_split() {
 // -------------------------------------------------------------------------
 #[test]
 fn bust_lag_within_century_envelope() {
+    // HONESTY NOTE (red-team round 3): the baseline queue is a plateau,
+    // not a rise-and-fall peak — the 2026 argmax is an initialization
+    // transient. We therefore measure from SCARCITY ONSET (first year the
+    // queue sustains >1.35, skipping the 2026-27 startup ringing) to glut
+    // onset, and the envelope [0,6] is deliberately outlier-inclusive
+    // (11/12 episodes had lag <=3; US railroads' 30-yr composite hit 6).
+    // This test bounds the timing structurally; it is weaker than the
+    // other envelopes and should not be read as a sharp falsification.
     let states = base();
-    let peak = year_of_peak_queue(&states);
+    let onset = states
+        .iter()
+        .find(|s| s.year >= 2028 && s.queue_ratio > 1.35)
+        .map(|s| s.year)
+        .expect("baseline never develops a scarcity queue");
     let glut = first_glut_year(&states)
         .expect("baseline must eventually produce a glut (all 12 episodes did)");
-    let lag = glut - peak;
+    let lag = glut - onset;
     assert!(
         (0..=6).contains(&lag),
-        "bust lag {lag} yrs (peak queue {peak} -> glut {glut}) outside [0, 6]"
+        "bust lag {lag} yrs (scarcity onset {onset} -> glut {glut}) outside [0, 6]"
     );
 }
 
@@ -201,11 +213,11 @@ fn credit_crunch_requires_external_funding() {
         .iter()
         .map(|s| s.credit_multiplier)
         .fold(f64::MAX, f64::min);
-    // Mild tightening (>0.95) from sovereign crowding-out is allowed —
-    // the 2019-26 deficit era tightened rates without an AI-sector
-    // crunch. A crunch is a material multiplier collapse.
+    // Restored to the strict original threshold after the winner-tax lag
+    // gave the sovereign path an equilibrium (red-team round 3 final:
+    // the earlier 0.95 relaxation passed only by horizon truncation).
     assert!(
-        min_internal > 0.95,
+        min_internal > 0.98,
         "internally funded boom produced a credit crunch (GPU-cycle contradiction): {min_internal}"
     );
 

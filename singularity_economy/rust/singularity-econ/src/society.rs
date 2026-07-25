@@ -194,6 +194,7 @@ pub struct SocietyState {
     pub unrest: f64,
     years_disp_hot: i32,
     years_s1_high: i32,
+    years_transfers_active: i32,
     incidents_seen: u32,
     trust_latched: bool,
     emergency_fired: bool,
@@ -213,6 +214,7 @@ impl SocietyState {
             gov_debt_gdp: sp.gov_debt_2026,
             unrest: 0.0,
             years_disp_hot: 0,
+            years_transfers_active: 0,
             years_s1_high: 0,
             incidents_seen: 0,
             trust_latched: false,
@@ -372,9 +374,16 @@ impl SocietyState {
                 self.transfer_emergency = (self.transfer_emergency - over).max(0.0);
             }
         }
-        // Transfers are ~60% debt-financed (winner taxes arrive with a
-        // 7-yr lag, design table); nominal growth erodes the ratio.
-        self.gov_debt_gdp = (self.gov_debt_gdp + self.transfer_share() * 0.6
+        // Debt-financed at first; the winner-tax arrives with the design's
+        // ~5-7yr lag and takes over most funding — giving the sovereign
+        // path an EQUILIBRIUM instead of an unbounded slide (red-team
+        // round 3 final: credit erosion had no fixed point and the test
+        // passed only by horizon truncation).
+        if self.transfers_active() {
+            self.years_transfers_active += 1;
+        }
+        let debt_share = if self.years_transfers_active > 5 { 0.15 } else { 0.6 };
+        self.gov_debt_gdp = (self.gov_debt_gdp + self.transfer_share() * debt_share
             - 0.03 * self.gov_debt_gdp)
             .max(0.5);
 
