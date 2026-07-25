@@ -46,25 +46,26 @@ fn transfers_step_at_elections_or_crisis_only() {
 #[test]
 fn sentiment_is_pulse_not_plateau() {
     let states = base();
-    let rate = |i: usize| {
-        if i == 0 {
-            states[0].cog_displacement
-        } else {
-            states[i].cog_displacement - states[i - 1].cog_displacement
-        }
-    };
-    let peak_rate_year = (0..states.len())
-        .max_by(|&a, &b| rate(a).total_cmp(&rate(b)))
-        .map(|i| states[i].year)
-        .unwrap();
+    // Politics keys on the VISIBLE rate (demography's freeze filter),
+    // and the youth channel is a stock detector with a designed 3-yr lag
+    // — so the sentiment peak may trail the visible-rate peak by up to 3
+    // years (later-but-sharper, demography_design.md §4).
+    let peak_rate_year = states
+        .iter()
+        .max_by(|a, b| a.visible_disp_rate.total_cmp(&b.visible_disp_rate))
+        .unwrap()
+        .year;
+    // The pulse flat-tops near saturation, so argmax is degenerate; the
+    // meaningful statistic is peak ARRIVAL — first year within 2% of max.
+    let max_sent = states.iter().map(|s| s.sentiment).fold(f64::MIN, f64::max);
     let peak_sent_year = states
         .iter()
-        .max_by(|a, b| a.sentiment.total_cmp(&b.sentiment))
+        .find(|s| s.sentiment >= 0.98 * max_sent)
         .unwrap()
         .year;
     assert!(
-        (peak_sent_year - peak_rate_year).abs() <= 2,
-        "sentiment peak {peak_sent_year} far from rate peak {peak_rate_year}"
+        (peak_sent_year - peak_rate_year).abs() <= 3,
+        "sentiment peak arrival {peak_sent_year} far from visible-rate peak {peak_rate_year}"
     );
     let peak_sent = states.iter().map(|s| s.sentiment).fold(f64::MIN, f64::max);
     let last = states.last().unwrap();

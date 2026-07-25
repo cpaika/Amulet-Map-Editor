@@ -13,11 +13,13 @@
 use serde::{Deserialize, Serialize};
 
 pub mod companies;
+pub mod demography;
 pub mod geopolitics;
 pub mod scenarios;
 pub mod society;
 pub mod valuation;
 
+pub use demography::{DemographyOutputs, DemographyParams, DemographyState};
 pub use geopolitics::{GeoRng, GeoShock, ShockKind};
 pub use society::{SocietyParams, SocietyState};
 
@@ -45,6 +47,10 @@ pub struct Loops {
     /// (sentiment, transfers, regulation, labor power, trust). With 0.0
     /// the legacy constant-gain B2 behavior is exactly recovered.
     pub society_layer: f64,
+    /// Demography layer switch: dynamic pools, hiring-freeze signal
+    /// filter, youth blockage, care economy, migration/solidarity/tension
+    /// politics. With 0.0 the static-pool legacy is exactly recovered.
+    pub d_demography: f64,
 }
 
 impl Default for Loops {
@@ -59,6 +65,7 @@ impl Default for Loops {
             b4_credit: 1.0,
             r4_physical_acceleration: 1.0,
             society_layer: 1.0,
+            d_demography: 1.0,
         }
     }
 }
@@ -123,6 +130,8 @@ pub struct Params {
     pub afford_gain: f64,
     /// Society-layer parameters (sentiment, transfers, regulation, trust).
     pub society: society::SocietyParams,
+    /// Demography-layer parameters (pools, youth, care, migration, tension).
+    pub demography: demography::DemographyParams,
     /// MC-drawn shock: calendar year an AI incident lands (0 = none).
     pub incident_year: i32,
     /// Whether that incident is dread-class (TMI pattern) vs ordinary-major.
@@ -226,6 +235,7 @@ impl Default for Params {
             backlash_gain: 2.0,
             afford_gain: 0.4,
             society: society::SocietyParams::default(),
+            demography: demography::DemographyParams::default(),
             incident_year: 0,
             incident_dread: false,
             geo_shocks: Vec::new(),
@@ -418,6 +428,14 @@ pub struct YearState {
     pub labor_power: f64,
     pub inst_trust: f64,
     pub consumer_trust: f64,
+    // demography layer (end-of-year; legacy constants when layer off)
+    pub blocked_entrants_m: f64,
+    pub visible_disp_rate: f64,
+    pub tension: f64,
+    pub solidarity: f64,
+    pub migration_openness: f64,
+    pub cog_pool_m: f64,
+    pub phys_pool_m: f64,
     pub pools: Pools,
     pub profits: Profits,
 }
@@ -465,6 +483,13 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut soc = SocietyState::new(&p.society);
     let mut prev_adopt_soc = 0.0_f64;
     let mut dread_armed = false;
+
+    // Demography: dynamic pools + political signal filter. Steps BEFORE
+    // society each year; prior-year outputs modulate this year's loops.
+    let demo_on = l.d_demography > 0.0;
+    let mut demo = DemographyState::new(
+        &p.demography, p.cognitive_workers_m, p.physical_workers_m);
+    let mut demo_out: Option<DemographyOutputs> = None;
 
     // Geopolitics: metals index is mean-reverting (half-life ~2.5yr);
     // onshoring scares boost the supply response for 4 years.
@@ -539,11 +564,17 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // shaped by sentiment, labor power, transfers, and trust —
         // peaking with the displacement rate and fading after (design
         // doc §5.1) — instead of a constant.
-        let soc_mult = if soc_on {
+        let mut soc_mult = if soc_on {
             soc.backlash_multiplier(&p.society, recent_disp_rate)
         } else {
             1.0
         };
+        if let Some(d) = &demo_out {
+            // Grievance redirection: scapegoating routes backlash away
+            // from AI firms (conserved flow — pro-adoption short-run,
+            // socially corrosive via the unrest multiplier below).
+            soc_mult *= 1.0 - d.backlash_redirect.min(0.5);
+        }
         let friction = 1.0 + l.b2_backlash * p.backlash_gain * recent_disp_rate * soc_mult;
 
         let btl_price = if let Some(prev) = out.last() {
@@ -787,8 +818,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // from ~4 years toward ~2 as robots self-integrate.
             let midpoint = 4.0 * (1.0 - p.asi_integration_relief * asi);
             let deploy_ramp = logistic(0.9 * (t_rob - midpoint));
-            let fleet_target = p.physical_workers_m * p.physical_addressable
-                * deploy_ramp * (econ_pull / 2.0).min(1.0);
+            let (phys_pool, addressable) = match &demo_out {
+                Some(d) => (d.phys_pool_m, d.physical_addressable_eff),
+                None => (p.physical_workers_m, p.physical_addressable),
+            };
+            let care_pull = demo_out.as_ref().map_or(0.0, |d| d.robot_pull_units_m);
+            let fleet_target = phys_pool * addressable
+                * deploy_ramp * (econ_pull / 2.0).min(1.0)
+                + care_pull;
             let robot_demand = (fleet_target
                 - robot_fleet * (1.0 - p.robot_attrition))
                 .max(p.robot_prod_2028_m * 0.5);
@@ -808,8 +845,13 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         }
 
         let phys_hew = robot_fleet * p.robot_hew;
-        let pd_target =
-            (phys_hew / p.physical_workers_m).min(p.physical_addressable);
+        let demo_phys_pool =
+            demo_out.as_ref().map_or(p.physical_workers_m, |d| d.phys_pool_m);
+        let pd_target = (phys_hew / demo_phys_pool).min(
+            demo_out
+                .as_ref()
+                .map_or(p.physical_addressable, |d| d.physical_addressable_eff),
+        );
         let prev_pd = 1.0 - phys_workers_m / p.physical_workers_m;
         let pd = pd_target
             .min(prev_pd + p.max_physical_displacement_rate)
@@ -889,6 +931,29 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 - compliance
                 - unrest_cost);
 
+        // ---- demography advances first: it filters what politics sees ----
+        let election = (year - p.start_year) % p.society.election_period == 0;
+        let gdp_growth_this_year = if let Some(prev) = out.last() {
+            gdp / prev.gdp - 1.0
+        } else {
+            p.base_gdp_growth
+        };
+        let this_demo = if demo_on {
+            let d = demo.step(
+                &p.demography,
+                disp,
+                robot_prod * p.robot_hew,
+                soc.sentiment,
+                soc.transfer_share(),
+                gdp_growth_this_year,
+                election,
+                pd,
+            );
+            Some(d)
+        } else {
+            None
+        };
+
         // ---- society stocks advance on this year's outcomes ----
         if soc_on {
             let lag = p.society.erosion_lag as usize;
@@ -903,10 +968,34 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             if incident && p.incident_dread {
                 dread_armed = true;
             }
-            let election = (year - p.start_year) % p.society.election_period == 0;
+            // Demography rewires the political inputs: society sees the
+            // VISIBLE displacement rate (net of hiring freezes, vacancy
+            // filling, restriction masking) against an endogenous
+            // attrition threshold, and transfer size/cap gate on
+            // solidarity + fiscal aging.
+            let (soc_rate, sp_eff, suppress_transfers) = match &this_demo {
+                Some(d) => {
+                    let mut sp = p.society.clone();
+                    sp.attrition_threshold = d.attrition_threshold;
+                    sp.transfer_cap = d.transfer_cap_eff;
+                    sp.transfer_step *= d.transfer_step_mult;
+                    sp.transfer_crisis_step *= d.transfer_step_mult;
+                    if d.restriction_fired {
+                        // restriction-first: the cheap valve fires INSTEAD
+                        // of the transfer step this cycle
+                        sp.b5_relief = 0.0;
+                    }
+                    (
+                        d.visible_cog_rate + d.visible_phys_rate,
+                        sp,
+                        d.restriction_fired,
+                    )
+                }
+                None => (new_disp, p.society.clone(), false),
+            };
             soc.step(
-                &p.society,
-                new_disp,
+                &sp_eff,
+                soc_rate,
                 adopt,
                 adopt_delta,
                 lagged_rate,
@@ -914,7 +1003,26 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 incident,
                 incident && p.incident_dread,
             );
+            if let Some(d) = &this_demo {
+                // Channel B (youth blockage) is a SEPARATE sentiment
+                // inflow — the historically revolutionary variable; it
+                // never touches labor_power (blocked youth can't strike).
+                soc.sentiment = (soc.sentiment
+                    + d.youth_sentiment_inflow * (1.0 - soc.sentiment))
+                    .min(1.0);
+                if suppress_transfers {
+                    // restriction vents SALIENCE, not grievance
+                    soc.sentiment = (soc.sentiment
+                        - p.demography.restriction_sent_relief)
+                        .max(0.0);
+                }
+                // tension multiplies the unrest hazard (IMF/Barrett
+                // self-excitation), applied to the boil level
+                soc.unrest =
+                    (soc.unrest * (1.0 + 0.5 * (d.unrest_mult - 1.0))).min(1.0);
+            }
         }
+        demo_out = this_demo;
 
         last_capex = ai_capex.max(1e-6);
 
@@ -954,6 +1062,15 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             labor_power: soc.labor_power,
             inst_trust: soc.inst_trust,
             consumer_trust: soc.consumer_trust,
+            blocked_entrants_m: demo.blocked_entrants_m,
+            visible_disp_rate: demo_out
+                .as_ref()
+                .map_or(new_disp, |d| d.visible_cog_rate + d.visible_phys_rate),
+            tension: demo.tension,
+            solidarity: demo.solidarity,
+            migration_openness: demo.migration_openness,
+            cog_pool_m: demo.cog_pool_m,
+            phys_pool_m: demo.phys_pool_m,
             pools,
             profits,
         });

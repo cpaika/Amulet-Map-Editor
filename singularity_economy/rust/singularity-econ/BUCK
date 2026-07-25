@@ -9,6 +9,7 @@ SRCS = glob([
     "src/scenarios.rs",
     "src/companies.rs",
     "src/society.rs",
+    "src/demography.rs",
     "src/geopolitics.rs",
 ])
 
@@ -65,6 +66,14 @@ rust_test(
     name = "geopolitics",
     srcs = ["tests/geopolitics.rs"],
     crate_root = "tests/geopolitics.rs",
+    edition = "2021",
+    deps = [":core"],
+)
+
+rust_test(
+    name = "demography",
+    srcs = ["tests/demography.rs"],
+    crate_root = "tests/demography.rs",
     edition = "2021",
     deps = [":core"],
 )
