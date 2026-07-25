@@ -126,6 +126,15 @@ pub struct Params {
     pub algo_eff_cap: f64,
     pub adoption_halflife: f64,
     pub max_displacement_rate: f64,
+    /// Marginal returns to intelligence: economic labor supplied is
+    /// (compute x algo_eff)^rho. rho=1 is the legacy linear assumption;
+    /// rho<1 encodes task-coverage concavity — each capability doubling
+    /// unlocks a SHRINKING marginal slice of economic tasks (the long
+    /// tail of tasks is harder, less standardized, more embodied), plus
+    /// Chinchilla-style log returns of capability to raw compute.
+    /// Normalized at the 2026 anchor (compute x algo = 1), so t0
+    /// calibration is invariant to rho.
+    pub intelligence_returns_rho: f64,
     pub backlash_gain: f64,
     pub afford_gain: f64,
     /// Society-layer parameters (sentiment, transfers, regulation, trust).
@@ -232,6 +241,7 @@ impl Default for Params {
             algo_eff_cap: 3000.0,
             adoption_halflife: 1.6,
             max_displacement_rate: 0.22,
+            intelligence_returns_rho: 0.85,
             backlash_gain: 2.0,
             afford_gain: 0.4,
             society: society::SocietyParams::default(),
@@ -609,7 +619,10 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         };
         prev_adopt_soc = adopt;
 
-        let ai_hew_raw = p.ai_hew_2026_m * compute_stock * algo_eff;
+        // Concave returns to intelligence: anchored at t0 where
+        // compute_stock * algo_eff = 1, so rho only shapes GROWTH.
+        let ai_hew_raw = p.ai_hew_2026_m
+            * (compute_stock * algo_eff).max(1e-12).powf(p.intelligence_returns_rho);
         let price_ratio = if t_sing >= 0 { p.ai_task_price_rel * afford } else { 0.25 };
         let task_expansion = price_ratio
             .powf(-(p.cognitive_demand_elasticity - 1.0) * 0.35)

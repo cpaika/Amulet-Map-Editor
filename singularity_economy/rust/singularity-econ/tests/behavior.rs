@@ -257,3 +257,29 @@ fn starved_power_run_recovers_no_absorbing_state() {
         assert!(s.capacity_glut <= 50.0 + 1e-9);
     }
 }
+
+// ---------------- returns to intelligence ----------------
+
+// Marginal returns to intelligence (rho < 1) must not rewrite the decade:
+// AI labor supply saturates demand within ~2 years of the singularity, so
+// displacement is ADOPTION-gated, not capability-gated. This is the
+// robustness result against both linear-returns optimism and
+// diminishing-returns pessimism — the conclusions survive either.
+#[test]
+fn conclusions_robust_to_intelligence_returns() {
+    let linear = run(Params { intelligence_returns_rho: 1.0, ..Params::default() });
+    let concave = run(Params { intelligence_returns_rho: 0.7, ..Params::default() });
+    let d = |v: &[YearState], y: i32| {
+        v.iter().find(|s| s.year == y).unwrap().cog_displacement
+    };
+    assert!(
+        (d(&linear, 2032) - d(&concave, 2032)).abs() < 0.05,
+        "displacement should be adoption-gated, not returns-gated: {} vs {}",
+        d(&linear, 2032),
+        d(&concave, 2032)
+    );
+    // but concavity must bite where supply is actually tight (early years):
+    let s27_lin = linear.iter().find(|s| s.year == 2027).unwrap().ai_hew_m;
+    let s27_con = concave.iter().find(|s| s.year == 2027).unwrap().ai_hew_m;
+    assert!(s27_con <= s27_lin + 1e-9, "concavity must not raise early supply");
+}
