@@ -109,6 +109,7 @@ pub struct Company {
 
 pub fn earnings_path(c: &Company, states: &[YearState]) -> Vec<f64> {
     let base = &states[0].pools;
+    let base_silicon_margin = states[0].silicon_margin.max(1e-6);
     let mut path = Vec::with_capacity(HORIZON);
     for (i, s) in states.iter().enumerate().skip(1) {
         if path.len() == HORIZON {
@@ -117,7 +118,17 @@ pub fn earnings_path(c: &Company, states: &[YearState]) -> Vec<f64> {
         let mut growth = 0.0;
         for &(pool, w) in &c.pools {
             let p0 = base.ratio(pool).max(1e-9);
-            growth += w * (s.pools.ratio(pool) / p0);
+            // Route the SILICON revenue pool through its ENDOGENOUS margin
+            // (audit #5): the B1 capacity rent compresses (silicon_margin
+            // ~0.50 -> ~0.24), so pricing silicon names on revenue^beta at a
+            // frozen 2026 margin overstates earnings. Other ratio pools have no
+            // model margin and stay revenue proxies.
+            let margin_mult = if pool == RatioPool::Silicon {
+                s.silicon_margin / base_silicon_margin
+            } else {
+                1.0
+            };
+            growth += w * (s.pools.ratio(pool) / p0) * margin_mult;
         }
         let growth = growth.max(0.0).powf(c.pool_beta);
         let mut e = c.ntm_earnings_b * growth * (1.0 + c.share_drift).powi(i as i32);
