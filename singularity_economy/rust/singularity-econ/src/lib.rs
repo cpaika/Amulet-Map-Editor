@@ -194,6 +194,32 @@ pub struct Params {
     pub component_growth_ceiling: f64,
     pub component_pipeline_stages: usize,
     pub bootstrap_gain: f64,
+    /// R2 self-replication switch (0 = off). When on, the robot fleet
+    /// staffs its own manufacturing, and the growth ceiling transitions
+    /// from the HUMAN mobilization ceiling toward the MACHINE ceiling as
+    /// autonomy rises — the "pure robotics is different from WWII" regime.
+    pub robot_self_replication: f64,
+    /// MACHINE mobilization ceiling (x/yr): the fastest a self-replicating
+    /// industrial system can double, set by PHYSICAL throughput (a factory
+    /// makes ~its own mass/yr; materials refining; the machines that make
+    /// machines), NOT by human labor. Above WWII's 2.5x but finite.
+    /// This is the parameter the robot-exponential argument turns on —
+    /// dial it up to test faster self-replication.
+    pub machine_ceiling: f64,
+    /// Share of robot output reinvested into MORE manufacturing capacity
+    /// vs consumed as labor (AI-2027's capacity-reinvestment split). High
+    /// reinvest = faster self-replication, slower near-term labor effect.
+    pub reinvest_share: f64,
+    /// Fleet size (millions) at which manufacturing self-staffing reaches
+    /// half — the Michaelis half-saturation of the human→machine autonomy
+    /// transition. Below it, robots can't yet run their own factories at
+    /// scale; well above it, the machine ceiling dominates.
+    pub self_staff_half_m: f64,
+    /// Grid draw per fielded robot (kW), continuous-duty equivalent. A
+    /// billion-robot fleet competes with datacenter compute for the SAME
+    /// constrained power buildout — the physical bound that keeps the
+    /// self-replication exponential finite once the grid saturates.
+    pub robot_kw_each: f64,
     pub robot_cost_2028_k: f64,
     pub robot_learning_rate: f64,
     pub robot_cost_floor_k: f64,
@@ -302,6 +328,11 @@ impl Default for Params {
             component_growth_ceiling: 1.4,
             component_pipeline_stages: 2,
             bootstrap_gain: 0.10,
+            robot_self_replication: 1.0,
+            machine_ceiling: 4.0,
+            reinvest_share: 0.5,
+            self_staff_half_m: 60.0,
+            robot_kw_each: 2.0,
             robot_cost_2028_k: 50.0,
             robot_learning_rate: 0.22,
             robot_cost_floor_k: 8.0,
@@ -845,8 +876,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // Shock haircut on energization (blockade: no GPUs to fill halls;
         // the lost flow is destroyed, not deferred — war losses).
         let power_additions = power_pipe.step_accel(orders, speedup) * gfx.power_mult;
+        // A fielded robot fleet draws the SAME constrained grid the datacenters
+        // are racing to build. At a billion robots this is TW-scale and becomes
+        // the physical bound on the self-replication exponential (last year's
+        // fleet; the draw is subtracted from headroom compute competes over).
+        let robot_power_gw = robot_fleet * p.robot_kw_each / 1e6;
         let power_headroom = (ai_power + space.orbital_gw_equiv + power_additions
-            - compute_stock * gw_per_unit * power_jevons_mult)
+            - compute_stock * gw_per_unit * power_jevons_mult
+            - robot_power_gw)
             .max(0.0);
         let power_cap = (power_headroom / gw_per_unit) * cost_per_unit;
         let capital_cap = gdp * p.capex_gdp_cap * credit_mult;
@@ -923,12 +960,40 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 component_capacity = p.component_capacity_2028;
             }
             let comp_excess = (component_margin - p.normal_margin).max(0.0);
+
+            // ---- R2 self-replication: the human→machine ceiling transition ----
+            // The WWII 2.5x/yr ceiling is a HUMAN mobilization ceiling — it caps
+            // how fast people can stand up new factories. Once the fleet is large
+            // enough to STAFF its own manufacturing (and superintelligence directs
+            // it there), that constraint dissolves: the binding ceiling migrates
+            // toward the finite MACHINE ceiling (physical throughput of a factory
+            // reproducing its own mass), which is higher but not unbounded.
+            // Autonomy saturates in fleet size and is gated by ASI focus, so it is
+            // ~0 before superintelligence and climbs as robots build robots.
+            let mfg_autonomy = (p.robot_self_replication
+                * asi
+                * (robot_fleet / (robot_fleet + p.self_staff_half_m)))
+                .clamp(0.0, 1.0);
+            let eff_growth_ceiling = p.component_growth_ceiling
+                + (p.machine_ceiling - p.component_growth_ceiling) * mfg_autonomy;
+
             let bootstrap = l.r2_robot_bootstrap * p.bootstrap_gain
                 * (robot_fleet * 0.3).min(10.0);
-            let comp_ceiling = p.component_growth_ceiling + bootstrap;
+            let comp_ceiling = eff_growth_ceiling + bootstrap;
+            // Self-replication capacity injection: an autonomous fleet builds
+            // its OWN new factories, mines, and tooling, so the manufacturing
+            // capacity compounds at a rate that is no longer set by human capex
+            // (`component_base_growth`, ~1.7x/yr) but climbs toward the machine
+            // ceiling as autonomy rises. This — not merely lifting the ceiling —
+            // is what makes the capacity-bound early/mid period accelerate; the
+            // legacy human-capex growth was well below even the WWII ceiling, so
+            // a higher ceiling with no faster driver changed nothing.
+            let self_repl_growth =
+                p.robot_self_replication * p.reinvest_share * mfg_autonomy * p.machine_ceiling;
             let comp_growth = (p.component_base_growth
                 + l.b1_supply_response * p.component_supply_gain * comp_excess
-                + bootstrap * 0.2)
+                + bootstrap * 0.2
+                + self_repl_growth)
                 .min(comp_ceiling * ceiling_mult);
             component_capacity +=
                 comp_pipe.step_accel(component_capacity * comp_growth, speedup);
@@ -956,9 +1021,23 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             let fleet_target = phys_pool * addressable
                 * deploy_ramp * (econ_pull / 2.0).min(1.0)
                 + care_pull;
-            let robot_demand = (fleet_target
+            // Labor-substitution demand: bring the fleet up to the human-work
+            // target (this is the WWII-analogue, human-labor-capped channel).
+            let replacement = (fleet_target
                 - robot_fleet * (1.0 - p.robot_attrition))
-                .max(p.robot_prod_2028_m * 0.5);
+                .max(0.0);
+            // Self-replication demand: an autonomous fleet is NOT demand-capped
+            // by human-labor substitution. A `reinvest_share` slice of what the
+            // fleet can produce is plowed back into building MORE of the robot
+            // economy — the factories, mines, refineries, and grid that make
+            // robots — which is itself robot demand scaling with the FLEET, not
+            // the human workforce. This is the self-sustaining exponential; it
+            // is bounded by machine-ceiling capacity above and grid power below,
+            // not by how many human jobs are left to take.
+            let self_repl_demand =
+                p.robot_self_replication * p.reinvest_share * mfg_autonomy * robot_fleet;
+            let robot_demand =
+                (replacement + self_repl_demand).max(p.robot_prod_2028_m * 0.5);
             // A minerals embargo is a hard supply gate: ex-China magnet
             // capacity caps western output regardless of price.
             robot_prod = robot_demand.min(component_capacity * gfx.comp_supply_mult);

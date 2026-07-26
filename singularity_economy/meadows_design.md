@@ -49,10 +49,42 @@ cost of AI capacity → demand expansion slows until supply catches up.
 **R1 — Recursive AI (reinforcing, saturating).** Capability → AI does AI
 R&D → algorithmic efficiency ↑. Saturates (log-logistic) — no infinities.
 
-**R2 — Robot bootstrap (reinforcing).** Robot fleet works in component and
-robot factories → capacity growth ceiling rises with fleet. Tiny gain early
-(the 2028–2032 ramp barely feels it), decisive in the 2030s. This is the
-formal version of "robots building robots takes most of a decade to matter."
+**R2 — Robot bootstrap / self-replication (reinforcing).** Robot fleet works
+in component and robot factories → capacity growth ceiling rises with fleet.
+Tiny gain early (the 2028–2032 ramp barely feels it), decisive in the 2030s.
+This is the formal version of "robots building robots takes most of a decade
+to matter."
+
+*Self-replication upgrade (`robot_self_replication`, on by default).* The
+first-cut R2 had two flaws the "robots are a self-sustaining exponential"
+critique correctly identified. **(1) The wrong ceiling.** The manufacturing
+growth ceiling was the WWII 2.5x/yr *human* mobilization ceiling — how fast
+*people* can stand up factories. Once the fleet is large enough to STAFF its
+own manufacturing (and superintelligence directs it there), that constraint
+dissolves; the binding ceiling migrates toward a finite **machine ceiling**
+(`machine_ceiling`, 4x/yr default) set by physical throughput — a factory
+reproducing roughly its own mass per year, materials refining, the machines
+that make machines. The transition is endogenous: an autonomy fraction
+saturating in fleet size (`self_staff_half_m`) and gated by ASI focus, so it
+is ~0 before superintelligence and climbs as robots build robots. **(2) The
+wrong bind.** Diagnostics showed the legacy fleet was *capacity*-bound at a
+human-capex growth rate (~1.7x/yr, far below even the human ceiling), so
+lifting the ceiling alone changed nothing — and it was *demand*-capped by
+human-labor substitution, so it PLATEAUED (~1.7B) the moment it saturated the
+human physical workforce. That plateau is the artifact the critique targeted:
+a self-sustaining loop should not stall because human jobs ran out. The fix
+injects (a) a self-replication capacity term — the autonomous fleet builds its
+own factories, so capacity compounding accelerates toward the machine ceiling
+(1.6x → 2.2x/yr as autonomy rises) — and (b) a self-replication demand term —
+a `reinvest_share` slice of output plowed back into more robots, scaling with
+the FLEET not the workforce. Result: the loop stays exponential past the labor
+cap (fleet 13M→137M→2.2B→17.6B across 2036–2050 vs the plateauing 1.7B legacy).
+It stays **finite** by three physical bounds: the machine ceiling caps capacity
+growth; `reinvest_share` caps how much output recycles vs is consumed; and a
+billion-robot fleet draws the SAME constrained grid the datacenters race to
+build (`robot_kw_each`, TW-scale by 2050), competing with compute for power.
+Ablation is clean: `robot_self_replication = 0` recovers the legacy fleet
+byte-for-byte (robotics never reads the power balance).
 
 **R3 — Capex momentum (reinforcing → overshoot).** Investment follows
 *perceived* (lagged, smoothed) demand growth plus herding on recent growth.
@@ -161,10 +193,17 @@ the extended run is where several of them finally bind:
   response the IP monopolist cannot strategically absorb. The model
   generates the two-decade monopoly (ASML/x86 pattern) AND its eventual
   end from structure.
-- **Robot bootstrap (R2) goes vertical 2038-2050**: fleet 13M (2036) ->
-  102M (2040) -> 1.7B (2050). Physical displacement is the 2040s story
-  even with a 2027 singularity — the "components early, labor late"
-  sequencing holds across the full horizon.
+- **Robot self-replication (R2) goes vertical 2038-2050**: with the
+  self-replication upgrade the fleet no longer plateaus at the human-labor
+  cap — 13M (2036) -> 137M (2040) -> 2.2B (2044) -> 17.6B (2050), driven by
+  capacity compounding that accelerates from 1.6x to 2.2x/yr as robots staff
+  their own factories (vs the legacy 1.7B plateau, which stalled the moment
+  it saturated the human workforce). Physical displacement is still the 2040s
+  story even with a 2027 singularity — "components early, labor late"
+  sequencing holds through ~2044, after which the loop is self-replication-
+  demand-bound rather than human-labor-bound. The exponential stays finite:
+  capped by the machine ceiling, the reinvest share, and grid competition
+  (the fleet's TW-scale draw contends with datacenter compute).
 - **Land autonomization index plateaus ~0.40** (2045) — the trend is
   real and persistent but never reaches the ~1.0 production-for-
   production regime threshold in-model; the thermostat's meltdown ratio
