@@ -150,6 +150,16 @@ pub struct Params {
     /// Normalized at the 2026 anchor (compute x algo = 1), so t0
     /// calibration is invariant to rho.
     pub intelligence_returns_rho: f64,
+    /// Jevons elasticity of compute DEMAND w.r.t. efficiency. 1.0 = the
+    /// legacy assumption (demand rises exactly to fill efficiency gains,
+    /// power neutral). <1 = efficiency jumps cut net power demand (the
+    /// power-sleeve bear case); commodity tier ~1.25, frontier ~0.5.
+    pub jevons_elasticity: f64,
+    /// MC-drawn efficiency discontinuity: year of a >=10x algorithmic
+    /// efficiency jump (0 = none). DeepSeek-R1-class (priced Jan 2025).
+    pub efficiency_jump_year: i32,
+    /// Size of that jump (multiplier on efficiency, e.g. 10.0).
+    pub efficiency_jump_size: f64,
     pub backlash_gain: f64,
     pub afford_gain: f64,
     /// Society-layer parameters (sentiment, transfers, regulation, trust).
@@ -267,6 +277,9 @@ impl Default for Params {
             adoption_halflife: 1.6,
             max_displacement_rate: 0.22,
             intelligence_returns_rho: 0.85,
+            jevons_elasticity: 1.0,
+            efficiency_jump_year: 0,
+            efficiency_jump_size: 1.0,
             backlash_gain: 2.0,
             afford_gain: 0.4,
             society: society::SocietyParams::default(),
@@ -572,6 +585,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut onshoring_until = i32::MIN;
     let mut invaded = false;
     let mut gw_per_unit = p.gw_per_compute_unit;
+    let mut power_jevons_mult = 1.0_f64; // persistent post-efficiency-jump power scaler
 
     let mut power_pipe = Pipeline::new(p.power_pipeline_stages, p.power_additions_2026);
     let mut chip_pipe = Pipeline::new(p.chip_pipeline_stages,
@@ -630,6 +644,15 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         };
         let onshoring_boost = if year <= onshoring_until { 1.5 } else { 1.0 };
         let t_sing = year - p.singularity_year;
+
+        // Efficiency discontinuity (DeepSeek-class): a >=10x algorithmic
+        // efficiency jump permanently scales NET power demand by
+        // jump^(jevons-1). jevons=1 => neutral (demand fills efficiency,
+        // legacy); jevons<1 => net power demand falls (the power-sleeve
+        // bear case, DeepSeek Jan-2025); jevons>1 => commodity-Jevons rise.
+        if year == p.efficiency_jump_year && p.efficiency_jump_size > 1.0 {
+            power_jevons_mult *= p.efficiency_jump_size.powf(p.jevons_elasticity - 1.0);
+        }
 
         // ---- R1: recursive AI (saturating) ----
         if year > p.start_year {
@@ -823,7 +846,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // the lost flow is destroyed, not deferred — war losses).
         let power_additions = power_pipe.step_accel(orders, speedup) * gfx.power_mult;
         let power_headroom = (ai_power + space.orbital_gw_equiv + power_additions
-            - compute_stock * gw_per_unit)
+            - compute_stock * gw_per_unit * power_jevons_mult)
             .max(0.0);
         let power_cap = (power_headroom / gw_per_unit) * cost_per_unit;
         let capital_cap = gdp * p.capex_gdp_cap * credit_mult;
@@ -855,7 +878,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let units_added = ai_capex / cost_per_unit;
         compute_stock = compute_stock * (1.0 - p.compute_deprec) + units_added;
         ai_power += power_additions;
-        let used_power = (compute_stock * gw_per_unit).min(ai_power);
+        let used_power = (compute_stock * gw_per_unit * power_jevons_mult).min(ai_power);
 
         // ---- utilizations, prices, margins ----
         let chip_utilization = (desired_capex * p.silicon_share_of_capex
@@ -867,8 +890,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             / ip_capacity.max(1e-9))
             .min(1.35);
         prev_ip_util = ip_utilization;
-        let power_demand_gw = pre_stock * (1.0 - p.compute_deprec) * gw_per_unit
-            + (desired_capex / cost_per_unit) * gw_per_unit;
+        let power_demand_gw = (pre_stock * (1.0 - p.compute_deprec) * gw_per_unit
+            + (desired_capex / cost_per_unit) * gw_per_unit)
+            * power_jevons_mult;
         let power_utilization = (power_demand_gw
             / (ai_power + space.orbital_gw_equiv).max(1e-9))
             .min(1.35);

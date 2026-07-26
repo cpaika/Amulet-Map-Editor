@@ -112,3 +112,11 @@ rust_test(
     edition = "2021",
     deps = [":core"],
 )
+
+rust_test(
+    name = "efficiency",
+    srcs = ["tests/efficiency.rs"],
+    crate_root = "tests/efficiency.rs",
+    edition = "2021",
+    deps = [":core"],
+)
