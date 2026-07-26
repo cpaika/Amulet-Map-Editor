@@ -220,6 +220,43 @@ pub struct Params {
     /// constrained power buildout — the physical bound that keeps the
     /// self-replication exponential finite once the grid saturates.
     pub robot_kw_each: f64,
+    // ---- self-replication FEEDBACK WEB (all gated by robot_self_replication;
+    // set the master switch to 0 to recover the legacy robotics block) ----
+    /// R-cost (reinforcing): robot-built robots are cheaper because the robot
+    /// labor inside the factory is ~free — autonomy accelerates the Wright
+    /// learning curve (extra effective doublings). Cheaper robots → shorter
+    /// payback → more demand → more volume → cheaper still.
+    pub learning_autonomy_gain: f64,
+    /// R-energy (reinforcing): robots build their OWN generation. kW of new
+    /// grid each reinvested robot-year constructs, added straight to the power
+    /// stock (bypassing the human power-order pipeline) — this is the loop
+    /// that RELIEVES the grid bind the fleet's own draw creates.
+    pub energy_selfbuild_kw: f64,
+    /// Rate limit (GW/yr) on robot-built generation — even a self-replicating
+    /// fleet cannot stand up unlimited power per year (siting, grid, thermal).
+    pub energy_buildout_ceiling_gw: f64,
+    /// R-flywheel (reinforcing): robots build the fabs, datacenters, and power
+    /// halls that compute lives in, so the chip/power capacity ceilings climb
+    /// as autonomy rises → faster compute → smarter ASI → higher autonomy.
+    pub asi_flywheel_gain: f64,
+    /// R-materials (reinforcing): robots mine and refine their own inputs,
+    /// relieving the metals cost pass-through as autonomy rises.
+    pub materials_selfsupply_gain: f64,
+    /// B-materials (balancing): the flip side — an exponential robot economy
+    /// pressures ore grades and refining, raising delivered cost with the
+    /// square root of fleet size. At extreme scale this wins over self-supply,
+    /// putting a cost floor under the loop.
+    pub materials_depletion_gain: f64,
+    /// Fleet (millions) at which materials-depletion pressure reaches its
+    /// sqrt-reference unit.
+    pub materials_depletion_half_m: f64,
+    /// B-maintenance (balancing): a huge deployed fleet absorbs a rising share
+    /// of its own output just staying alive (upkeep, repair, replacement),
+    /// throttling the reinvestment available for growth — diminishing returns
+    /// to scale that keep the exponential finite.
+    pub maintenance_drag_gain: f64,
+    /// Fleet (millions) at which maintenance drag reaches half its ceiling.
+    pub maintenance_half_m: f64,
     pub robot_cost_2028_k: f64,
     pub robot_learning_rate: f64,
     pub robot_cost_floor_k: f64,
@@ -333,6 +370,15 @@ impl Default for Params {
             reinvest_share: 0.5,
             self_staff_half_m: 60.0,
             robot_kw_each: 2.0,
+            learning_autonomy_gain: 0.5,
+            energy_selfbuild_kw: 3.0,
+            energy_buildout_ceiling_gw: 2000.0,
+            asi_flywheel_gain: 0.3,
+            materials_selfsupply_gain: 0.06,
+            materials_depletion_gain: 0.05,
+            materials_depletion_half_m: 1000.0,
+            maintenance_drag_gain: 0.4,
+            maintenance_half_m: 500.0,
             robot_cost_2028_k: 50.0,
             robot_learning_rate: 0.22,
             robot_cost_floor_k: 8.0,
@@ -573,6 +619,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut robot_fleet = 0.0_f64;
     let mut cum_robots = 0.02_f64;
     let mut robot_cost = p.robot_cost_2028_k;
+    // Last year's manufacturing-autonomy fraction — the self-replication
+    // feedback web's cross-timestep coupling: robots that staffed factories,
+    // built power halls, and stood up fabs LAST year raise this year's
+    // ceilings, grid, and cost curve (the loops that close a year apart).
+    let mut autonomy_prev = 0.0_f64;
     #[allow(unused_assignments)]
     let mut human_cog_m = p.cognitive_workers_m;
     let mut phys_workers_m = p.physical_workers_m;
@@ -786,8 +837,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         } else {
             0.0
         };
-        let speedup = 1.0 + asi * p.asi_delay_compression;
-        let ceiling_mult = 1.0 + asi * p.asi_ceiling_boost;
+        // R-flywheel (robots build the physical layer compute lives in): last
+        // year's autonomous fleet stood up fabs, datacenters, and power halls,
+        // so this year's construction speedup and capacity ceilings are higher.
+        // Closes the loop compute → ASI → autonomy → more compute infra.
+        let robot_infra_boost =
+            p.robot_self_replication * p.asi_flywheel_gain * autonomy_prev;
+        let speedup = (1.0 + asi * p.asi_delay_compression) * (1.0 + 0.5 * robot_infra_boost);
+        let ceiling_mult = (1.0 + asi * p.asi_ceiling_boost) * (1.0 + robot_infra_boost);
 
         // ---- R3: capex desire from perceived demand ----
         let mut demand_signal_growth = p.demand_growth_base;
@@ -880,8 +937,20 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // are racing to build. At a billion robots this is TW-scale and becomes
         // the physical bound on the self-replication exponential (last year's
         // fleet; the draw is subtracted from headroom compute competes over).
-        let robot_power_gw = robot_fleet * p.robot_kw_each / 1e6;
-        let power_headroom = (ai_power + space.orbital_gw_equiv + power_additions
+        // Units: robot_fleet is in MILLIONS of robots, robot_kw_each is kW per
+        // robot, so total draw in GW = fleet_millions × kW (the 1e6 robots and
+        // the kW→GW 1e-6 cancel). 8B robots × 2 kW = ~16 TW.
+        let robot_power_gw = robot_fleet * p.robot_kw_each;
+        // R-energy (robots build their own generation): last year's autonomous
+        // fleet stood up power, added straight to the grid stock, bypassing the
+        // human power-order pipeline. This is the loop that RELIEVES the draw
+        // above — a self-replicating fleet ends up NET-powering itself. Rate-
+        // limited: siting/thermal cap how much generation goes up per year.
+        let robot_power_built_gw = (p.robot_self_replication * autonomy_prev
+            * p.reinvest_share * robot_fleet * p.energy_selfbuild_kw)
+            .min(p.energy_buildout_ceiling_gw);
+        let power_headroom = (ai_power + robot_power_built_gw + space.orbital_gw_equiv
+            + power_additions
             - compute_stock * gw_per_unit * power_jevons_mult
             - robot_power_gw)
             .max(0.0);
@@ -914,7 +983,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let pre_stock = compute_stock;
         let units_added = ai_capex / cost_per_unit;
         compute_stock = compute_stock * (1.0 - p.compute_deprec) + units_added;
-        ai_power += power_additions;
+        ai_power += power_additions + robot_power_built_gw;
         let used_power = (compute_stock * gw_per_unit * power_jevons_mult).min(ai_power);
 
         // ---- utilizations, prices, margins ----
@@ -977,6 +1046,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             let eff_growth_ceiling = p.component_growth_ceiling
                 + (p.machine_ceiling - p.component_growth_ceiling) * mfg_autonomy;
 
+            // B-maintenance (balancing): a large deployed fleet spends a rising
+            // share of its own output just staying alive — upkeep, repair, and
+            // replacement — so the reinvestment actually available for GROWTH
+            // shrinks with scale. Diminishing returns that keep the loop finite.
+            let maint_fraction = p.robot_self_replication * p.maintenance_drag_gain
+                * (robot_fleet / (robot_fleet + p.maintenance_half_m));
+            let eff_reinvest = p.reinvest_share * (1.0 - maint_fraction);
+
             let bootstrap = l.r2_robot_bootstrap * p.bootstrap_gain
                 * (robot_fleet * 0.3).min(10.0);
             let comp_ceiling = eff_growth_ceiling + bootstrap;
@@ -988,8 +1065,28 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // is what makes the capacity-bound early/mid period accelerate; the
             // legacy human-capex growth was well below even the WWII ceiling, so
             // a higher ceiling with no faster driver changed nothing.
-            let self_repl_growth =
-                p.robot_self_replication * p.reinvest_share * mfg_autonomy * p.machine_ceiling;
+            // Capacity yield: the reinforcing/balancing loops that act on HOW
+            // MUCH capacity each unit of autonomous reinvestment stands up (the
+            // active bind), rather than on unit cost (which floors out and feeds
+            // only the inert labor-arbitrage channel).
+            //  R-cost/efficiency: robot-built robots are more capable per unit of
+            //    effort as autonomy compounds, so each reinvested robot builds
+            //    MORE capacity (learn_boost > 1).
+            //  R-materials (self-supply): robots mine and refine their own inputs,
+            //    relieving the feedstock constraint on capacity (mat_supply > 1).
+            //  B-materials (depletion): an exponential robot economy pressures ore
+            //    grades and refining, throttling capacity with sqrt(fleet); at
+            //    extreme scale this overtakes self-supply (mat_deplete > 1),
+            //    putting a physical floor under the loop.
+            let learn_boost =
+                1.0 + p.robot_self_replication * p.learning_autonomy_gain * mfg_autonomy;
+            let mat_supply =
+                1.0 + p.robot_self_replication * p.materials_selfsupply_gain * mfg_autonomy;
+            let mat_deplete = 1.0 + p.robot_self_replication * p.materials_depletion_gain
+                * (robot_fleet / p.materials_depletion_half_m).sqrt();
+            let capacity_yield = learn_boost * mat_supply / mat_deplete;
+            let self_repl_growth = p.robot_self_replication
+                * eff_reinvest * mfg_autonomy * p.machine_ceiling * capacity_yield;
             let comp_growth = (p.component_base_growth
                 + l.b1_supply_response * p.component_supply_gain * comp_excess
                 + bootstrap * 0.2
@@ -1035,22 +1132,50 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // is bounded by machine-ceiling capacity above and grid power below,
             // not by how many human jobs are left to take.
             let self_repl_demand =
-                p.robot_self_replication * p.reinvest_share * mfg_autonomy * robot_fleet;
+                p.robot_self_replication * eff_reinvest * mfg_autonomy * robot_fleet;
             let robot_demand =
                 (replacement + self_repl_demand).max(p.robot_prod_2028_m * 0.5);
             // A minerals embargo is a hard supply gate: ex-China magnet
             // capacity caps western output regardless of price.
             robot_prod = robot_demand.min(component_capacity * gfx.comp_supply_mult);
+            // ---- POWER GATE: robots and compute share ONE grid ----
+            // A fielded fleet must be RUN, not just built: you cannot power 8B
+            // robots (~16 TW at 2 kW each) unless the grid exists. After compute
+            // takes its share of the grid, whatever remains caps how large a
+            // fleet can actually operate. This is where the robot power draw
+            // BITES on the fleet itself (not merely on compute headroom), and
+            // where robots building their OWN generation pays off — the grid the
+            // fleet is capped against includes the power robots stood up last
+            // year (folded into ai_power above). Closes R-energy ⇄ B-grid.
+            if p.robot_kw_each > 0.0 {
+                let compute_draw_gw = compute_stock * gw_per_unit * power_jevons_mult;
+                let robot_grid_gw =
+                    (ai_power + space.orbital_gw_equiv - compute_draw_gw).max(0.0);
+                // fleet in millions = grid_GW / kW_per_robot (units as above).
+                let max_powered_fleet = robot_grid_gw / p.robot_kw_each;
+                let powered_room =
+                    (max_powered_fleet - robot_fleet * (1.0 - p.robot_attrition)).max(0.0);
+                robot_prod = robot_prod.min(powered_room);
+            }
             let comp_utilization = robot_demand / component_capacity.max(1e-9);
             component_margin += p.price_adjustment
                 * (margin_from(comp_utilization.min(1.35), 0.8) - component_margin);
 
             cum_robots += robot_prod;
-            let doublings = (cum_robots / 0.06).max(1.0).log2();
+            // R-cost (reinforcing): robot-built robots are cheaper because the
+            // robot labor inside the factory is ~free, so autonomy buys extra
+            // effective doublings on the Wright curve. Cheaper robots → shorter
+            // payback (econ_pull above) → more demand → more volume → cheaper
+            // still, bounded below by the hard cost floor.
+            let doublings = (cum_robots / 0.06).max(1.0).log2()
+                * (1.0 + p.robot_self_replication * p.learning_autonomy_gain * mfg_autonomy);
             robot_cost = (p.robot_cost_2028_k
                 * (1.0 - p.robot_learning_rate).powf(doublings))
                 .max(p.robot_cost_floor_k);
             robot_fleet = robot_fleet * (1.0 - p.robot_attrition) + robot_prod;
+            // Carry this year's autonomy forward: it drives next year's compute-
+            // infra flywheel (ceilings/speedup) and robot-built grid power.
+            autonomy_prev = mfg_autonomy;
         }
 
         let phys_hew = robot_fleet * p.robot_hew;

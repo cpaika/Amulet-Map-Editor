@@ -78,13 +78,61 @@ own factories, so capacity compounding accelerates toward the machine ceiling
 (1.6x → 2.2x/yr as autonomy rises) — and (b) a self-replication demand term —
 a `reinvest_share` slice of output plowed back into more robots, scaling with
 the FLEET not the workforce. Result: the loop stays exponential past the labor
-cap (fleet 13M→137M→2.2B→17.6B across 2036–2050 vs the plateauing 1.7B legacy).
+cap. The spine alone (capacity+demand) would reach ~17.6B by 2050; the full
+feedback web below tempers that to ~7.9B (fleet 13M→144M→2.1B→7.9B across
+2036–2050) vs the plateauing 1.7B legacy.
 It stays **finite** by three physical bounds: the machine ceiling caps capacity
 growth; `reinvest_share` caps how much output recycles vs is consumed; and a
 billion-robot fleet draws the SAME constrained grid the datacenters race to
 build (`robot_kw_each`, TW-scale by 2050), competing with compute for power.
-Ablation is clean: `robot_self_replication = 0` recovers the legacy fleet
-byte-for-byte (robotics never reads the power balance).
+
+*The full self-replication feedback web.* The single capacity+demand term above
+is only the spine. The actual loop is a web of reinforcing and balancing
+couplings, each individually gain-switched and sign-tested (tests/robotics.rs).
+The governing lesson from wiring it: **effects only bind if they act on the
+ACTIVE channel.** Unit cost floors out by 2036 and feeds only the (inert)
+human-labor-arbitrage demand, so cost-routed loops are dead weight; the live
+channels are capacity growth, reinvestment, and the power grid. Routing every
+loop to its live channel:
+
+- **R-efficiency (learning × autonomy).** Robot-built robots are more capable
+  per unit effort as autonomy compounds → each reinvested robot builds MORE
+  capacity (routed to capacity yield, not cost). Amplifies.
+- **R-flywheel (robots build the compute substrate).** Last year's autonomous
+  fleet stands up the fabs, datacenters, and power halls compute lives in →
+  chip/power ceilings and construction speedup rise → faster ASI → higher
+  autonomy. Closes compute ⇄ robots. Amplifies (~3%).
+- **R-materials (self-supply).** Robots mine and refine their own feedstock,
+  relieving the input constraint on capacity as autonomy rises. Amplifies.
+- **R-energy (robots build their own grid).** The fleet stands up generation,
+  added straight to the power stock (bypassing the human power-order pipeline),
+  rate-limited by `energy_buildout_ceiling_gw`. *Latent in the benign baseline*
+  (the human grid already covers the fleet) but decisive under a throttled grid,
+  where it lifts the 2050 fleet by >2x — it relieves the very bind the fleet's
+  own draw creates.
+- **B-maintenance drag (dominant limiter).** A large deployed fleet spends a
+  rising share of its output just staying alive (upkeep, repair, replacement),
+  so reinvestment available for GROWTH shrinks with scale. This is the biggest
+  single balancing force — removing it more than doubles the 2050 fleet.
+- **B-materials depletion.** An exponential robot economy pressures ore grades
+  and refining, throttling capacity with √(fleet); at extreme scale it overtakes
+  self-supply, putting a physical floor under the loop.
+- **B-power gate (the fleet must be RUN, not just built).** Robots and compute
+  share ONE grid; after compute takes its share, what remains caps how large a
+  fleet can actually operate. This is where the robot draw bites on the fleet
+  itself. In the aggressive baseline the (robot-assisted) grid keeps pace, so
+  power is a *potential* bind that goes live under any power-supply stress.
+
+**Net behavior of the full web:** the reinforcing amplifiers are individually
+modest (~3% each); the dominant dynamic is the core exponential *tempered by
+maintenance drag*, which pulls the naive 17.6B (spine-only) 2050 fleet down to
+~7.9B — still 4.6x the plateaued 1.7B legacy, and still visibly exponential
+(>1.6x over 2047→2050) rather than flat. The honest systems result is that
+"self-sustaining" does not mean "unbounded": it means the loop no longer stalls
+at the *human*-labor cap, but it re-binds on *machine*-economy limits —
+maintenance, materials, capital, and power. Ablation is clean: master switch
+`robot_self_replication = 0` collapses the entire web and recovers the legacy
+fleet byte-for-byte.
 
 **R3 — Capex momentum (reinforcing → overshoot).** Investment follows
 *perceived* (lagged, smoothed) demand growth plus herding on recent growth.
@@ -193,15 +241,16 @@ the extended run is where several of them finally bind:
   response the IP monopolist cannot strategically absorb. The model
   generates the two-decade monopoly (ASML/x86 pattern) AND its eventual
   end from structure.
-- **Robot self-replication (R2) goes vertical 2038-2050**: with the
-  self-replication upgrade the fleet no longer plateaus at the human-labor
-  cap — 13M (2036) -> 137M (2040) -> 2.2B (2044) -> 17.6B (2050), driven by
+- **Robot self-replication (R2) goes vertical 2038-2050**: with the full
+  self-replication feedback web the fleet no longer plateaus at the human-labor
+  cap — 13M (2036) -> 144M (2040) -> 2.1B (2044) -> 7.9B (2050), driven by
   capacity compounding that accelerates from 1.6x to 2.2x/yr as robots staff
   their own factories (vs the legacy 1.7B plateau, which stalled the moment
   it saturated the human workforce). Physical displacement is still the 2040s
   story even with a 2027 singularity — "components early, labor late"
   sequencing holds through ~2044, after which the loop is self-replication-
-  demand-bound rather than human-labor-bound. The exponential stays finite:
+  demand-bound rather than human-labor-bound, and maintenance drag (not the
+  human workforce) becomes the dominant limiter. The exponential stays finite:
   capped by the machine ceiling, the reinvest share, and grid competition
   (the fleet's TW-scale draw contends with datacenter compute).
 - **Land autonomization index plateaus ~0.40** (2045) — the trend is

@@ -187,13 +187,22 @@ fn r2_off_no_more_robots() {
 fn r3_off_shallower_queues() {
     // Ablate with the society layer off: political feedback (sentiment ->
     // precautionary demand drag) otherwise confounds the pure momentum
-    // mechanism this test isolates.
-    let on = with_loops(Loops { society_layer: 0.0, ..Loops::default() });
-    let off = with_loops(Loops {
+    // mechanism this test isolates. Also zero the robot grid draw
+    // (robot_kw_each): robots competing with compute for the grid is a separate
+    // coupling that perturbs the AI-compute queue by ~0.1% — comparable to R3's
+    // own tiny effect on peak queue depth at this horizon — and would otherwise
+    // confound this isolation. It has its own contract in tests/robotics.rs.
+    let base = |extra: Loops| Params {
+        robot_kw_each: 0.0,
+        loops: extra,
+        ..Params::default()
+    };
+    let on = simulate(&base(Loops { society_layer: 0.0, ..Loops::default() }));
+    let off = simulate(&base(Loops {
         r3_capex_momentum: 0.0,
         society_layer: 0.0,
         ..Loops::default()
-    });
+    }));
     let peak = |v: &[YearState]| v.iter().map(|s| s.queue_ratio).fold(f64::MIN, f64::max);
     assert!(peak(&off) < peak(&on) + 1e-9);
 }

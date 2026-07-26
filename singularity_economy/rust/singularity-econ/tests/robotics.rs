@@ -29,9 +29,11 @@ fn off_params() -> Params {
 }
 
 // Ablation (byte-exact fleet): switching self-replication off must recover the
-// legacy robotics trajectory exactly. Robotics reads only capacity and demand —
-// never the power balance — so the always-on robot grid draw cannot perturb it.
-// This 2036 value is the frozen pre-self-replication baseline.
+// legacy robotics trajectory exactly. The always-on power terms (robot grid draw
+// and the powered-fleet gate) do not perturb the legacy fleet: at the small
+// legacy scale the grid dwarfs robot demand, so the gate is a no-op, and the
+// capacity/demand path never reads power. This 2036 value is the frozen
+// pre-self-replication baseline.
 #[test]
 fn self_replication_off_recovers_legacy_fleet_exactly() {
     let off = simulate(&off_params()); // default horizon 2036
@@ -141,4 +143,92 @@ fn robot_grid_draw_never_increases_the_fleet() {
         fleet(&heavy, 2050),
         fleet(&light, 2050)
     );
+}
+
+// ---- self-replication FEEDBACK WEB: each loop must carry its designed sign ----
+// Reinforcing loops (learning-efficiency, ASI flywheel, materials self-supply)
+// amplify the fleet; disabling any of them must SHRINK the 2050 endpoint.
+#[test]
+fn reinforcing_loops_amplify_the_fleet() {
+    let full = fleet(&to2050(Params::default()), 2050);
+    let learn_off = fleet(
+        &to2050(Params { learning_autonomy_gain: 0.0, ..Params::default() }),
+        2050,
+    );
+    let flywheel_off = fleet(
+        &to2050(Params { asi_flywheel_gain: 0.0, ..Params::default() }),
+        2050,
+    );
+    let mat_supply_off = fleet(
+        &to2050(Params { materials_selfsupply_gain: 0.0, ..Params::default() }),
+        2050,
+    );
+    assert!(learn_off < full, "learning×autonomy must amplify: {learn_off} !< {full}");
+    assert!(flywheel_off < full, "ASI flywheel must amplify: {flywheel_off} !< {full}");
+    assert!(
+        mat_supply_off < full,
+        "materials self-supply must amplify: {mat_supply_off} !< {full}"
+    );
+}
+
+// Balancing loops (maintenance drag, materials depletion) keep the exponential
+// finite; disabling either must GROW the endpoint. Maintenance drag is the
+// dominant limiter — removing it should more than double the fleet.
+#[test]
+fn balancing_loops_bound_the_fleet() {
+    let full = fleet(&to2050(Params::default()), 2050);
+    let maint_off = fleet(
+        &to2050(Params { maintenance_drag_gain: 0.0, ..Params::default() }),
+        2050,
+    );
+    let deplete_off = fleet(
+        &to2050(Params { materials_depletion_gain: 0.0, ..Params::default() }),
+        2050,
+    );
+    assert!(
+        maint_off > full * 1.5,
+        "maintenance drag is the dominant limiter: {maint_off} not >> {full}"
+    );
+    assert!(deplete_off > full, "materials depletion must bound: {deplete_off} !> {full}");
+}
+
+// The power gate makes a fielded fleet require a grid to RUN on: robots and
+// compute share it. Under a throttled grid the fleet is power-limited, and
+// robots building their OWN generation (R-energy) materially lifts the ceiling —
+// the loop that relieves the very bind the fleet's draw creates.
+#[test]
+fn power_gate_binds_and_self_build_relieves_it() {
+    let tight = |selfbuild: f64| {
+        to2050(Params {
+            power_growth_ceiling: 0.15, // throttle human grid buildout
+            robot_kw_each: 6.0,         // heavier per-robot draw
+            energy_selfbuild_kw: selfbuild,
+            ..Params::default()
+        })
+    };
+    let with_build = fleet(&tight(3.0), 2050);
+    let no_build = fleet(&tight(0.0), 2050);
+    // power is a real bind here: the throttled-grid fleet is far below the
+    // benign-grid default
+    let benign = fleet(&to2050(Params::default()), 2050);
+    assert!(
+        no_build < benign * 0.5,
+        "power gate should sharply bind a throttled grid: {no_build} vs {benign}"
+    );
+    // and robots self-building generation relieves it
+    assert!(
+        with_build > no_build * 1.2,
+        "self-built energy must relieve the power bind: {with_build} vs {no_build}"
+    );
+}
+
+// The whole web must stay FINITE and physically bounded — a self-reinforcing
+// loop with real limits, not a numerical runaway. Even with the machine ceiling
+// dialed high, the balancing loops hold the 2050 fleet to a sane magnitude.
+#[test]
+fn full_web_stays_finite_and_bounded() {
+    let hot = to2050(Params { machine_ceiling: 8.0, ..Params::default() });
+    let f = fleet(&hot, 2050);
+    assert!(f.is_finite() && f > 0.0, "fleet must be a real positive number: {f}");
+    assert!(f < 1e6, "fleet must stay physically bounded (millions): {f}");
 }
