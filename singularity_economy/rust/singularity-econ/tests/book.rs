@@ -207,8 +207,13 @@ fn taiwan_shock_is_priced() {
         .iter()
         .find(|s| s.scenario == "taiwan_shock")
         .unwrap();
+    // Taiwan shock must price REAL TSM damage. Threshold relaxed from 0.10 to
+    // 0.03 after the batch-1 chip-cap-latch fix: post-invasion fabs now recover
+    // as ASI rebuilds them (the latch was permanently pinning growth at 18%), so
+    // an invasion is materially less PERMANENTLY damaging — the shock is still
+    // priced (~5% haircut), just no longer catastrophic-forever.
     assert!(
-        shock.upside < base.upside - 0.10,
+        shock.upside < base.upside - 0.03,
         "TSM shows no Taiwan damage: shock {} vs base {}",
         shock.upside,
         base.upside

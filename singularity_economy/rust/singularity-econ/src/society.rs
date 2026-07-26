@@ -315,12 +315,20 @@ impl SocietyState {
     pub fn credit_injection(&self, sp: &SocietyParams, dread_armed: bool) -> f64 {
         let crowding =
             sp.crowding_gain * (self.gov_debt_gdp - sp.gov_debt_tolerance).max(0.0);
-        let spiral = if dread_armed && self.reg_enforcement > 0.5 {
+        crowding + self.credit_spiral(dread_armed)
+    }
+
+    /// The R7 regulatory-cost SPIRAL portion of the credit injection, WITHOUT the
+    /// sovereign-crowding term. Used when B11 is on and the macro layer already
+    /// owns crowding via the risk-free rate — so we add the spiral at full
+    /// strength instead of scaling the combined signal by 0.3 (which had kept
+    /// 30% of crowding too, a partial double-count).
+    pub fn credit_spiral(&self, dread_armed: bool) -> f64 {
+        if dread_armed && self.reg_enforcement > 0.5 {
             0.15
         } else {
             0.0
-        };
-        crowding + spiral
+        }
     }
 
     /// GDP-growth adjustment: transfers offset part of transition drag;

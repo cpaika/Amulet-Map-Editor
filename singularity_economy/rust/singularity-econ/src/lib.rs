@@ -965,7 +965,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             soc.credit_injection(&p.society, dread_armed)
         } else if soc_on {
             // keep only the R7 regulatory-spiral part, not the crowding part
-            soc.credit_injection(&p.society, dread_armed) * 0.3
+            // (crowding lives in the macro layer's risk-free-rate injection)
+            soc.credit_spiral(dread_armed)
         } else {
             0.0
         };
@@ -1036,6 +1037,16 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let robot_power_built_gw = (p.robot_self_replication * autonomy_prev
             * p.reinvest_share * robot_fleet * p.energy_selfbuild_kw)
             .min(p.energy_buildout_ceiling_gw);
+        // NOTE (audit A7, DEFERRED): this subtracts the full pre-depreciation
+        // compute draw, slightly over-tightening power vs power_demand_gw's
+        // depreciated treatment. The one-line fix (multiply by (1-compute_deprec))
+        // is verified-correct in isolation, but it interacts adversely with the
+        // robot power gate below: freeing compute power lets compute consume more
+        // grid, and the gate hands robots only the RESIDUAL (grid - compute_draw),
+        // starving them of the ~1 GW they need when compute is itself power-bound
+        // — halving the mid-2030s robot fleet and masking the embargo/component
+        // gates. Ship only after reworking the gate so robot demand joins grid
+        // ORDERS rather than taking the residual.
         let power_headroom = (ai_power + robot_power_built_gw + space.orbital_gw_equiv
             + power_additions
             - compute_stock * gw_per_unit * power_jevons_mult

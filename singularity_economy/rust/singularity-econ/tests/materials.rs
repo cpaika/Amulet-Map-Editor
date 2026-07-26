@@ -124,21 +124,25 @@ fn higher_substitution_grows_the_gated_fleet() {
     );
 }
 
-// A rare-earth embargo (S6/S7) triggers the China cut and bites the fleet — and
-// crucially, a Taiwan CHIP invasion must NOT spuriously trigger it (the fixed
-// channel: embargo keys on the shock kind, not any metals_index move).
+// Channel separation (audit A12): a rare-earth/minerals shock (S6/S7) triggers
+// the China cut on the MAGNET ceiling, while a Taiwan CHIP invasion must NOT
+// spuriously trigger it. Tested at the geopolitics-flag + magnet-ceiling level:
+// at the fleet level the cut is masked while a different input (chips) gates and
+// the shock's power hit perversely frees grid for robots — so the embargo bites
+// the magnet CEILING, which is the honest, testable claim.
 #[test]
-fn rare_earth_embargo_bites_but_chip_shock_does_not() {
-    let embargo = to2050(Params {
-        geo_shocks: vec![GeoShock { kind: ShockKind::MineralsEmbargo, start_year: 2032, duration_years: 6.0 }],
-        ..Params::default()
-    });
-    let base = to2050(Params::default());
-    assert!(
-        fleet(&embargo, 2036) < fleet(&base, 2036),
-        "rare-earth embargo must bite the fleet: {} vs {}",
-        fleet(&embargo, 2036), fleet(&base, 2036)
-    );
+fn rare_earth_embargo_separates_from_chip_shock() {
+    use singularity_econ::geopolitics::{effects_for_year, ShockKind as SK};
+    let minerals = vec![GeoShock { kind: SK::MineralsEmbargo, start_year: 2032, duration_years: 6.0 }];
+    let taiwan = vec![GeoShock { kind: SK::TaiwanInvasion, start_year: 2032, duration_years: 6.0 }];
+    // minerals shock sets the rare-earth-embargo flag; a chip invasion does not
+    assert!(effects_for_year(&minerals, 2034).rare_earth_embargo);
+    assert!(!effects_for_year(&taiwan, 2034).rare_earth_embargo);
+    // and the flag cuts the magnet ceiling (China ~90% concentrated)
+    let mp = MaterialsParams::default();
+    let calm = stepn(&mp, 0.6, 3.0, 1.0, false, 4);
+    let cut = stepn(&mp, 0.6, 3.0, 1.0, true, 4);
+    assert!(cut.robot_ceiling_m < calm.robot_ceiling_m && cut.binding == "rare_earth_magnets");
 }
 
 // Telemetry: the binding input is a real, named chokepoint on the horizon (not

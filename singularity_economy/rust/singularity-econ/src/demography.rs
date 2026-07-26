@@ -271,8 +271,16 @@ impl DemographyState {
         // economic stress (Miguel arm) + salience; the chronic component
         // tracks displacement-driven grievance so scapegoating is a live
         // channel, not a floor-pinned inert stock (red-team fix).
-        let econ_stress =
-            (-gdp_growth / 0.05).max(0.0) + 2.0 * (sentiment - 0.3).max(0.0);
+        // The economic arm is DISPLACEMENT (the live dislocation that drives
+        // scapegoating even in a boom), not just recession: the prior
+        // (-gdp_growth) term is dead whenever growth is positive, which
+        // collapsed tension into a mere lag of sentiment. Keep the recession
+        // term (live in busts) and add the displacement driver so tension is an
+        // independent channel (audit A6).
+        let disp_level = (raw_cog_disp_level + phys_disp_level).max(0.0);
+        let econ_stress = 0.15 * disp_level
+            + (-gdp_growth / 0.05).max(0.0)
+            + 2.0 * (sentiment - 0.3).max(0.0);
         let inflow = dp.tension_gain * econ_stress * (1.0 - self.tension);
         self.tension = self.tension * dp.tension_acute_decay + inflow + 0.02;
         self.tension = self.tension.clamp(0.0, 1.0);
