@@ -173,6 +173,34 @@ is clean: master switch
 `robot_self_replication = 0` collapses the entire web and recovers the legacy
 fleet byte-for-byte.
 
+*Critical-inputs supply chain (Liebig's law of the minimum — `materials.rs`).*
+The single aggregate "metals index" is replaced by an explicit chokepoint set,
+each calibrated to the overnight components + raw-materials research
+(output/history/robotics_components.md, raw_materials_mines.md,
+asi_materials_optimization.md): precision reducers (Epoch's binding ~0.5M
+humanoids/yr — planetary 3M/yr÷6 and RV 2M/yr÷4), torque sensors/encoders
+(~1.25M), ball screws (~2.5M), rare-earth magnets (~12M robot-equivalents, China
+~90% of magnets + refining — the embargo channel), inference chips (leading-edge,
+Taiwan-concentrated), and copper (elastic, the late/bulk input). Robot output is
+the MINIMUM effective capacity across inputs. Each input's capacity grows with
+physical buildout AND with ASI-driven substitution — RE-free motors (Tesla
+already ships them), cycloidal/QDD transmissions dodging the harmonic-flexspline
+grind, AI materials discovery — which designs out 70–90% of exotic-material
+intensity in 2–5 years. A China embargo (metals shock) cuts the concentrated
+share; scarcity rents raise unit cost as demand presses the binding ceiling.
+
+The layer's central finding: **whether materials bind is entirely a bet on
+substitution.** In the aggressive-substitution baseline the chokepoints are
+designed out faster than the fleet grows into them, so the layer is *slack* —
+byte-identical to no-layer, and the binding constraint sits (as the ASI-materials
+research predicted) on bulk throughput, energy, and capital, not exotic inputs.
+Turn substitution down (ASI *can't* design out reducers/rare earths) and add a
+rare-earth embargo, and materials become the wall: the 2050 fleet collapses from
+~26B to ~3B — an ~8× haircut. So the layer quantifies the swing: superintelligent
+substitution is worth roughly 8× on the 2050 fleet, and it is the reason the
+pure-play reducer/magnet equities' scarcity moat is a two-sided bet. Ablation:
+`materials.enabled = 0` emits an infinite ceiling and unit-cost 1.0 (legacy).
+
 **R3 — Capex momentum (reinforcing → overshoot).** Investment follows
 *perceived* (lagged, smoothed) demand growth plus herding on recent growth.
 With perception delays + construction delays, deceleration in demand arrives

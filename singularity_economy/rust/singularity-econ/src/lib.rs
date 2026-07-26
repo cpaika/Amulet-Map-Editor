@@ -17,6 +17,7 @@ pub mod companies;
 pub mod demography;
 pub mod geopolitics;
 pub mod macrofin;
+pub mod materials;
 pub mod scenarios;
 pub mod society;
 pub mod space;
@@ -172,6 +173,9 @@ pub struct Params {
     pub macrofin: macrofin::MacroParams,
     /// Bio/cyber-layer parameters (drug pool, hazards, shadow optionality).
     pub bio: bio::BioParams,
+    /// Critical-inputs supply chain (Liebig minimum over reducers, magnets,
+    /// sensors, chips, copper — with China concentration + ASI substitution).
+    pub materials: materials::MaterialsParams,
     /// MC-drawn bio/cyber dread shocks (empty = baseline unchanged).
     pub dread_shocks: Vec<bio::shocks::DreadShock>,
     /// Open-weight model share (erodes bio safeguard efficacy).
@@ -359,6 +363,7 @@ impl Default for Params {
             space: space::SpaceParams::default(),
             macrofin: macrofin::MacroParams::default(),
             bio: bio::BioParams::default(),
+            materials: materials::MaterialsParams::default(),
             dread_shocks: Vec::new(),
             open_weight_share: 0.3,
             incident_year: 0,
@@ -570,6 +575,11 @@ pub struct YearState {
     pub robot_fleet_m: f64,
     pub robot_cost_k: f64,
     pub component_capacity_m: f64,
+    /// Critical-input Liebig ceiling on robot production this year (M/yr);
+    /// f64::INFINITY when the materials layer is off or nothing binds.
+    pub materials_ceiling_m: f64,
+    /// Name of the binding critical input ("precision_reducers", etc.).
+    pub materials_binding: String,
     pub phys_displacement: f64,
     pub sector_debt: f64,
     pub credit_multiplier: f64,
@@ -651,6 +661,10 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     // built power halls, and stood up fabs LAST year raise this year's
     // ceilings, grid, and cost curve (the loops that close a year apart).
     let mut autonomy_prev = 0.0_f64;
+    // Cumulative ASI-weighted years since singularity — drives how far the
+    // materials-substitution/design-out program has progressed (RE-free motors,
+    // cycloidal/QDD reducers, thrifting) against the critical-input chokepoints.
+    let mut asi_years = 0.0_f64;
     #[allow(unused_assignments)]
     let mut human_cog_m = p.cognitive_workers_m;
     let mut phys_workers_m = p.physical_workers_m;
@@ -864,6 +878,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         } else {
             0.0
         };
+        asi_years += asi; // cumulative ASI-weighted years (materials substitution clock)
         // R-flywheel (robots build the physical layer compute lives in): last
         // year's autonomous fleet stood up fabs, datacenters, and power halls,
         // so this year's construction speedup and capacity ceilings are higher.
@@ -1048,6 +1063,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
 
         // ---- robotics ----
         let mut robot_prod = 0.0;
+        let mut mat_binding: &'static str = "none";
+        let mut mat_ceiling_m = f64::INFINITY;
         // Price actually PAID this year (shock premia included); the
         // Wright's-law learning state stays on the clean cost curve.
         let mut robot_cost_paid = robot_cost;
@@ -1132,10 +1149,27 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
 
             let avg_phys_wage_k =
                 p.physical_wage_bill / p.physical_workers_m * 1e3;
+            // ---- critical-inputs supply chain (Liebig minimum) ----
+            // Robot output is gated by the single tightest input (reducers,
+            // magnets, sensors, chips, copper), each relieved by ASI substitution
+            // and threatened by a China embargo. Demand proxy is last year's
+            // realized production; embargo fires on a serious minerals shock.
+            let prev_robot_prod =
+                out.last().map_or(p.robot_prod_2028_m, |s| s.robot_prod_m);
+            let mat = p.materials.step(
+                (year - 2028) as f64,
+                asi,
+                asi_years,
+                prev_robot_prod,
+                metals_index > 1.5,
+            );
+            mat_binding = mat.binding;
+            mat_ceiling_m = mat.robot_ceiling_m;
             // Minerals shocks pass through to delivered robot cost
-            // (magnets 5-10% of humanoid BOM; copper elasticity 0.08).
-            let robot_cost_eff =
-                robot_cost * gfx.comp_cost_mult * metals_index.powf(0.08);
+            // (magnets 5-10% of humanoid BOM; copper elasticity 0.08), plus the
+            // scarcity rent on the binding critical input.
+            let robot_cost_eff = robot_cost * gfx.comp_cost_mult
+                * metals_index.powf(0.08) * mat.cost_mult;
             robot_cost_paid = robot_cost_eff;
             let payback_years =
                 robot_cost_eff / (avg_phys_wage_k * p.robot_hew).max(1e-9);
@@ -1171,8 +1205,13 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             let robot_demand =
                 (replacement + self_repl_demand).max(p.robot_prod_2028_m * 0.5);
             // A minerals embargo is a hard supply gate: ex-China magnet
-            // capacity caps western output regardless of price.
-            robot_prod = robot_demand.min(component_capacity * gfx.comp_supply_mult);
+            // capacity caps western output regardless of price. The Liebig
+            // ceiling is the harder, structural version: the single tightest
+            // critical input (reducers early, then magnets) caps output until
+            // ASI substitution designs the chokepoint out.
+            robot_prod = robot_demand
+                .min(component_capacity * gfx.comp_supply_mult)
+                .min(mat.robot_ceiling_m);
             // ---- POWER GATE: robots and compute share ONE grid ----
             // A fielded fleet must be RUN, not just built: you cannot power 8B
             // robots (~16 TW at 2 kW each) unless the grid exists. After compute
@@ -1439,6 +1478,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             robot_fleet_m: robot_fleet,
             robot_cost_k: robot_cost,
             component_capacity_m: component_capacity,
+            materials_ceiling_m: mat_ceiling_m,
+            materials_binding: mat_binding.to_string(),
             phys_displacement: pd,
             sector_debt,
             credit_multiplier: credit_mult,
