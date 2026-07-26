@@ -222,6 +222,22 @@ impl Draw {
                 y
             },
             incident_dread: self.uniform(0.0, 1.0) < 0.25,
+            // efficiency discontinuity: ~1.2 jumps/yr expected for >=3x
+            // commodity events; sample one >=10x jump per path with a
+            // tier-mixed Jevons elasticity (commodity ~1.25 / frontier ~0.5)
+            efficiency_jump_year: {
+                let mut y = 0;
+                for year in 2027..=2034 {
+                    if self.uniform(0.0, 1.0) < 0.12 { y = year; break; }
+                }
+                y
+            },
+            efficiency_jump_size: 3.0 + self.uniform(0.0, 1.0) * 12.0,
+            jevons_elasticity: if self.uniform(0.0, 1.0) < 0.5 {
+                self.uniform(0.85, 1.85) // commodity tier
+            } else {
+                self.uniform(0.30, 0.70) // frontier tier (bear)
+            },
             ..Params::default()
         }
     }
