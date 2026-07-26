@@ -610,6 +610,9 @@ pub struct YearState {
     // ---- regional blocs (US, China, EU order) ----
     pub bloc_capability: Vec<f64>,
     pub bloc_stress: Vec<f64>,
+    /// Per-bloc fracture/regime-shift hazard (US, China, EU). China's rises
+    /// nonlinearly once suppressed stress crosses the brittleness threshold.
+    pub bloc_fracture_risk: Vec<f64>,
     pub china_us_capability_gap: f64,
     pub west_capability_share: f64,
     pub phys_displacement: f64,
@@ -1591,6 +1594,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             food_unrest: food_out.unrest_pressure,
             bloc_capability: region_out.capability.clone(),
             bloc_stress: region_out.stress.clone(),
+            bloc_fracture_risk: region_out.fracture_risk.clone(),
             china_us_capability_gap: region_out.china_us_gap,
             west_capability_share: region_out.west_share,
             phys_displacement: pd,

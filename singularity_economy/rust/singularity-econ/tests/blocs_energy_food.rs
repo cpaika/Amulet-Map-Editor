@@ -145,3 +145,17 @@ fn food_tension_coupling_raises_backlash() {
         peak(&base)
     );
 }
+
+// C9: the autocratic-brittleness fracture hazard must be LIVE, not dead — China's
+// suppressed stress crosses the brittleness threshold and produces a nonzero
+// regime-shift risk somewhere on the horizon (previously computed then discarded,
+// with the threshold set above the peak so it never fired).
+#[test]
+fn china_fracture_hazard_is_live() {
+    let v = to2050(Params::default());
+    let china_peak = v.iter().map(|s| s.bloc_fracture_risk[1]).fold(0.0_f64, f64::max);
+    assert!(
+        china_peak > 0.0,
+        "China's brittleness fracture hazard never fires: peak {china_peak}"
+    );
+}

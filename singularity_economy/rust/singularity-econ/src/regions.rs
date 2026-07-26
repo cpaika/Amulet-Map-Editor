@@ -62,7 +62,10 @@ impl Default for RegionParams {
         RegionParams {
             enabled: 1.0,
             stress_decay: 0.15,
-            fracture_threshold: 1.0,
+            // Below China's peak suppressed stress (~0.86) so the autocratic-
+            // brittleness fracture hazard actually fires — the design's "no
+            // electoral release valve → stored stress cracks nonlinearly."
+            fracture_threshold: 0.7,
             blocs: default_blocs(),
         }
     }
