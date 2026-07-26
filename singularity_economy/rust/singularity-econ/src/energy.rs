@@ -165,8 +165,14 @@ impl EnergyState {
         self.cum_battery_gwh += battery_add;
 
         // --- gas: dispatchable firming, turbine-lead-time limited ---
-        self.gas_gw += (p.gas_buildout_gwpy * pull.min(2.0)).min(p.gas_buildout_gwpy * 2.5)
-            * region_mult.max(0.5);
+        // Audit A9: the old `(buildout * pull.min(2.0)).min(buildout * 2.5)` let the
+        // term reach ~2x buildout (60 GW/yr at the 30 GW/yr default) — above the
+        // stated 20-40 GW/yr global turbine ceiling — while the outer `.min(2.5x)`
+        // could never bind (2.0 < 2.5) and was dead. Gas turbine capacity is
+        // lead-time-bound and cannot surge on demand the way solar can, so cap the
+        // demand pull at a modest 1.33x: buildout tops out near 40 GW/yr in crunch
+        // years and sits at 30 GW/yr otherwise, respecting the physical ceiling.
+        self.gas_gw += p.gas_buildout_gwpy * pull.min(1.33) * region_mult.max(0.5);
 
         // --- nuclear/SMR: slow firm ---
         self.nuclear_gw += p.nuclear_buildout_gwpy * (1.0 + 0.5 * asi) * region_mult.max(0.5);
