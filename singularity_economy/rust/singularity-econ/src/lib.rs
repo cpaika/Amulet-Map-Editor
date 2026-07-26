@@ -1539,9 +1539,17 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // Energy: the generation mix that supplies the grid the economy runs on.
         let grid_demand_gw = compute_stock * gw_per_unit * power_jevons_mult + robot_power_gw;
         let energy_out = energy_state.step(&p.energy, grid_demand_gw, 1.0, asi);
-        // Food: gas/energy price (proxied by the electricity-price ratio) drives
-        // fertilizer → food price → unrest; automation ramps the AI cost-out.
-        let fuel_price_index = electricity_price / p.electricity_price_normal;
+        // Food: the fertilizer(Haber-Bosch) driver is the ENERGY-cost environment,
+        // not datacenter compute pricing. Audit C4: this was fed
+        // `electricity_price/normal`, a datacenter-scarcity ratio that is one-sided
+        // (AI crunch pushes it up, never down), so fertilizer was floored at 1.0 and
+        // the clean-N relief path was unreachable — a one-way "AI crunch → food up"
+        // wire. Feed the energy layer's blended `cost_index` instead: it falls below
+        // 1.0 as solar+battery Wright's law compounds, and once green ammonia
+        // (electrolysis, food.green_ammonia_year) severs the gas wire that cheap-
+        // electricity signal is exactly the ammonia driver. This gives the energy
+        // layer a genuine downstream consumer.
+        let fuel_price_index = energy_out.cost_index;
         let food_out = food_state.step(&p.food, fuel_price_index, adopt.min(1.0), year);
         // Regions: decompose the transition into US/China/EU bloc trajectories.
         let region_out = region_state.step(

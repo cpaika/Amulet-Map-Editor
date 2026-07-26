@@ -146,6 +146,29 @@ fn food_tension_coupling_raises_backlash() {
     );
 }
 
+// C4: the food fertilizer driver is the ENERGY cost index, not datacenter compute
+// pricing — so as solar+battery Wright's law pulls the blended energy cost below
+// 1.0, the fertilizer(Haber-Bosch)/green-ammonia channel must pass that RELIEF
+// through to a FALLING food price. Previously food was fed a one-sided
+// datacenter-scarcity ratio (>=1 always), flooring fertilizer at 1.0 and making
+// the clean-N relief path unreachable.
+#[test]
+fn cheap_energy_relieves_food_price() {
+    let v = to2050(Params::default());
+    let early = at(&v, 2030).food_price_index;
+    let late = at(&v, 2050).food_price_index;
+    // energy cost index falls over the horizon...
+    assert!(
+        at(&v, 2050).electricity_cost_index < at(&v, 2030).electricity_cost_index,
+        "precondition: energy cost index must fall"
+    );
+    // ...and food price must follow it DOWN (the two-way coupling is live).
+    assert!(
+        late < early,
+        "cheap energy must relieve food price: {late} !< {early}"
+    );
+}
+
 // C9: the autocratic-brittleness fracture hazard must be LIVE, not dead — China's
 // suppressed stress crosses the brittleness threshold and produces a nonzero
 // regime-shift risk somewhere on the horizon (previously computed then discarded,
