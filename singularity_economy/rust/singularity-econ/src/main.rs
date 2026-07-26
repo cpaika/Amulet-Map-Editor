@@ -119,7 +119,8 @@ fn book(financials_path: Option<&str>) {
         Err(_) => eprintln!("note: {path} not found; using built-in (synced) financials"),
     }
     let states = scenario_states();
-    let rows = evaluate_all(&comps, &states);
+    let dr_beta = singularity_econ::macrofin::MacroParams::default().dr_beta;
+    let rows = evaluate_all(&comps, &states, dr_beta);
     println!("{:<10} {:<6} {:>12} {:>8} {:>8} {:>8}",
              "ticker", "side", "impliedCAGR", "E[up]", "worst", "best");
     for r in &rows {

@@ -193,16 +193,21 @@ pub struct Evaluation {
 /// A high-transfer/high-debt scenario carries a higher discount than
 /// fizzle — compressing exactly the power/toll EVs where they win, which
 /// the flat-rate model silently ignored (gap-scan #1).
-fn scenario_discount(states: &[YearState]) -> f64 {
+///
+/// `dr_beta` is the equity-duration beta from `MacroParams` (audit A3: this
+/// was a frozen `const 0.60`, decoupling the discount from the layer that
+/// owns it and making it un-perturbable in the MC sampler). Default 0.60,
+/// so threading the default is behavior-preserving.
+fn scenario_discount(states: &[YearState], dr_beta: f64) -> f64 {
     let n = states.len().max(1) as f64;
     let mean_long: f64 = states.iter().map(|s| s.long_rate).sum::<f64>() / n;
-    const DR_BETA: f64 = 0.60;
-    DISCOUNT_RATE + DR_BETA * (mean_long - 0.045)
+    DISCOUNT_RATE + dr_beta * (mean_long - 0.045)
 }
 
 pub fn evaluate(
     c: &Company,
     scenario_states: &[(&'static str, Vec<YearState>)],
+    dr_beta: f64,
 ) -> Evaluation {
     let mut per: Vec<ScenarioValue> = Vec::new();
     for (name, states) in scenario_states {
@@ -212,7 +217,7 @@ pub fn evaluate(
         } else {
             c.terminal_multiple
         };
-        let dr = scenario_discount(states);
+        let dr = scenario_discount(states, dr_beta);
         let fair = pv(&path, tm, dr);
         per.push(ScenarioValue {
             scenario: name,
@@ -244,11 +249,12 @@ pub fn evaluate(
 pub fn evaluate_all(
     companies: &[Company],
     scenario_states: &[(&'static str, Vec<YearState>)],
+    dr_beta: f64,
 ) -> Vec<Evaluation> {
     let mut rows: Vec<Evaluation> = companies
         .iter()
         .filter(|c| c.ntm_earnings_b > 0.0)
-        .map(|c| evaluate(c, scenario_states))
+        .map(|c| evaluate(c, scenario_states, dr_beta))
         .collect();
     rows.sort_by(|a, b| b.expected_upside.partial_cmp(&a.expected_upside).unwrap());
     rows

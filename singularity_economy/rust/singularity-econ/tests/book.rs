@@ -11,6 +11,11 @@ use singularity_econ::valuation::{
 };
 use singularity_econ::{simulate, Params};
 
+/// Equity-duration beta threaded into the valuation (audit A3). Matches the
+/// `MacroParams::default().dr_beta`, so these locks price on the same discount
+/// the shipped `main` uses.
+const DR_BETA: f64 = 0.60;
+
 fn test_company(pools: Vec<(RatioPool, f64)>, beta: f64, drift: f64) -> Company {
     Company {
         ticker: "TEST",
@@ -108,7 +113,7 @@ fn probs_sum_to_one_and_scenarios_present() {
 fn fizzle_is_worst_for_beneficiaries() {
     let states = scenario_states();
     let c = test_company(vec![(RatioPool::Silicon, 1.0)], 1.1, 0.0);
-    let e = evaluate(&c, &states);
+    let e = evaluate(&c, &states, DR_BETA);
     let worst = e.per_scenario.iter()
         .min_by(|a, b| a.upside.partial_cmp(&b.upside).unwrap())
         .unwrap();
@@ -118,7 +123,7 @@ fn fizzle_is_worst_for_beneficiaries() {
 #[test]
 fn evaluate_all_ranks_by_expected_upside() {
     let states = scenario_states();
-    let rows = evaluate_all(&universe(), &states);
+    let rows = evaluate_all(&universe(), &states, DR_BETA);
     for w in rows.windows(2) {
         assert!(w[0].expected_upside >= w[1].expected_upside);
     }
@@ -128,7 +133,7 @@ fn evaluate_all_ranks_by_expected_upside() {
 
 fn book() -> Vec<(String, f64)> {
     let states = scenario_states();
-    evaluate_all(&universe(), &states)
+    evaluate_all(&universe(), &states, DR_BETA)
         .into_iter()
         .map(|e| (e.ticker.to_string(), e.expected_upside))
         .collect()
@@ -200,7 +205,7 @@ fn taiwan_shock_is_priced() {
     let states = singularity_econ::scenarios::scenario_states();
     let companies = singularity_econ::companies::universe();
     let tsm = companies.iter().find(|c| c.ticker == "TSM").unwrap();
-    let ev = singularity_econ::valuation::evaluate(tsm, &states);
+    let ev = singularity_econ::valuation::evaluate(tsm, &states, DR_BETA);
     let base = ev.per_scenario.iter().find(|s| s.scenario == "baseline").unwrap();
     let shock = ev
         .per_scenario
