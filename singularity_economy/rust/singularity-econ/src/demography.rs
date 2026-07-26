@@ -188,6 +188,7 @@ impl DemographyState {
         enh_solidarity_erosion: f64,
     ) -> DemographyOutputs {
         let t = self.years as f64;
+        let year_i = 2026 + self.years;
         self.years += 1;
 
         // ---- raw displacement demand this year (M workers) ----
@@ -205,7 +206,7 @@ impl DemographyState {
 
         // blocked entrants drain to underemployment (physical pool) and
         // scar-decay out of the political window
-        let drain = dp.underemploy_drain * self.blocked_entrants_m * 0.5;
+        let drain = dp.underemploy_drain * self.blocked_entrants_m;
         self.blocked_entrants_m =
             (self.blocked_entrants_m - drain) * (1.0 - 0.07);
 
@@ -226,7 +227,12 @@ impl DemographyState {
         let care_gap = (self.care_demand_m - self.care_workers_m).max(0.0);
         self.care_workers_m += (dp.care_supply_cap * self.care_workers_m)
             .min(care_gap);
-        let robot_pull_units_m = dp.care_pull_gain * care_gap / 1000.0;
+        // care_gap is in M worker-equivalents; each robot supplies ~1.4
+        // HEW, and effectiveness is heavily discounted pre-2031 (Japan's
+        // 20-yr eldercare-robot experiment: ~0 substitution) rising to
+        // ~0.15 by 2040. Converts to robot UNITS (red-team fix: was /1000).
+        let care_robot_eff = if year_i < 2031 { 0.0 } else { (0.15 * (t - 5.0) / 9.0).clamp(0.0, 0.15) };
+        let robot_pull_units_m = dp.care_pull_gain * care_gap * care_robot_eff / 1.4;
 
         // ---- physical visibility: robots fill the aging-core vacancy gap
         // before they displace anyone ----
@@ -262,11 +268,13 @@ impl DemographyState {
         // salience (sentiment proxies national salience); acute component
         // decays fast (self-excitation half-life months, not years).
         // Immigration LEVEL deliberately absent (contested/near-null). ----
-        let econ_stress = (-gdp_growth / 0.05).max(0.0) + (sentiment - 0.4).max(0.0);
-        let migration_rate = self.migration_openness * 0.02; // flow proxy
-        self.tension = self.tension * dp.tension_acute_decay
-            + dp.tension_gain * migration_rate * econ_stress * 10.0
-            + 0.02; // chronic floor drift
+        // economic stress (Miguel arm) + salience; the chronic component
+        // tracks displacement-driven grievance so scapegoating is a live
+        // channel, not a floor-pinned inert stock (red-team fix).
+        let econ_stress =
+            (-gdp_growth / 0.05).max(0.0) + 2.0 * (sentiment - 0.3).max(0.0);
+        let inflow = dp.tension_gain * econ_stress * (1.0 - self.tension);
+        self.tension = self.tension * dp.tension_acute_decay + inflow + 0.02;
         self.tension = self.tension.clamp(0.0, 1.0);
 
         // ---- restriction-first branch: at elections under pressure, the

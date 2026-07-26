@@ -141,3 +141,47 @@ fn demography_off_recovers_static_legacy() {
         "layer on must change the political trajectory"
     );
 }
+
+// Red-team round (demography): the tension/scapegoating channel must be a
+// LIVE stock, not pinned near its floor — a confirmed finding was that it
+// decayed to ~0.04 all decade, making redirect ~3% vs the designed 55-75%.
+#[test]
+fn tension_is_a_live_channel_not_floor_pinned() {
+    let states = base();
+    let peak = states.iter().map(|s| s.tension).fold(f64::MIN, f64::max);
+    assert!(
+        peak > 0.5,
+        "tension never activated (peak {peak}) — scapegoating channel is inert"
+    );
+    // and it decays after the sentiment pulse (acute self-excitation)
+    let last = states.last().unwrap().tension;
+    assert!(last < peak - 0.2, "tension never decayed from its peak");
+}
+
+// The care-robot pull must convert the care gap to robot UNITS (not the
+// /1000 bug that made it numerically dead), and must respect the Japan
+// eldercare-effectiveness gate (~0 substitution before 2031).
+#[test]
+fn care_pull_zero_pre_2031_then_positive() {
+    // Run to 2050: robots are component-constrained until the 2040s, so
+    // the care-demand pull (which raises fleet TARGET) only translates to
+    // realized production once components stop binding — components-early.
+    let mut p = Params::default();
+    p.demography.care_pull_gain = 2.0;
+    p.end_year = 2050;
+    let with_pull = simulate(&p);
+    let mut p0 = Params::default();
+    p0.demography.care_pull_gain = 0.0;
+    p0.end_year = 2050;
+    let no_pull = simulate(&p0);
+    // pre-2031 the effectiveness gate is 0: identical fleets
+    let f30 = |v: &[YearState]| v.iter().find(|s| s.year == 2030).unwrap().robot_fleet_m;
+    assert!((f30(&with_pull) - f30(&no_pull)).abs() < 1e-6, "care pull leaked pre-2031");
+    // by 2050 the pull adds measurable fleet (not the dead /1000 coupling)
+    let f50 = |v: &[YearState]| v.iter().find(|s| s.year == 2050).unwrap().robot_fleet_m;
+    assert!(
+        f50(&with_pull) > f50(&no_pull) + 1.0,
+        "care pull still numerically dead post-2031: {} vs {}",
+        f50(&with_pull), f50(&no_pull)
+    );
+}
