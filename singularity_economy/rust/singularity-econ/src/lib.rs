@@ -781,6 +781,13 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let prev_adopt_bio = out.last().map_or(0.08, |st| st.adoption_level);
         let bfx = bio::shocks::effects_for_year(&p.dread_shocks, year);
         if bio_on {
+            // C6: a mass-casualty bio event arms the mandatory synthesis-screening
+            // ratchet — the balancing loop that re-closes the synthesis-access
+            // gate. Previously `arm_screening_mandate` was never called, leaving
+            // the biorisk subsystem a pure runaway gate with no counter-force.
+            if bfx.arm_screening {
+                biostate.arm_screening_mandate();
+            }
             bio_out = Some(biostate.step(
                 &p.bio,
                 algo_eff,
