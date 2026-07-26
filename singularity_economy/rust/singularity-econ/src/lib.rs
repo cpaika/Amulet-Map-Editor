@@ -16,8 +16,11 @@ pub mod bio;
 pub mod companies;
 pub mod demography;
 pub mod geopolitics;
+pub mod energy;
+pub mod food;
 pub mod macrofin;
 pub mod materials;
+pub mod regions;
 pub mod scenarios;
 pub mod society;
 pub mod space;
@@ -176,6 +179,17 @@ pub struct Params {
     /// Critical-inputs supply chain (Liebig minimum over reducers, magnets,
     /// sensors, chips, copper — with China concentration + ASI substitution).
     pub materials: materials::MaterialsParams,
+    /// Energy generation mix (solar+battery Wright exponentials vs gas+nuclear
+    /// firm power) — the supply side of the power constraint.
+    pub energy: energy::EnergyParams,
+    /// Food production + food-price → political-unrest coupling (gas→fertilizer
+    /// →food→tension chain).
+    pub food: food::FoodParams,
+    /// Regional political economy (US / China / EU divergence).
+    pub regions: regions::RegionParams,
+    /// Food-unrest → tension coupling gain (0 = satellite only; feeds the
+    /// demography/society tension channel with a one-year lag).
+    pub food_tension_gain: f64,
     /// MC-drawn bio/cyber dread shocks (empty = baseline unchanged).
     pub dread_shocks: Vec<bio::shocks::DreadShock>,
     /// Open-weight model share (erodes bio safeguard efficacy).
@@ -364,6 +378,10 @@ impl Default for Params {
             macrofin: macrofin::MacroParams::default(),
             bio: bio::BioParams::default(),
             materials: materials::MaterialsParams::default(),
+            energy: energy::EnergyParams::default(),
+            food: food::FoodParams::default(),
+            regions: regions::RegionParams::default(),
+            food_tension_gain: 0.0,
             dread_shocks: Vec::new(),
             open_weight_share: 0.3,
             incident_year: 0,
@@ -580,6 +598,20 @@ pub struct YearState {
     pub materials_ceiling_m: f64,
     /// Name of the binding critical input ("precision_reducers", etc.).
     pub materials_binding: String,
+    // ---- energy generation mix ----
+    pub firm_power_gw: f64,
+    pub solar_gw: f64,
+    pub battery_gwh: f64,
+    pub clean_power_share: f64,
+    pub electricity_cost_index: f64,
+    // ---- food ----
+    pub food_price_index: f64,
+    pub food_unrest: f64,
+    // ---- regional blocs (US, China, EU order) ----
+    pub bloc_capability: Vec<f64>,
+    pub bloc_stress: Vec<f64>,
+    pub china_us_capability_gap: f64,
+    pub west_capability_share: f64,
     pub phys_displacement: f64,
     pub sector_debt: f64,
     pub credit_multiplier: f64,
@@ -665,6 +697,13 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     // materials-substitution/design-out program has progressed (RE-free motors,
     // cycloidal/QDD reducers, thrifting) against the critical-input chokepoints.
     let mut asi_years = 0.0_f64;
+    // Energy / food / regions satellite layers (supply side of the power
+    // constraint; food↔energy↔tension chain; US/China/EU divergence).
+    let mut energy_state = energy::EnergyState::new(&p.energy);
+    let mut food_state = food::FoodState::new();
+    let mut region_state = regions::RegionState::new(&p.regions);
+    let mut food_unrest_prev = 0.0_f64; // one-year-lagged food→tension coupling
+    let mut prev_adopt_region = 0.08_f64;
     #[allow(unused_assignments)]
     let mut human_cog_m = p.cognitive_workers_m;
     let mut phys_workers_m = p.physical_workers_m;
@@ -1454,6 +1493,30 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             }
         }
 
+        // ---- energy / food / regions satellite layers ----
+        // Energy: the generation mix that supplies the grid the economy runs on.
+        let grid_demand_gw = compute_stock * gw_per_unit * power_jevons_mult + robot_power_gw;
+        let energy_out = energy_state.step(&p.energy, grid_demand_gw, 1.0, asi);
+        // Food: gas/energy price (proxied by the electricity-price ratio) drives
+        // fertilizer → food price → unrest; automation ramps the AI cost-out.
+        let fuel_price_index = electricity_price / p.electricity_price_normal;
+        let food_out = food_state.step(&p.food, fuel_price_index, adopt.min(1.0), year);
+        // Regions: decompose the transition into US/China/EU bloc trajectories.
+        let region_out = region_state.step(
+            &p.regions,
+            (adopt - prev_adopt_region).max(0.0),
+            (power_additions / ai_power.max(1e-9)).clamp(0.0, 0.5),
+            disp.max(pd),
+            asi,
+        );
+        prev_adopt_region = adopt;
+        // Food → tension: last year's food unrest feeds this year's political
+        // stress (gated; 0 by default keeps the layers pure satellites).
+        if p.food_tension_gain > 0.0 && soc_on {
+            soc.add_external_stress(p.food_tension_gain * food_unrest_prev);
+        }
+        food_unrest_prev = food_out.unrest_pressure;
+
         last_capex = ai_capex.max(1e-6);
 
         out.push(YearState {
@@ -1480,6 +1543,17 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             component_capacity_m: component_capacity,
             materials_ceiling_m: mat_ceiling_m,
             materials_binding: mat_binding.to_string(),
+            firm_power_gw: energy_out.firm_power_gw,
+            solar_gw: energy_out.solar_gw,
+            battery_gwh: energy_out.battery_gwh,
+            clean_power_share: energy_out.clean_share,
+            electricity_cost_index: energy_out.cost_index,
+            food_price_index: food_out.food_price_index,
+            food_unrest: food_out.unrest_pressure,
+            bloc_capability: region_out.capability.clone(),
+            bloc_stress: region_out.stress.clone(),
+            china_us_capability_gap: region_out.china_us_gap,
+            west_capability_share: region_out.west_share,
             phys_displacement: pd,
             sector_debt,
             credit_multiplier: credit_mult,

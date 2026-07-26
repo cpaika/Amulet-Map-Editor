@@ -234,6 +234,13 @@ impl SocietyState {
         self.transfer_permanent = self.transfer_permanent.min(cap.max(0.02));
     }
 
+    /// External grievance injection (e.g. a food-price shock): adds directly to
+    /// public sentiment, the same stock displacement backlash feeds. Clamped to
+    /// the 0..1 salience range. Off unless a caller wires a positive coupling.
+    pub fn add_external_stress(&mut self, s: f64) {
+        self.sentiment = (self.sentiment + s.max(0.0)).clamp(0.0, 1.0);
+    }
+
     fn transfers_active(&self) -> bool {
         self.transfer_share() > 0.03
     }

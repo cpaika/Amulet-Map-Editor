@@ -201,6 +201,47 @@ substitution is worth roughly 8× on the 2050 fleet, and it is the reason the
 pure-play reducer/magnet equities' scarcity moat is a two-sided bet. Ablation:
 `materials.enabled = 0` emits an infinite ceiling and unit-cost 1.0 (legacy).
 
+*Energy generation mix (`energy.rs`).* The supply side of the power constraint,
+made explicit so "is the grid a hard ceiling or a self-relieving exponential?"
+is answered by structure. Solar rides Wright's law (~20%/doubling) and batteries
+(LFP, ~19-24%/doubling) firm it; together they are the cheap, fast exponential
+(robots-build-solar via ASI accelerates it further). Gas is the dispatchable
+BRIDGE, turbine-lead-time-capped (~20-40 GW/yr global). Nuclear/SMR is slow firm.
+Verdict encoded: energy is **not a hard global ceiling** — it is a self-relieving
+exponential (clean share 40%→78%, cost index 0.85→0.44 across 2028-2050) gated by
+three *temporary* hard constraints that bite 2026-32 (turbines, nuclear lead
+times, and — regionally decisive — the US grid: 2.6 TW queue, 4-9yr waits vs
+China's ~2yr). Satellite (ablatable); a gated coupling to the core power price is
+available for scenario work.
+
+*Regional political economy (`regions.rs`).* Decomposes the single global
+aggregate into US / China / EU blocs, because the binding constraint DIFFERS by
+bloc along three anti-correlated axes: capital mobilization, power buildout, and
+displacement absorption. China builds physical/energy capacity ~8x faster
+(429 GW added 2024 vs US ~50) and installs 54% of the world's robots, but lags
+the compute frontier (~0.4x, export-controlled) and has no electoral release
+valve for the displaced against a −24% working-age clock → low overt backlash
+but a fat, discontinuous regime-shift tail (brittleness). The US leads on
+frontier + capital but is energy-permitting-bound and politically brittle on a
+2-4yr clock with a half-spent fiscal absorber. The EU is the triple bind
+(power ~2.6x US cost, capital ~0.2x, highest regulation) with only its welfare
+buffer as an edge. Model behavior: US keeps the lead (0.56→0.54 share), China
+closes partway on its energy edge (0.33→0.38), EU fades (0.11→0.08); the West
+accumulates high political stress while China suppresses it (democracies vent,
+the autocracy stores brittleness). Satellite decomposition; ablatable.
+
+*Food (`food.rs`).* A low-automation, nitrogen-and-water-bound production system
+AND a political-stability driver. Two couplings: food←energy (Haber-Bosch ammonia
+is ~3-5% of gas and 70-90% of ammonia cost; elasticity ~0.8, 1-2 season lag) and
+food→tension (real food-price index crossing its disruption band drives unrest,
+gained by import-dependence, damped by subsidy buffers — the 2008/2011 → Arab
+Spring pattern). The marquee chain fires in-model: the 2030s power crunch pushes
+food to ~2x by 2036 (unrest peaks), then green ammonia (2035) + AI cost-out +
+alt-protein relieve it. The farm gate is only ~12% of the food dollar, so AI/robots
+cut cost only ~1-3%/yr — a trend accelerator, not a discontinuity. Food-unrest
+feeds political sentiment via a gated, one-year-lagged coupling
+(`food_tension_gain`, 0 by default; the layers stay pure satellites otherwise).
+
 **R3 — Capex momentum (reinforcing → overshoot).** Investment follows
 *perceived* (lagged, smoothed) demand growth plus herding on recent growth.
 With perception delays + construction delays, deceleration in demand arrives
