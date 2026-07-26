@@ -107,7 +107,14 @@ impl SpaceState {
         // Starlink-loop 42%/yr lesson), hard-capped by the WWII ceiling
         let proven = sp.starship_proven_year > 0 && year >= sp.starship_proven_year;
         let g = if proven { sp.launch_growth_fast } else { sp.launch_growth_slow };
-        self.launch_capacity_tpy *= (1.0 + g).min(2.5);
+        // Saturating growth toward an absolute annual-tonnage ceiling: the
+        // per-year multiplier (~1.35x) never hit the old 2.5x mobilization cap,
+        // so tonnage compounded to >1000x base by 2050. Bound it to a plausible
+        // mature launch throughput (~1000x the 2026 base — a fully-reusable,
+        // high-cadence world) via logistic saturation.
+        let cap = sp.launch_capacity_2026_tpy * 1000.0;
+        let headroom = (1.0 - self.launch_capacity_tpy / cap).max(0.0);
+        self.launch_capacity_tpy *= 1.0 + g * headroom;
         let upmass = self.launch_capacity_tpy;
         self.cum_upmass_t += upmass;
 
@@ -128,10 +135,11 @@ impl SpaceState {
         self.kg_per_kw = (self.kg_per_kw * (1.0 - sp.specific_mass_decline))
             .max(sp.kg_per_kw_floor);
 
-        // tonnage available after Starlink/defense pre-emption
-        let available_t = upmass * (1.0 - sp.preempt_share)
-            - self.orbital_gw_it * self.kg_per_kw * 1000.0 * sp.orbital_attrition;
-        let available_t = available_t.max(0.0);
+        // tonnage available after Starlink/defense pre-emption. Attrition is
+        // charged ONCE — via the orbital-stock decay below — so the replacement
+        // tonnage is drawn from this pool implicitly (rebuild competes with new
+        // capacity), not subtracted a second time here (the prior double-count).
+        let available_t = (upmass * (1.0 - sp.preempt_share)).max(0.0);
 
         // B11 economic gate: power rents widen the orbital breakeven
         let breakeven = 200.0 + 300.0 * power_rent_index.clamp(0.0, 1.0);

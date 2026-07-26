@@ -991,7 +991,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 * onshoring_boost)
             .min(p.chip_growth_ceiling * ceiling_mult);
         if invaded {
-            chip_growth = chip_growth.min(0.18);
+            // Post-invasion fab rebuild is capped at ~18%/yr while human-paced,
+            // but the latch must not be PERMANENT: as ASI diffuses it rebuilds
+            // fabs faster (the model's own premise), so the cap recovers toward
+            // the boosted ceiling rather than pinning growth for all time.
+            chip_growth = chip_growth.min((0.18 + asi * 0.5).min(p.chip_growth_ceiling * ceiling_mult));
         }
         let chip_delivery = chip_pipe.step_accel(chip_capacity * chip_growth, speedup);
         chip_capacity += chip_delivery;

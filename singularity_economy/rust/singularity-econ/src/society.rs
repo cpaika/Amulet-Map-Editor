@@ -135,7 +135,11 @@ impl Default for SocietyParams {
             sentiment_halflife: 7.0,
             sentiment_halflife_relieved: 2.5,
             transfer_trigger_rate: 0.02,
-            crisis_rate: 0.02,
+            // Crisis bypass must sit ABOVE the transfer trigger, else every
+            // triggered transfer also counts as a crisis and the election-gated
+            // 0.04-step path is dead. Aligned with the >4pp/yr emergency-powers
+            // throttle: only a genuine displacement crisis fires the 0.08 step.
+            crisis_rate: 0.045,
             transfer_step: 0.04,
             transfer_crisis_step: 0.08,
             transfer_cap: 0.15,

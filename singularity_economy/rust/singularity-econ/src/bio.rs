@@ -380,8 +380,11 @@ impl BioState {
         let preclinical_throughput =
             pharma_adopt * (1.0 / bp.preclinical_cost_mult) * (0.5 + validated_cap);
         self.drug_pipeline += preclinical_throughput;
-        // B-attrition clamp: ~90% drain to failure (Phase 2/3 unchanged).
-        self.drug_pipeline *= 1.0 - (1.0 - bp.clinical_loa);
+        // Per-YEAR clinical exit of the candidate stock (~1/7yr avg clinical
+        // duration). The lifetime 10% LOA is NOT an annual rate — applying it
+        // annually drained 90%/yr and collapsed the pipeline; the LOA is applied
+        // ONCE at royalty realization below.
+        self.drug_pipeline *= 1.0 - 0.14;
         // tooling/SaaS pool ramps deterministically; royalty option only
         // after the first Ph3 readout window.
         let tooling = ramp(bp.drug_pool_2026_b, bp.drug_pool_2035_b, t, 9.0) * pharma_adopt
