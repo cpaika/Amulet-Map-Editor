@@ -78,7 +78,7 @@ fn democracies_vent_autocracy_suppresses() {
 fn regions_off_is_frozen() {
     let p = RegionParams { enabled: 0.0, ..RegionParams::default() };
     let mut st = RegionState::new(&p);
-    let out = st.step(&p, 0.2, 0.1, 0.1, 1.0);
+    let out = st.step(&p, 0.2, 0.1, 0.1, 1.0, 1.0);
     assert!((out.capability[0] - 0.56).abs() < 1e-9, "US frozen at 2026 share");
     assert_eq!(out.divergence, 0.0);
 }
@@ -166,6 +166,32 @@ fn cheap_energy_relieves_food_price() {
     assert!(
         late < early,
         "cheap energy must relieve food price: {late} !< {early}"
+    );
+}
+
+// C10: a Taiwan chip-supply shock must be REGIONALLY DECISIVE — a blockade throttles
+// capability growth in proportion to each bloc's leading-edge chip dependence, and the
+// US frontier lead is the most chip-concentrated, so China closes the capability gap
+// versus a shock-free baseline. Previously the regions layer saw only global scalars
+// and a Taiwan war had ZERO effect on the China-vs-US split (the design's decisive axis).
+#[test]
+fn taiwan_blockade_closes_china_us_gap() {
+    use singularity_econ::geopolitics::{GeoShock, ShockKind};
+    let base = to2050(Params::default());
+    let mut shocked_p = Params::default();
+    shocked_p.geo_shocks = vec![GeoShock {
+        kind: ShockKind::TaiwanBlockade,
+        start_year: 2030,
+        duration_years: 2.0,
+    }];
+    let shocked = to2050(shocked_p);
+    // china_us_capability_gap = China share - US share (less negative ⇒ closing).
+    let gap = |v: &[YearState], y: i32| at(v, y).china_us_capability_gap;
+    assert!(
+        gap(&shocked, 2035) > gap(&base, 2035),
+        "Taiwan blockade must let China close the gap: shocked {} vs base {}",
+        gap(&shocked, 2035),
+        gap(&base, 2035)
     );
 }
 

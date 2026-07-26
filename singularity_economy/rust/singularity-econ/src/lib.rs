@@ -1552,12 +1552,17 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let fuel_price_index = energy_out.cost_index;
         let food_out = food_state.step(&p.food, fuel_price_index, adopt.min(1.0), year);
         // Regions: decompose the transition into US/China/EU bloc trajectories.
+        // C10: feed the Taiwan chip-supply shock (chip_mult net of the one-time
+        // invasion destruction) so a blockade/invasion reshapes the China-vs-US
+        // split. Identity (1.0) on the deterministic baseline (empty geo_shocks).
+        let chip_supply_index = (gfx.chip_mult * (1.0 - gfx.chip_destruction)).clamp(0.0, 1.0);
         let region_out = region_state.step(
             &p.regions,
             (adopt - prev_adopt_region).max(0.0),
             (power_additions / ai_power.max(1e-9)).clamp(0.0, 0.5),
             disp.max(pd),
             asi,
+            chip_supply_index,
         );
         prev_adopt_region = adopt;
         // Food → tension: last year's food unrest feeds this year's political

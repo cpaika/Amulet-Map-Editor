@@ -40,6 +40,13 @@ pub struct Bloc {
     /// legitimacy-crisis hazard past a threshold (0 for open systems that vent
     /// continuously through elections).
     pub brittleness: f64,
+    /// Fraction of the bloc's capability GROWTH gated by Taiwan-fabbed
+    /// leading-edge silicon (C10). The US frontier lead is the most
+    /// leading-edge-concentrated; China is already export-controlled off EUV
+    /// and has pivoted toward indigenous mature-node + robotics/energy, so a
+    /// Taiwan supply shock hits it LESS — the "silicon shield" cuts the US lead
+    /// harder and lets China close the gap. 0 ⇒ chip-shock-immune.
+    pub chip_dependence: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -89,6 +96,7 @@ pub fn default_blocs() -> Vec<Bloc> {
             fiscal_space: 0.45,
             regulation_drag: 0.35,
             brittleness: 0.0,
+            chip_dependence: 0.85, // frontier lead is leading-edge-concentrated
         },
         // China: 429 GW added 2024 (~8x US ~50 GW), 54% of global robot installs
         // (2.5x adoption), state-directed capital — but frontier compute ~0.4x
@@ -105,6 +113,7 @@ pub fn default_blocs() -> Vec<Bloc> {
             fiscal_space: 0.45,
             regulation_drag: 0.15,
             brittleness: 0.85,
+            chip_dependence: 0.45, // export-controlled off EUV; mature-node + robotics pivot
         },
         // EU: the triple bind — industrial power ~2.3-2.6x US cost, capital
         // mobilization ~0.15-0.30x US (Draghi's €800B/yr = 4.4% GDP gap),
@@ -120,6 +129,7 @@ pub fn default_blocs() -> Vec<Bloc> {
             fiscal_space: 0.60,
             regulation_drag: 1.00,
             brittleness: 0.1,
+            chip_dependence: 0.65, // ASML owner but fabless; imports leading-edge silicon
         },
     ]
 }
@@ -179,6 +189,7 @@ impl RegionState {
         power_growth: f64,
         displacement: f64,
         asi: f64,
+        chip_supply_index: f64,
     ) -> RegionOutputs {
         let n = p.blocs.len();
         if p.enabled <= 0.0 {
@@ -210,7 +221,14 @@ impl RegionState {
             // slowed by regulation. Energy is the decisive multiplier.
             let energy_gate = (s.energy_cap / (s.energy_cap + 0.5)).clamp(0.0, 1.0);
             let reg = 1.0 - 0.5 * b.regulation_drag;
-            s.capability *= 1.0 + adoption_growth * b.capital_mobilization * reg * energy_gate;
+            // C10: a Taiwan leading-edge chip-supply shock throttles capability
+            // growth in proportion to the bloc's chip dependence. `chip_supply_index`
+            // is 1.0 on the deterministic baseline (no drawn shock) ⇒ chip_gate=1.0
+            // and this term is inert; under a blockade/invasion it bites the US
+            // frontier lead hardest (highest dependence), letting China close.
+            let chip_gate = (1.0 - b.chip_dependence * (1.0 - chip_supply_index)).clamp(0.0, 1.0);
+            s.capability *=
+                1.0 + adoption_growth * b.capital_mobilization * reg * energy_gate * chip_gate;
             // Political stress: displacement drives it, fiscal transfers and
             // natural decay drain it. Democracies vent through backlash (high
             // gain, but it caps adoption elsewhere); autocracies suppress it
