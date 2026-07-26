@@ -80,16 +80,18 @@ fn self_replication_breaks_the_human_labor_plateau() {
 
 // Autonomy is gated by ASI focus and fleet self-staffing, so before
 // superintelligence and while the fleet is small the layer contributes almost
-// nothing — the early (components-early) period must track legacy closely.
+// nothing — the early (components-early) period must track legacy closely and
+// ramp in GRADUALLY, not as a step. With earlier self-staffing (half=20M) the
+// ramp begins ~2032; through 2031 the divergence stays sub-percent.
 #[test]
 fn pre_asi_early_period_tracks_legacy() {
     let off = to2050(off_params());
     let on = to2050(Params::default());
-    for y in [2029, 2031, 2033] {
+    for y in [2028, 2029, 2030, 2031] {
         let rel = (fleet(&on, y) - fleet(&off, y)).abs() / fleet(&off, y).max(1e-9);
         assert!(
-            rel < 0.03,
-            "self-replication leaked into the pre-ASI period at {y}: {:.1}% divergence",
+            rel < 0.015,
+            "self-replication leaked into the pre-ramp period at {y}: {:.1}% divergence",
             rel * 100.0
         );
     }
@@ -102,7 +104,7 @@ fn pre_asi_early_period_tracks_legacy() {
 #[test]
 fn machine_ceiling_is_a_monotone_finite_throttle() {
     let base = to2050(Params::default());
-    let hi = to2050(Params { machine_ceiling: 6.0, ..Params::default() });
+    let hi = to2050(Params { machine_ceiling: 9.0, ..Params::default() });
     assert!(
         fleet(&hi, 2050) > fleet(&base, 2050),
         "raising the machine ceiling must grow the fleet: {} vs {}",

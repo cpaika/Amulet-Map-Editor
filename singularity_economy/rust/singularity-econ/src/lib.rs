@@ -366,9 +366,18 @@ impl Default for Params {
             component_pipeline_stages: 2,
             bootstrap_gain: 0.10,
             robot_self_replication: 1.0,
-            machine_ceiling: 4.0,
+            // Doubling ~every 4.5 months — Carl Shulman's "existing industrial
+            // equipment produces its own mass in a couple of months," and that
+            // is the pre-superintelligence figure. 4x (6-month doubling) was the
+            // conservative floor; 10x (~monthly) is the frontier case, tunable.
+            machine_ceiling: 6.0,
             reinvest_share: 0.5,
-            self_staff_half_m: 60.0,
+            // A superintelligent robot runs 24/7 and coordinates perfectly, so
+            // it is worth several human manufacturing workers — the fleet needed
+            // to half-staff its own reproduction is well below the ~350M-worker
+            // human manufacturing headcount. Earlier self-staffing than the
+            // first-cut 60M human-scale intuition.
+            self_staff_half_m: 20.0,
             robot_kw_each: 2.0,
             learning_autonomy_gain: 0.5,
             energy_selfbuild_kw: 3.0,

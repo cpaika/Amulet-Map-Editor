@@ -166,9 +166,21 @@ fn wage_linked_shorts_negative() {
 }
 
 #[test]
-fn robotics_longs_do_not_clear_hurdle() {
+fn robotics_longs_split_component_vs_integrator() {
+    // Under faster self-replication (machine ceiling 6x, earlier self-staffing),
+    // the robot-scaling crunch pulls hard on the COMPONENT bottleneck: 6268.T
+    // (Nabtesco — precision reducers / harmonic drives, the classic robot-supply
+    // choke point) now clears the hurdle as a picks-and-shovels beneficiary.
+    // The system integrator (SYM) and the upstream materials name (MP) still do
+    // NOT clear it — their economics don't ride the component-demand crunch the
+    // same way, so the model keeps them below the bar.
     let rows = book();
-    for t in ["6268.T", "SYM", "MP"] {
+    assert!(
+        upside(&rows, "6268.T") > 0.2,
+        "robot-component supplier should clear the hurdle under fast self-replication: {}",
+        upside(&rows, "6268.T")
+    );
+    for t in ["SYM", "MP"] {
         assert!(upside(&rows, t) < 0.2, "{t}: {}", upside(&rows, t));
     }
 }

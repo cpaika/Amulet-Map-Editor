@@ -78,9 +78,22 @@ own factories, so capacity compounding accelerates toward the machine ceiling
 (1.6x → 2.2x/yr as autonomy rises) — and (b) a self-replication demand term —
 a `reinvest_share` slice of output plowed back into more robots, scaling with
 the FLEET not the workforce. Result: the loop stays exponential past the labor
-cap. The spine alone (capacity+demand) would reach ~17.6B by 2050; the full
-feedback web below tempers that to ~7.9B (fleet 13M→144M→2.1B→7.9B across
-2036–2050) vs the plateauing 1.7B legacy.
+cap: fleet 15M→351M→3.1B→11B across 2036–2050 vs the plateauing 1.7B legacy.
+
+*Calibration (why 6x/yr and half-staff at 20M, not 4x/60M).* The machine ceiling
+is the doubling rate of a self-reproducing industrial base. Carl Shulman's
+analysis — existing industrial equipment produces its own mass in a *couple of
+months* — puts the pre-superintelligence figure at ~4–6x/yr; 4x (6-month
+doubling) was the conservative floor, so the default is **6x** (~4.5-month
+doubling), with **10x** (~monthly) exposed as the frontier case (2050 fleet
+~17B). The self-staffing half-point is likewise not the ~350M human
+manufacturing headcount: a superintelligent robot runs 24/7 and coordinates
+perfectly, worth several human workers, so half-staffing arrives near **20M**
+robots — the self-replication ramp begins ~2032 rather than ~2036. Endpoint
+sensitivity is asymmetric: the self-staff threshold dominates the *mid* (2036–44)
+trajectory (dropping it 60M→5M raises the 2040 fleet ~8x), while the machine
+ceiling mostly shifts *when* you arrive — the 2050 endpoint is
+maintenance/power-dominated and only weakly ceiling-sensitive.
 It stays **finite** by three physical bounds: the machine ceiling caps capacity
 growth; `reinvest_share` caps how much output recycles vs is consumed; and a
 billion-robot fleet draws the SAME constrained grid the datacenters race to
@@ -125,8 +138,8 @@ loop to its live channel:
 
 **Net behavior of the full web:** the reinforcing amplifiers are individually
 modest (~3% each); the dominant dynamic is the core exponential *tempered by
-maintenance drag*, which pulls the naive 17.6B (spine-only) 2050 fleet down to
-~7.9B — still 4.6x the plateaued 1.7B legacy, and still visibly exponential
+maintenance drag*, which pulls the 2050 fleet from ~34B (maintenance off) down
+to ~11B — still 6.5x the plateaued 1.7B legacy, and still visibly exponential
 (>1.6x over 2047→2050) rather than flat. The honest systems result is that
 "self-sustaining" does not mean "unbounded": it means the loop no longer stalls
 at the *human*-labor cap, but it re-binds on *machine*-economy limits —
@@ -243,7 +256,7 @@ the extended run is where several of them finally bind:
   end from structure.
 - **Robot self-replication (R2) goes vertical 2038-2050**: with the full
   self-replication feedback web the fleet no longer plateaus at the human-labor
-  cap — 13M (2036) -> 144M (2040) -> 2.1B (2044) -> 7.9B (2050), driven by
+  cap — 15M (2036) -> 351M (2040) -> 3.1B (2044) -> 11B (2050), driven by
   capacity compounding that accelerates from 1.6x to 2.2x/yr as robots staff
   their own factories (vs the legacy 1.7B plateau, which stalled the moment
   it saturated the human workforce). Physical displacement is still the 2040s
