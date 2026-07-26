@@ -1189,6 +1189,15 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 + bootstrap * 0.2
                 + self_repl_growth)
                 .min(comp_ceiling * ceiling_mult);
+            // NB (audit DO-FIRST #2): component_capacity can drift far above
+            // realized production once a downstream ceiling (materials/power)
+            // binds — but that drift is a SLACK variable: capacity only affects
+            // output when it is itself the binding min(), where cap/prod≈1. The
+            // substantive part of #2's concern — the fleet being insensitive to
+            // materials — was resolved by DO-FIRST #3 (the bounded Liebig ceiling
+            // now gates the fleet). A utilization gate was trialed here but
+            // perturbed the well-tested self-replication contracts for a purely
+            // cosmetic cap/prod ratio, so it was reverted.
             component_capacity +=
                 comp_pipe.step_accel(component_capacity * comp_growth, speedup);
 
