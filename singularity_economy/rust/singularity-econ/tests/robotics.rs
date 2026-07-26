@@ -234,3 +234,28 @@ fn full_web_stays_finite_and_bounded() {
     assert!(f.is_finite() && f > 0.0, "fleet must be a real positive number: {f}");
     assert!(f < 1e6, "fleet must stay physically bounded (millions): {f}");
 }
+
+// Intelligence attacks maintenance: the maintenance drag is the drag on a
+// HUMAN-run machine economy, but predictive maintenance, robots-repairing-robots,
+// and design-for-reliability dissolve much of it as ASI diffuses. So a higher
+// intelligence-relief must GROW the fleet (it releases the dominant late-stage
+// limiter) — and with relief=0 the mechanism must recover the un-relieved drag.
+#[test]
+fn intelligence_relieves_maintenance_and_grows_the_fleet() {
+    let none = fleet(
+        &to2050(Params { maintenance_intelligence_relief: 0.0, ..Params::default() }),
+        2050,
+    );
+    let some = fleet(
+        &to2050(Params { maintenance_intelligence_relief: 0.6, ..Params::default() }),
+        2050,
+    );
+    let lots = fleet(
+        &to2050(Params { maintenance_intelligence_relief: 0.9, ..Params::default() }),
+        2050,
+    );
+    assert!(some > none, "maintenance relief must grow the fleet: {some} !> {none}");
+    assert!(lots > some, "more relief must grow it further: {lots} !> {some}");
+    // still finite even when intelligence dissolves most of the drag
+    assert!(lots.is_finite() && lots < 1e6, "fleet must stay bounded: {lots}");
+}

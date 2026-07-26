@@ -253,10 +253,19 @@ pub struct Params {
     /// B-maintenance (balancing): a huge deployed fleet absorbs a rising share
     /// of its own output just staying alive (upkeep, repair, replacement),
     /// throttling the reinvestment available for growth — diminishing returns
-    /// to scale that keep the exponential finite.
+    /// to scale that keep the exponential finite. This is the drag on a
+    /// HUMAN-run machine economy; see `maintenance_intelligence_relief`.
     pub maintenance_drag_gain: f64,
     /// Fleet (millions) at which maintenance drag reaches half its ceiling.
     pub maintenance_half_m: f64,
+    /// Fraction of the maintenance drag that superintelligence dissolves as it
+    /// diffuses (scales with ASI). Maintenance is exactly what intelligence
+    /// attacks: predictive maintenance cuts unplanned downtime (McKinsey ~30-50%),
+    /// robots repairing robots turns upkeep into cheap machine-labor rather than
+    /// a headcount tax, and design-for-reliability raises MTBF. At full ASI the
+    /// effective drag is (1 - relief)x the human-economy figure — a machine
+    /// economy is NOT maintenance-taxed the way a human-run one is.
+    pub maintenance_intelligence_relief: f64,
     pub robot_cost_2028_k: f64,
     pub robot_learning_rate: f64,
     pub robot_cost_floor_k: f64,
@@ -372,12 +381,15 @@ impl Default for Params {
             // conservative floor; 10x (~monthly) is the frontier case, tunable.
             machine_ceiling: 6.0,
             reinvest_share: 0.5,
-            // A superintelligent robot runs 24/7 and coordinates perfectly, so
-            // it is worth several human manufacturing workers — the fleet needed
-            // to half-staff its own reproduction is well below the ~350M-worker
-            // human manufacturing headcount. Earlier self-staffing than the
-            // first-cut 60M human-scale intuition.
-            self_staff_half_m: 20.0,
+            // Leading plants are ALREADY near-unmanned: FANUC's Oshino factory
+            // runs robots-building-robots unattended for 720 hrs (30 days), and
+            // Xiaomi's dark factory makes 10M phones/yr at ~81% automation with
+            // essentially no floor workers. So the human headcount robots must
+            // displace to self-staff is small (Epoch: ~a few thousand operators
+            // per gigafactory making ~500k robots/yr), and each superintelligent
+            // robot covers several of those roles — half-staffing arrives near
+            // ~12M robots, not the 60M human-scale first cut.
+            self_staff_half_m: 12.0,
             robot_kw_each: 2.0,
             learning_autonomy_gain: 0.5,
             energy_selfbuild_kw: 3.0,
@@ -388,6 +400,12 @@ impl Default for Params {
             materials_depletion_half_m: 1000.0,
             maintenance_drag_gain: 0.4,
             maintenance_half_m: 500.0,
+            // Predictive maintenance alone cuts cost 10-40% and downtime 30-50%
+            // (McKinsey/Deloitte); stack robots-repairing-robots (upkeep becomes
+            // cheap machine-labor) and design-for-reliability (+20-40% lifespan,
+            // MTBF already 40-100k hrs) and ~two-thirds of the growth-drag
+            // dissolves at full ASI. The rest is the irreducible physical floor.
+            maintenance_intelligence_relief: 0.65,
             robot_cost_2028_k: 50.0,
             robot_learning_rate: 0.22,
             robot_cost_floor_k: 8.0,
@@ -1058,8 +1076,16 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // B-maintenance (balancing): a large deployed fleet spends a rising
             // share of its own output just staying alive — upkeep, repair, and
             // replacement — so the reinvestment actually available for GROWTH
-            // shrinks with scale. Diminishing returns that keep the loop finite.
+            // shrinks with scale. But maintenance is exactly what intelligence
+            // attacks: predictive maintenance cuts unplanned downtime, robots
+            // repair robots (upkeep becomes cheap machine-labor, not a headcount
+            // tax), and design-for-reliability raises MTBF. So the drag
+            // COEFFICIENT falls as ASI diffuses — a machine economy is not
+            // maintenance-taxed the way a human-run one is. The remaining drag is
+            // the irreducible physical floor (parts wear out, entropy is real).
+            let maint_relief = 1.0 - p.maintenance_intelligence_relief * asi;
             let maint_fraction = p.robot_self_replication * p.maintenance_drag_gain
+                * maint_relief
                 * (robot_fleet / (robot_fleet + p.maintenance_half_m));
             let eff_reinvest = p.reinvest_share * (1.0 - maint_fraction);
 
