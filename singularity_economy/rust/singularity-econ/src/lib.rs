@@ -1482,14 +1482,19 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
 
         // ---- macro-finance: bond market prices the transfer ramp (B11) ----
         if macro_on {
-            let debt_share = 0.6; // transfers debt-financed early (society layer)
+            // Endogenous inputs (audit DO-FIRST #4): the debt-financing share
+            // follows society's dynamic winner-tax maturation (0.6→0.15), and
+            // nominal growth is THIS year's realized real GDP growth + a ~2%
+            // inflation add-on — not a pinned 5% that manufactured (g−r)<0 and
+            // a permanent snowball regardless of the actual boom.
+            let debt_share = if soc_on { soc.debt_financing_share() } else { 0.6 };
             let ai_ig = (ai_capex * (1.0 - p.internal_funding_share) / gdp).max(0.0);
             macro_out = Some(macrost.step(
                 &p.macrofin,
                 soc.transfer_share(),
                 debt_share,
                 ai_ig,
-                (p.base_gdp_growth + 0.02).max(0.0),
+                (gdp_growth_this_year + 0.02).max(0.0),
             ));
             // debt-service squeeze on the transfer cap (fiscal collision)
             if let Some(m) = &macro_out {

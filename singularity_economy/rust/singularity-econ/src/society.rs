@@ -238,6 +238,14 @@ impl SocietyState {
         self.transfer_permanent = self.transfer_permanent.min(cap.max(0.02));
     }
 
+    /// Dynamic debt-financing share of transfers: early transfers are ~60%
+    /// debt-financed, falling toward ~15% once a winner-tax base matures after
+    /// ~5 active-transfer years. Exposed so the macro-finance layer prices the
+    /// sovereign snowball off the SAME dynamic share instead of a hardcoded 0.6.
+    pub fn debt_financing_share(&self) -> f64 {
+        if self.years_transfers_active > 5 { 0.15 } else { 0.6 }
+    }
+
     /// External grievance injection (e.g. a food-price shock): adds directly to
     /// public sentiment, the same stock displacement backlash feeds. Clamped to
     /// the 0..1 salience range. Off unless a caller wires a positive coupling.
