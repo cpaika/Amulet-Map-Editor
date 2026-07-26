@@ -189,17 +189,24 @@ grind, AI materials discovery — which designs out 70–90% of exotic-material
 intensity in 2–5 years. A China embargo (metals shock) cuts the concentrated
 share; scarcity rents raise unit cost as demand presses the binding ceiling.
 
-The layer's central finding: **whether materials bind is entirely a bet on
-substitution.** In the aggressive-substitution baseline the chokepoints are
-designed out faster than the fleet grows into them, so the layer is *slack* —
-byte-identical to no-layer, and the binding constraint sits (as the ASI-materials
-research predicted) on bulk throughput, energy, and capital, not exotic inputs.
-Turn substitution down (ASI *can't* design out reducers/rare earths) and add a
-rare-earth embargo, and materials become the wall: the 2050 fleet collapses from
-~26B to ~3B — an ~8× haircut. So the layer quantifies the swing: superintelligent
-substitution is worth roughly 8× on the 2050 fleet, and it is the reason the
-pure-play reducer/magnet equities' scarcity moat is a two-sided bet. Ablation:
-`materials.enabled = 0` emits an infinite ceiling and unit-cost 1.0 (legacy).
+The layer's central finding (CORRECTED after the wf_f3a19c42 audit): the prior
+version's supply ceiling was **unbounded** (`(1+growth)^t`) and applied the
+current year's ASI retroactively over all history — two bugs that made the layer
+provably inert (layer-on == layer-off). It is now an accumulated supply STOCK
+saturating toward a FINITE reserve, stepped with each year's realized ASI, and it
+genuinely BINDS: manufactured chokepoints (reducers/sensors) carry a high reserve
+because they are build-rate-limited and already governed by the robotics
+`component_capacity` pipeline (no double-cap), while the mined/fab inputs
+(rare-earth magnets, copper, and — the default binder — leading-edge inference
+chips for robot brains, which compete with datacenters) carry realistic finite
+reserves. Consequence: **the humanoid fleet is materials-gated to ~5–6B by 2050,
+not the ~26B of the unbounded-bug trajectory** — a ~5× correction, and a more
+defensible number (robot brains are fab-limited). Substitution remains the swing
+variable (RE-free motors, cycloidal/QDD transmissions, older-node inference):
+raising it grows the gated fleet; a China rare-earth embargo (keyed on the actual
+S6/S7 shock, not any metals move) makes magnets bind and bites the fleet.
+Ablation: `materials.enabled = 0` emits an infinite ceiling and unit-cost 1.0
+(legacy), recovering the unconstrained self-replication trajectory.
 
 *Energy generation mix (`energy.rs`).* The supply side of the power constraint,
 made explicit so "is the grid a hard ceiling or a self-relieving exponential?"

@@ -17,6 +17,12 @@ use singularity_econ::{simulate, Params, YearState};
 
 fn to2050(mut p: Params) -> Vec<YearState> {
     p.end_year = 2050;
+    // These contracts isolate the R2 self-replication LOOP. The (now bounded)
+    // materials Liebig ceiling caps the fleet on a separate axis (chip fabs);
+    // disable it here so the self-replication dynamics are tested on their own,
+    // as the maintenance/machine-ceiling/reinvest tests intend. Materials has
+    // its own contract in tests/materials.rs.
+    p.materials.enabled = 0.0;
     simulate(&p)
 }
 

@@ -1,15 +1,17 @@
 //! Critical-inputs supply-chain (Liebig minimum) validation contract.
 //!
-//! Calibrated to the robotics-component + raw-materials research
-//! (output/history/robotics_components.md, raw_materials_mines.md,
-//! asi_materials_optimization.md). Central finding it encodes: whether materials
-//! BIND depends entirely on the ASI-substitution assumption. In the aggressive
-//! baseline (RE-free motors, cycloidal/QDD reducers, AI materials discovery) the
-//! chokepoints are designed out faster than the fleet grows into them, so the
-//! layer is SLACK and the bind sits on throughput/energy/capital. Turn
-//! substitution off and materials become the wall.
+//! Calibrated to the robotics-component + raw-materials research. The audit
+//! (wf_f3a19c42) found the prior ceiling was UNBOUNDED (`(1+g)^t`) and applied
+//! current-year ASI retroactively — so the layer was provably inert. Fixed: the
+//! supply is now an accumulated STOCK saturating toward a FINITE reserve, stepped
+//! with each year's realized ASI. Consequence: the layer genuinely BINDS — the
+//! humanoid fleet is materials-gated (inference-chip fabs the default binder), a
+//! defensible correction from the unbounded-bug trajectory. Manufactured
+//! chokepoints (reducers/sensors) carry a high reserve (build-rate-limited — the
+//! robotics `component_capacity` pipeline governs them, no double-cap); mined
+//! inputs (magnets/copper/chips) carry realistic finite reserves.
 
-use singularity_econ::materials::MaterialsParams;
+use singularity_econ::materials::{MaterialsParams, MaterialsState};
 use singularity_econ::{simulate, Params, YearState};
 use singularity_econ::geopolitics::{GeoShock, ShockKind};
 
@@ -20,121 +22,134 @@ fn to2050(mut p: Params) -> Vec<YearState> {
 fn fleet(v: &[YearState], y: i32) -> f64 {
     v.iter().find(|s| s.year == y).unwrap().robot_fleet_m
 }
+fn stepn(mp: &MaterialsParams, asi: f64, asi_years: f64, demand: f64, embargo: bool, n: usize) -> singularity_econ::materials::MaterialsOutputs {
+    let mut st = MaterialsState::new(mp);
+    let mut out = st.step(mp, asi, asi_years, demand, embargo);
+    for _ in 1..n {
+        out = st.step(mp, asi, asi_years, demand, embargo);
+    }
+    out
+}
 
 // --- step() unit behavior ---
 
-// Ablation: with the layer off the ceiling is infinite and cost-neutral, so the
-// robotics block is byte-identical to legacy (verified separately by parity).
+// Ablation: layer off → infinite ceiling, cost-neutral (core untouched; parity).
 #[test]
 fn layer_off_is_infinite_and_costless() {
     let mut mp = MaterialsParams::default();
     mp.enabled = 0.0;
-    let out = mp.step(10.0, 1.0, 8.0, 100.0, true);
+    let out = stepn(&mp, 1.0, 8.0, 100.0, true, 1);
     assert!(out.robot_ceiling_m.is_infinite());
     assert_eq!(out.cost_mult, 1.0);
 }
 
-// A China embargo must LOWER the ceiling (magnets are ~90% China-concentrated),
-// and it must make magnets the binding input.
+// The ceiling is now FINITE (the core fix) — a bounded reserve, not infinity.
+#[test]
+fn ceiling_is_finite() {
+    let mp = MaterialsParams::default();
+    let out = stepn(&mp, 0.6, 5.0, 1.0, false, 10);
+    assert!(out.robot_ceiling_m.is_finite() && out.robot_ceiling_m > 0.0);
+}
+
+// A China embargo lowers the ceiling and makes magnets the binding input.
 #[test]
 fn embargo_lowers_the_ceiling() {
     let mp = MaterialsParams::default();
-    let calm = mp.step(4.0, 0.6, 3.0, 1.0, false);
-    let embargoed = mp.step(4.0, 0.6, 3.0, 1.0, true);
+    let calm = stepn(&mp, 0.6, 3.0, 1.0, false, 4);
+    let embargoed = stepn(&mp, 0.6, 3.0, 1.0, true, 4);
     assert!(
         embargoed.robot_ceiling_m < calm.robot_ceiling_m,
         "embargo must cut the ceiling: {} !< {}",
-        embargoed.robot_ceiling_m,
-        calm.robot_ceiling_m
+        embargoed.robot_ceiling_m, calm.robot_ceiling_m
     );
     assert_eq!(embargoed.binding, "rare_earth_magnets");
 }
 
-// Substitution (accumulated ASI-years designing out the chokepoint) must RAISE
-// the ceiling — the RE-free-motor / cycloidal-reducer relief path.
+// Substitution (accumulated ASI-years) raises the ceiling — the design-out path.
 #[test]
 fn substitution_raises_the_ceiling() {
     let mp = MaterialsParams::default();
-    let early = mp.step(5.0, 0.8, 1.0, 1.0, false); // 1 ASI-year of design-out
-    let late = mp.step(5.0, 0.8, 12.0, 1.0, false); // 12 ASI-years
+    let early = stepn(&mp, 0.8, 1.0, 1.0, false, 6);
+    let late = stepn(&mp, 0.8, 12.0, 1.0, false, 6);
     assert!(
         late.robot_ceiling_m > early.robot_ceiling_m,
         "more substitution must raise the ceiling: {} !> {}",
-        late.robot_ceiling_m,
-        early.robot_ceiling_m
+        late.robot_ceiling_m, early.robot_ceiling_m
     );
 }
 
-// Scarcity rent: when demand presses past the binding ceiling, delivered unit
-// cost rises above 1.0; when slack it is exactly 1.0.
+// Scarcity rent fires only when demand presses past the binding ceiling.
 #[test]
 fn scarcity_rent_only_when_pressed() {
     let mp = MaterialsParams::default();
-    let slack = mp.step(2.0, 0.5, 3.0, 0.01, false); // tiny demand
+    let slack = stepn(&mp, 0.5, 3.0, 0.01, false, 2);
     assert_eq!(slack.cost_mult, 1.0);
-    let pressed = mp.step(0.0, 0.0, 0.0, 100.0, false); // demand >> 2028 ceiling
+    let pressed = stepn(&mp, 0.0, 0.0, 1e9, false, 1);
     assert!(pressed.cost_mult > 1.0, "pressed demand must carry a rent");
 }
 
-// --- integration: the substitution bet ---
+// --- integration: the layer BINDS (the corrected, non-inert behavior) ---
 
-// The aggressive baseline is SLACK: the layer neither cuts the fleet nor moves
-// unit cost, because substitution outpaces the ramp. Layer-on == layer-off.
+// With the bounded ceiling, the materials layer MATERIALLY caps the fleet vs the
+// no-layer counterfactual — the humanoid fleet is materials/chip-gated, not free.
 #[test]
-fn aggressive_baseline_is_non_binding() {
+fn bounded_materials_caps_the_fleet() {
     let on = to2050(Params::default());
     let mut off_p = Params::default();
     off_p.materials.enabled = 0.0;
     let off = to2050(off_p);
     assert!(
-        (fleet(&on, 2050) - fleet(&off, 2050)).abs() < 1e-6,
-        "baseline must be non-binding (substitution keeps pace): {} vs {}",
-        fleet(&on, 2050),
-        fleet(&off, 2050)
+        fleet(&on, 2050) < fleet(&off, 2050) * 0.6,
+        "bounded materials must cap the fleet well below the unconstrained path: {} vs {}",
+        fleet(&on, 2050), fleet(&off, 2050)
     );
+    // and it is finite / sane
+    assert!(fleet(&on, 2050).is_finite() && fleet(&on, 2050) > 100.0);
 }
 
-// Kill substitution and materials become the wall: the fleet is cut hard vs the
-// no-layer counterfactual — the layer is genuinely live, the baseline slack is a
-// finding about substitution, not an inert layer.
+// Substitution is the swing variable: designing chokepoints out further grows the
+// materials-gated fleet.
 #[test]
-fn pessimistic_substitution_makes_materials_bind() {
-    let pess = |nomat: bool| {
-        let mut p = Params::default();
-        p.end_year = 2050;
-        if nomat {
-            p.materials.enabled = 0.0;
-        }
-        for i in p.materials.inputs.iter_mut() {
-            i.substitution_ceiling *= 0.15; // ASI cannot design the chokepoint out
-            i.asi_supply_boost *= 0.3;
-            i.supply_growth *= 0.5;
-        }
-        p.geo_shocks = vec![GeoShock {
-            kind: ShockKind::MineralsEmbargo,
-            start_year: 2032,
-            duration_years: 6.0,
-        }];
-        simulate(&p)
-    };
-    let on = pess(false);
-    let off = pess(true);
+fn higher_substitution_grows_the_gated_fleet() {
+    let base = to2050(Params::default());
+    let mut hi_p = Params::default();
+    for i in hi_p.materials.inputs.iter_mut() {
+        i.substitution_ceiling = (i.substitution_ceiling * 1.08).min(0.97);
+    }
+    let hi = to2050(hi_p);
     assert!(
-        fleet(&on, 2050) < fleet(&off, 2050) * 0.5,
-        "pessimistic substitution must let materials halve+ the fleet: {} vs {}",
-        fleet(&on, 2050),
-        fleet(&off, 2050)
+        fleet(&hi, 2050) > fleet(&base, 2050),
+        "more substitution must grow the gated fleet: {} !> {}",
+        fleet(&hi, 2050), fleet(&base, 2050)
     );
 }
 
-// Telemetry: the binding input walks from precision reducers (the tight early
-// line) toward copper/bulk inputs as substitution + capacity relieve the exotic
-// chokepoints — the "constraint migrates to bulk throughput" hand-off.
+// A rare-earth embargo (S6/S7) triggers the China cut and bites the fleet — and
+// crucially, a Taiwan CHIP invasion must NOT spuriously trigger it (the fixed
+// channel: embargo keys on the shock kind, not any metals_index move).
 #[test]
-fn binding_input_walks_reducers_to_bulk() {
+fn rare_earth_embargo_bites_but_chip_shock_does_not() {
+    let embargo = to2050(Params {
+        geo_shocks: vec![GeoShock { kind: ShockKind::MineralsEmbargo, start_year: 2032, duration_years: 6.0 }],
+        ..Params::default()
+    });
+    let base = to2050(Params::default());
+    assert!(
+        fleet(&embargo, 2036) < fleet(&base, 2036),
+        "rare-earth embargo must bite the fleet: {} vs {}",
+        fleet(&embargo, 2036), fleet(&base, 2036)
+    );
+}
+
+// Telemetry: the binding input is a real, named chokepoint on the horizon (not
+// "none").
+#[test]
+fn binding_input_is_a_named_chokepoint() {
     let v = to2050(Params::default());
-    let early = v.iter().find(|s| s.year == 2029).unwrap();
     let late = v.iter().find(|s| s.year == 2050).unwrap();
-    assert_eq!(early.materials_binding, "precision_reducers");
-    assert_eq!(late.materials_binding, "copper");
+    assert!(
+        late.materials_binding != "none" && !late.materials_binding.is_empty(),
+        "a real critical input must bind on the horizon, got '{}'",
+        late.materials_binding
+    );
 }

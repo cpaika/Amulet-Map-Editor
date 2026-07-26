@@ -46,6 +46,7 @@ pub struct GeoFx {
     pub demand_mult: f64,      // AI capex demand
     pub spread: f64,           // credit-spread injection (fraction, 600bp=0.6)
     pub onshoring: bool,       // scare response: supply buildout boost
+    pub rare_earth_embargo: bool, // S6/S7 minerals shock — triggers the Liebig China cut
 }
 
 impl Default for GeoFx {
@@ -61,6 +62,7 @@ impl Default for GeoFx {
             demand_mult: 1.0,
             spread: 0.0,
             onshoring: false,
+            rare_earth_embargo: false,
         }
     }
 }
@@ -125,6 +127,7 @@ fn kind_fx(kind: ShockKind, year: i32, active: bool, years_since_end: i32) -> Ge
                 fx.power_mult = 0.97;
                 fx.metals_target = 1.0 + 0.4 * decay;
                 fx.spread = 0.025;
+                fx.rare_earth_embargo = true;
             }
             ShockKind::MineralsEmbargo => {
                 fx.chip_mult = 0.98;
@@ -134,6 +137,7 @@ fn kind_fx(kind: ShockKind, year: i32, active: bool, years_since_end: i32) -> Ge
                 fx.metals_target = 1.0 + 2.0 * decay;
                 fx.demand_mult = 0.95;
                 fx.spread = 0.20;
+                fx.rare_earth_embargo = true;
             }
             ShockKind::EnergyChokepoint => {
                 // Never touches chips (channel-separation invariant).
@@ -211,6 +215,7 @@ pub fn effects_for_year(shocks: &[GeoShock], year: i32) -> GeoFx {
         }
         agg.rebuild_cap |= fx.rebuild_cap;
         agg.onshoring |= fx.onshoring;
+        agg.rare_earth_embargo |= fx.rare_earth_embargo;
     }
     agg
 }

@@ -42,6 +42,13 @@ pub struct Input {
     /// Single-source (China) share of supply — the fraction lost if an embargo
     /// fires against that input.
     pub china_share: f64,
+    /// FINITE reserve ceiling: the maximum multiple of 2028 capacity the
+    /// PHYSICAL supply can reach via buildout + recycling (before substitution).
+    /// Manufactured chokepoints (reducers, sensors, chips) can scale far more
+    /// than ore-limited inputs (magnets, copper). This bounds the previously
+    /// unbounded exponential — the fix that makes the Liebig ceiling finite and
+    /// able to bind under stress instead of running away to infinity.
+    pub reserve_mult: f64,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -98,6 +105,7 @@ pub fn default_inputs() -> Vec<Input> {
                     substitution_ceiling: 0.85,
                     substitution_speed: 0.6,
                     china_share: 0.35,
+                    reserve_mult: 2000.0, // manufactured: build-rate-limited (robotics pipeline governs), no ore reserve
                 },
                 // Epoch secondary ceilings: torque sensors & encoders ~1.25M/yr.
                 Input {
@@ -108,6 +116,7 @@ pub fn default_inputs() -> Vec<Input> {
                     substitution_ceiling: 0.70, // proprioceptive/current-sensing dodges
                     substitution_speed: 0.6,
                     china_share: 0.25,
+                    reserve_mult: 2000.0, // manufactured
                 },
                 // Epoch: ball screws / linear guides ~2.5M humanoids/yr (NSK/THK).
                 Input {
@@ -118,6 +127,7 @@ pub fn default_inputs() -> Vec<Input> {
                     substitution_ceiling: 0.60,
                     substitution_speed: 0.5,
                     china_share: 0.20,
+                    reserve_mult: 2000.0, // manufactured
                 },
                 Input {
                     name: "rare_earth_magnets",
@@ -132,9 +142,10 @@ pub fn default_inputs() -> Vec<Input> {
                     robots_supported_2028_m: 12.0,
                     supply_growth: 0.18,
                     asi_supply_boost: 0.5,
-                    substitution_ceiling: 0.82,
+                    substitution_ceiling: 0.90, // RE-free motors near-total-capable
                     substitution_speed: 0.45,
                     china_share: 0.90, // refining + magnet-making dominance
+                    reserve_mult: 15.0, // ore/refining + recycling; RE-free substitution routes around
                 },
                 Input {
                     name: "inference_chips",
@@ -145,15 +156,17 @@ pub fn default_inputs() -> Vec<Input> {
                     substitution_ceiling: 0.60, // edge/neuromorphic/older nodes
                     substitution_speed: 0.5,
                     china_share: 0.20, // Taiwan concentration handled by geo layer
+                    reserve_mult: 60.0, // fab-limited
                 },
                 Input {
                     name: "copper",
-                    robots_supported_2028_m: 8.0,
+                    robots_supported_2028_m: 400.0, // ~23Mt/yr global Cu, ~10kg/robot, ~20% claimable
                     supply_growth: 0.10,
                     asi_supply_boost: 0.6, // DLE-style extraction, tailings, recycling
                     substitution_ceiling: 0.40, // aluminium substitution, thrifting
                     substitution_speed: 0.4,
                     china_share: 0.10,
+                    reserve_mult: 20.0, // + recycling/DLE; not the real chokepoint
                 },
     ]
 }
@@ -173,21 +186,35 @@ pub struct MaterialsOutputs {
     pub binding_capacity_m: f64,
 }
 
-impl MaterialsParams {
-    /// Compute the materials ceiling and scarcity cost for a given year.
-    /// `asi` in [0,1] is the diffusion fraction; `asi_years` is cumulative
-    /// ASI-weighted years since singularity (drives substitution progress);
-    /// `t` is years since 2028 (supply compounding base); `robot_demand_m` is
-    /// this year's desired production; `embargo` fires the China cut.
+/// Per-input accumulated physical supply capacity (M robots/yr it can feed).
+/// A STOCK, integrated year-by-year with the realized ASI of each year —
+/// replacing the prior stateless `(1+growth)^t` which (a) grew without bound and
+/// (b) applied the CURRENT year's ASI retroactively over all past years.
+#[derive(Clone, Debug)]
+pub struct MaterialsState {
+    pub supply: Vec<f64>,
+}
+
+impl MaterialsState {
+    pub fn new(p: &MaterialsParams) -> Self {
+        MaterialsState {
+            supply: p.inputs.iter().map(|i| i.robots_supported_2028_m).collect(),
+        }
+    }
+
+    /// Advance one year and return the Liebig ceiling + scarcity cost. `asi` is
+    /// THIS year's diffusion fraction (drives supply buildout); `asi_years` is
+    /// cumulative ASI-weighted years (drives substitution); `robot_demand_m` is
+    /// desired production; `embargo` fires the China cut.
     pub fn step(
-        &self,
-        t: f64,
+        &mut self,
+        p: &MaterialsParams,
         asi: f64,
         asi_years: f64,
         robot_demand_m: f64,
         embargo: bool,
     ) -> MaterialsOutputs {
-        if self.enabled <= 0.0 || self.inputs.is_empty() {
+        if p.enabled <= 0.0 || p.inputs.is_empty() {
             return MaterialsOutputs {
                 robot_ceiling_m: f64::INFINITY,
                 cost_mult: 1.0,
@@ -195,25 +222,27 @@ impl MaterialsParams {
                 binding_capacity_m: f64::INFINITY,
             };
         }
-        let t = t.max(0.0);
         let mut ceiling = f64::INFINITY;
         let mut binding = "none";
-        for inp in &self.inputs {
-            // physical supply compounds; ASI accelerates it (mining, extraction,
-            // recycling). Substitution designs intensity down toward the ceiling,
-            // raising robots-per-unit-supply by 1/(1-sub).
-            let supply_mult = (1.0 + inp.supply_growth + inp.asi_supply_boost * asi)
-                .powf(t);
+        for (i, inp) in p.inputs.iter().enumerate() {
+            // Grow the supply STOCK toward a FINITE reserve (base × reserve_mult)
+            // via logistic saturation, at this year's realized rate. Bounded, so
+            // the ceiling can actually bind instead of running to infinity.
+            let reserve = inp.robots_supported_2028_m * inp.reserve_mult;
+            let rate = inp.supply_growth + inp.asi_supply_boost * asi;
+            let headroom = (1.0 - self.supply[i] / reserve).max(0.0);
+            self.supply[i] += self.supply[i] * rate * headroom;
+            // Substitution designs intensity down toward the ceiling, raising
+            // robots-per-unit-supply by 1/(1-sub).
             let sub = inp.substitution_ceiling
                 * (1.0 - (-inp.substitution_speed * asi_years).exp());
             let intensity_relief = 1.0 / (1.0 - sub).max(1e-3);
             let embargo_mult = if embargo {
-                (1.0 - inp.china_share * self.embargo_severity).max(0.0)
+                (1.0 - inp.china_share * p.embargo_severity).max(0.0)
             } else {
                 1.0
             };
-            let cap = inp.robots_supported_2028_m * supply_mult * intensity_relief
-                * embargo_mult;
+            let cap = self.supply[i] * intensity_relief * embargo_mult;
             if cap < ceiling {
                 ceiling = cap;
                 binding = inp.name;
@@ -222,7 +251,7 @@ impl MaterialsParams {
         // Scarcity rents: cost rises as demand presses past the binding ceiling.
         let utilization = (robot_demand_m / ceiling.max(1e-9)).max(0.0);
         let cost_mult = 1.0
-            + self.scarcity_cost_elasticity * (utilization - 1.0).max(0.0).min(3.0);
+            + p.scarcity_cost_elasticity * (utilization - 1.0).max(0.0).min(3.0);
         MaterialsOutputs {
             robot_ceiling_m: ceiling,
             cost_mult,

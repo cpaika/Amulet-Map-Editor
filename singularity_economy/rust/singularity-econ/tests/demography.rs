@@ -166,13 +166,19 @@ fn care_pull_zero_pre_2031_then_positive() {
     // Run to 2050: robots are component-constrained until the 2040s, so
     // the care-demand pull (which raises fleet TARGET) only translates to
     // realized production once components stop binding — components-early.
+    // Isolate the care-pull → fleet mechanism from the materials cap: when the
+    // fleet is materials-gated (chip-fab-bound), extra DEMAND (care pull) does
+    // not raise realized production, so disable the Liebig ceiling here to test
+    // the demography coupling itself.
     let mut p = Params::default();
     p.demography.care_pull_gain = 2.0;
     p.end_year = 2050;
+    p.materials.enabled = 0.0;
     let with_pull = simulate(&p);
     let mut p0 = Params::default();
     p0.demography.care_pull_gain = 0.0;
     p0.end_year = 2050;
+    p0.materials.enabled = 0.0;
     let no_pull = simulate(&p0);
     // pre-2031 the effectiveness gate is 0: identical fleets
     let f30 = |v: &[YearState]| v.iter().find(|s| s.year == 2030).unwrap().robot_fleet_m;

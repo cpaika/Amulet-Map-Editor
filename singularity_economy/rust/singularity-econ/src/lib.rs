@@ -699,6 +699,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut asi_years = 0.0_f64;
     // Energy / food / regions satellite layers (supply side of the power
     // constraint; food↔energy↔tension chain; US/China/EU divergence).
+    let mut materials_state = materials::MaterialsState::new(&p.materials);
+    let mut prev_robot_demand = p.robot_prod_2028_m;
     let mut energy_state = energy::EnergyState::new(&p.energy);
     let mut food_state = food::FoodState::new();
     let mut region_state = regions::RegionState::new(&p.regions);
@@ -1196,15 +1198,15 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // Robot output is gated by the single tightest input (reducers,
             // magnets, sensors, chips, copper), each relieved by ASI substitution
             // and threatened by a China embargo. Demand proxy is last year's
-            // realized production; embargo fires on a serious minerals shock.
-            let prev_robot_prod =
-                out.last().map_or(p.robot_prod_2028_m, |s| s.robot_prod_m);
-            let mat = p.materials.step(
-                (year - 2028) as f64,
+            // unclamped robot DEMAND (not clamped production) so the scarcity
+            // rent can actually fire when demand outran the ceiling; embargo
+            // fires on a genuine rare-earth shock, not any minerals shock.
+            let mat = materials_state.step(
+                &p.materials,
                 asi,
                 asi_years,
-                prev_robot_prod,
-                metals_index > 1.5,
+                prev_robot_demand,
+                gfx.rare_earth_embargo,
             );
             mat_binding = mat.binding;
             mat_ceiling_m = mat.robot_ceiling_m;
@@ -1247,6 +1249,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 p.robot_self_replication * eff_reinvest * mfg_autonomy * robot_fleet;
             let robot_demand =
                 (replacement + self_repl_demand).max(p.robot_prod_2028_m * 0.5);
+            prev_robot_demand = robot_demand; // lagged input to next year's scarcity rent
             // A minerals embargo is a hard supply gate: ex-China magnet
             // capacity caps western output regardless of price. The Liebig
             // ceiling is the harder, structural version: the single tightest
