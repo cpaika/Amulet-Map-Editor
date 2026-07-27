@@ -1209,7 +1209,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // Compute-governance throttle (gated): a licensing/compute-cap regime that
         // tightens as frontier capability rises, cutting compute added per capex
         // dollar at the SOURCE of the R1 flywheel. gain 0 => throttle 1 => baseline.
-        let governance_throttle = 1.0 - p.compute_governance_gain * asi.clamp(0.0, 1.0);
+        // Floored at 0 (a full stop, never compute DESTRUCTION) so an out-of-range
+        // gain > 1 can't turn additions negative — mirroring transmission_gain's
+        // self-clamp (re-audit robustness fix).
+        let governance_throttle =
+            (1.0 - p.compute_governance_gain * asi.clamp(0.0, 1.0)).max(0.0);
         let units_added = ai_capex / cost_per_unit * governance_throttle;
         compute_stock = compute_stock * (1.0 - p.compute_deprec) + units_added;
         // Transmission/HVDC delivery lag (gated): transformers/HVDC converters ramp
