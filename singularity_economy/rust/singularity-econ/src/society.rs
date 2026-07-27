@@ -97,8 +97,12 @@ pub struct SocietyParams {
 
     // -- S5 institutional trust / R5 radicalization --
     pub inst_trust_2026: f64,
-    /// Trust floor below which backlash reroutes anti-system: B2 halves
-    /// but policy incoherence doubles the election period.
+    /// Trust floor below which backlash reroutes anti-system: the B2 backlash
+    /// signal halves (see `regulatory_pressure`'s `reroute`). NOTE (audit C16):
+    /// the "policy incoherence also doubles the election period" dynamic is NOT
+    /// implemented — the election cadence is a fixed `election_period`. Only the
+    /// reroute-halving exists; the period-doubling is a candidate for a future
+    /// cycle (needs a stateful years-since-election counter in the core loop).
     pub trust_reroute_floor: f64,
 
     // -- S6 consumer trust / B10+R8 --
