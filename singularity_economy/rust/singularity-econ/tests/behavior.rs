@@ -47,6 +47,30 @@ fn q_governor_brakes_investment_below_the_return_hurdle() {
     assert!(hi < lo, "a higher return hurdle must brake investment: {hi} vs {lo}");
 }
 
+// AI-services commoditization. The AI provider's share of displaced-wage surplus is a
+// constant 0.45 by default (durable pricing power). gain=0 => byte-identical (golden).
+// With the gain on, the captured share erodes as the market matures (adoption rises),
+// so the AI-services profit pool falls below the constant-share baseline — and the gap
+// WIDENS over the horizon as adoption saturates. The first-principles "do AI labs keep
+// pricing power" question, made a live knob.
+#[test]
+fn ai_commoditization_erodes_provider_surplus_as_market_matures() {
+    let b = base();
+    let c = run(Params { ai_commoditization_gain: 0.5, ..Params::default() });
+    let gap = |y: i32| by_year(&b, y).profits.ai_services - by_year(&c, y).profits.ai_services;
+    // erosion is present and grows as adoption saturates (early gap < late gap)
+    assert!(gap(2030) > 0.0, "commoditization must erode AI-services rent by 2030");
+    assert!(
+        gap(2036) > gap(2030),
+        "erosion must widen as the market matures: {} -> {}",
+        gap(2030),
+        gap(2036)
+    );
+    for s in &c {
+        assert!(s.profits.ai_services >= 0.0 && s.gdp > 0.0, "sane at {}", s.year);
+    }
+}
+
 // Two-sided merchant power pricing. Default scarcity price is one-sided (rises above
 // normal in tightness, never falls below in a glut). gain=0 => byte-identical (golden).
 // With the gain on, a genuine power GLUT (AI demand fizzles while generation keeps

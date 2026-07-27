@@ -386,6 +386,13 @@ pub struct Params {
     /// 0 (default) => one-sided => baseline byte-identical.
     pub power_glut_price_gain: f64,
     pub ai_services_margin: f64,
+    /// AI-services commoditization (gated). The AI provider's share of the displaced-
+    /// wage surplus it captures is a constant 0.45 by default — durable pricing power
+    /// forever. With this on, that rent ERODES as the market matures (open weights,
+    /// multiple providers, capability commoditizing): the share falls toward
+    /// `0.45 × (1 − gain × adoption)`, so a saturated AI market competes the surplus
+    /// away. 0 (default) => constant 0.45 => baseline byte-identical.
+    pub ai_commoditization_gain: f64,
     // R4 physical acceleration (post-singularity)
     pub asi_diffusion_years: f64,
     pub asi_delay_compression: f64,
@@ -557,6 +564,7 @@ impl Default for Params {
             target_utilization: 0.85,
             power_glut_price_gain: 0.0, // off by default; ~0.6 prices the merchant-power glut downside
             ai_services_margin: 0.35,
+            ai_commoditization_gain: 0.0, // off by default; ~0.5 competes AI-provider rent away as adoption saturates
             asi_diffusion_years: 2.0,
             asi_delay_compression: 0.35,
             asi_ceiling_boost: 0.5,
@@ -1668,7 +1676,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         wage_index_cog += 0.5 * (cog_wage_target - wage_index_cog);
         wage_index_phys += 0.5 * (phys_wage_target - wage_index_phys);
         let displaced_value = disp * p.cognitive_workers_m * avg_cog_wage;
-        let ai_services = displaced_value * 0.45
+        // AI-provider surplus share erodes as the market commoditizes (gated): a mature,
+        // multi-provider AI market competes the captured share of displaced-wage value
+        // down. gain=0 => constant 0.45 => byte-identical.
+        let ai_surplus_share = 0.45 * (1.0 - p.ai_commoditization_gain * adopt.clamp(0.0, 1.0));
+        let ai_services = displaced_value * ai_surplus_share
             + (cognitive_task_index - 1.0) * p.cognitive_wage_bill * 0.06;
 
         let years_in = year - p.start_year;
