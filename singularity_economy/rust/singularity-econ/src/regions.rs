@@ -47,6 +47,15 @@ pub struct Bloc {
     /// Taiwan supply shock hits it LESS — the "silicon shield" cuts the US lead
     /// harder and lets China close the gap. 0 ⇒ chip-shock-immune.
     pub chip_dependence: f64,
+    /// Per-bloc displacement intensity relative to the global rate (C11). The
+    /// blocs no longer share one global displacement scaled only by a fixed
+    /// `backlash_gain` — that pinned China's stress inflow at a constant 0.35x of
+    /// the US forever, so the ordering could never reorder. China adopts robots
+    /// fastest (~54% of global installs, ~2.5x adoption) so it DISPLACES faster;
+    /// the EU adopts slowest. Combined with the low autocratic backlash_gain and
+    /// the brittleness fracture term, this lets stored stress build toward the
+    /// discontinuous regime-shift tail rather than a fixed fraction of the US.
+    pub displacement_modifier: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -97,6 +106,7 @@ pub fn default_blocs() -> Vec<Bloc> {
             regulation_drag: 0.35,
             brittleness: 0.0,
             chip_dependence: 0.85, // frontier lead is leading-edge-concentrated
+            displacement_modifier: 1.0, // reference bloc
         },
         // China: 429 GW added 2024 (~8x US ~50 GW), 54% of global robot installs
         // (2.5x adoption), state-directed capital — but frontier compute ~0.4x
@@ -114,6 +124,7 @@ pub fn default_blocs() -> Vec<Bloc> {
             regulation_drag: 0.15,
             brittleness: 0.85,
             chip_dependence: 0.45, // export-controlled off EUV; mature-node + robotics pivot
+            displacement_modifier: 1.4, // fastest robot adoption → fastest displacement
         },
         // EU: the triple bind — industrial power ~2.3-2.6x US cost, capital
         // mobilization ~0.15-0.30x US (Draghi's €800B/yr = 4.4% GDP gap),
@@ -130,6 +141,7 @@ pub fn default_blocs() -> Vec<Bloc> {
             regulation_drag: 1.00,
             brittleness: 0.1,
             chip_dependence: 0.65, // ASML owner but fabless; imports leading-edge silicon
+            displacement_modifier: 0.8, // slowest adoption (regulatory drag)
         },
     ]
 }
@@ -234,8 +246,12 @@ impl RegionState {
             // gain, but it caps adoption elsewhere); autocracies suppress it
             // (low gain) but store brittleness.
             let vented = p.stress_decay + b.fiscal_space * 0.2;
+            // C11: displacement is bloc-specific (global rate x the bloc's adoption
+            // intensity), not one shared scalar — so the stress ordering is no longer
+            // a frozen multiple of the US.
+            let bloc_disp = displacement * b.displacement_modifier;
             s.stress = (s.stress
-                + b.backlash_gain * displacement * (1.0 - b.fiscal_space * 0.5)
+                + b.backlash_gain * bloc_disp * (1.0 - b.fiscal_space * 0.5)
                 - vented * s.stress)
                 .max(0.0);
         }
