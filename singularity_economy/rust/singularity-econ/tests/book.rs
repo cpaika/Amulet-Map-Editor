@@ -92,7 +92,7 @@ fn beta_amplifies_and_drift_compounds() {
 fn capture_adds_emerging_pool_earnings() {
     let states = simulate(&Params::default());
     let mut with = test_company(vec![(RatioPool::GdpIndex, 1.0)], 1.0, 0.0);
-    with.capture = vec![(EmergingPool::AiServices, 0.05, 0.4)];
+    with.capture = vec![(EmergingPool::AiServices, 0.05)];
     let without = test_company(vec![(RatioPool::GdpIndex, 1.0)], 1.0, 0.0);
     assert!(earnings_path(&with, &states).last().unwrap()
             > earnings_path(&without, &states).last().unwrap());

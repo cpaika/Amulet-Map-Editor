@@ -82,6 +82,22 @@ impl Pools {
     }
 }
 
+impl crate::Profits {
+    /// Emerging-pool PROFIT ($T) — the pool revenue with the model's ENDOGENOUS
+    /// margin already applied (electricity_margin, component_margin, …). Capture
+    /// earnings ride this instead of a frozen per-company margin constant (audit V).
+    pub fn emerging(&self, p: EmergingPool) -> f64 {
+        match p {
+            EmergingPool::AiServices => self.ai_services,
+            EmergingPool::Electricity => self.electricity,
+            EmergingPool::Robots => self.robots,
+            EmergingPool::RobotComponents => self.robot_components,
+            EmergingPool::RobotServices => self.robot_services,
+            EmergingPool::IpTolls => self.ip_tolls,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Stance {
     Long,
@@ -101,9 +117,10 @@ pub struct Company {
     pub share_drift: f64,
     pub terminal_multiple: f64,
     pub stance: Stance,
-    /// (pool, share_of_pool, net_margin) — adds share*margin*pool($T)*1000
-    /// to earnings ($B), phased in over ~4 years.
-    pub capture: Vec<(EmergingPool, f64, f64)>,
+    /// (pool, share_of_pool) — adds share * pool_PROFIT($T) * 1000 to earnings
+    /// ($B), phased in over ~4 years. The margin is the model's endogenous one
+    /// (audit V), so only the captured SHARE is a per-company constant now.
+    pub capture: Vec<(EmergingPool, f64)>,
     /// Share of the company's productive capacity physically located in Taiwan
     /// (0 = none). In the `taiwan_shock` (invasion) scenario this capacity is
     /// destroyed, so the name takes a fair-value haircut the global Silicon pool
@@ -144,8 +161,13 @@ pub fn earnings_path(c: &Company, states: &[YearState]) -> Vec<f64> {
         let growth = growth.max(0.0).powf(c.pool_beta);
         let mut e = c.ntm_earnings_b * growth * (1.0 + c.share_drift).powi(i as i32);
         let phase = (i as f64 / 4.0).min(1.0);
-        for &(pool, share, margin) in &c.capture {
-            e += phase * share * margin * s.pools.emerging(pool) * 1000.0;
+        // Capture earnings ride the model's ENDOGENOUS profit pool (audit V): the
+        // captured share times the pool's PROFIT ($T, margin already applied by the
+        // sim) — not a frozen per-company margin constant. So VST/NRG/CEG electricity
+        // capture now tracks the endogenous electricity_margin (0.30 -> ~0.60) and
+        // component capture tracks component_margin, instead of a hand-set number.
+        for &(pool, share) in &c.capture {
+            e += phase * share * s.profits.emerging(pool) * 1000.0;
         }
         path.push(e);
     }
