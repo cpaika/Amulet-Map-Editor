@@ -45,6 +45,22 @@ fn sovereign_debt_snowballs_and_squeezes_transfers() {
     );
 }
 
+// New-dynamic: a job-guarantee tilt lowers the debt-financing share of transfers,
+// shrinking the sovereign snowball — so both debt/GDP and the long rate end BELOW
+// the pure-UBI baseline (the discount lever that lifts duration-heavy longs). jg
+// share 0 is the baseline (byte-identical, enforced by the golden snapshot).
+#[test]
+fn job_guarantee_shrinks_the_snowball() {
+    let base = base();
+    let mut p = Params::default();
+    p.society.jg_share = 0.6;
+    let jg = simulate(&p);
+    let b = base.last().unwrap();
+    let j = jg.last().unwrap();
+    assert!(j.gov_debt_gdp < b.gov_debt_gdp, "JG must lower debt/GDP: {} !< {}", j.gov_debt_gdp, b.gov_debt_gdp);
+    assert!(j.long_rate < b.long_rate, "JG must lower the long rate: {} !< {}", j.long_rate, b.long_rate);
+}
+
 // B11 ablation: with endogenous rates off, the long rate stays at the
 // exogenous anchor and never moves — the legacy flat-DCF world.
 #[test]

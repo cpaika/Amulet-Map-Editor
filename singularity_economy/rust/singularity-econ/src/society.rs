@@ -51,6 +51,14 @@ pub struct SocietyParams {
     pub transfer_crisis_step: f64,
     /// Cap on transfer share of GDP inside the horizon.
     pub transfer_cap: f64,
+    /// Job-guarantee share of the transfer program (new-dynamic; 0 = pure UBI,
+    /// the default). A job guarantee produces output and is self-targeting, so it
+    /// recovers part of its gross fiscal cost and is less debt-financed than
+    /// unconditional UBI. Higher `jg_share` lowers the debt-financing share of
+    /// transfers → smaller sovereign snowball → lower long rate and scenario
+    /// discount → lifts the duration-heavy power/toll longs. The single largest
+    /// discount lever; 0 keeps the pure-UBI baseline.
+    pub jg_share: f64,
     /// Fraction of each emergency step that ratchets permanent
     /// (CTC/UI lapsed; Alaska PFD endured: 0.3 baseline).
     pub ratchet_fraction: f64,
@@ -151,6 +159,7 @@ impl Default for SocietyParams {
             transfer_step: 0.04,
             transfer_crisis_step: 0.08,
             transfer_cap: 0.15,
+            jg_share: 0.0, // pure UBI baseline; >0 shifts toward a job guarantee
             ratchet_fraction: 0.3,
             sustained_years: 2,
             election_period: 2,
@@ -250,8 +259,12 @@ impl SocietyState {
     /// debt-financed, falling toward ~15% once a winner-tax base matures after
     /// ~5 active-transfer years. Exposed so the macro-finance layer prices the
     /// sovereign snowball off the SAME dynamic share instead of a hardcoded 0.6.
-    pub fn debt_financing_share(&self) -> f64 {
-        if self.years_transfers_active > 5 { 0.15 } else { 0.6 }
+    pub fn debt_financing_share(&self, sp: &SocietyParams) -> f64 {
+        let base = if self.years_transfers_active > 5 { 0.15 } else { 0.6 };
+        // A job guarantee recovers part of its gross cost (output + self-targeting),
+        // so it is less debt-financed than unconditional UBI. jg_share = 0 (default)
+        // leaves the pure-UBI base untouched.
+        base * (1.0 - 0.5 * sp.jg_share.clamp(0.0, 1.0))
     }
 
     /// External grievance injection (e.g. a food-price shock): adds directly to

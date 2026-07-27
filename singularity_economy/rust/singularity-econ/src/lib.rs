@@ -1670,7 +1670,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // nominal growth is THIS year's realized real GDP growth + a ~2%
             // inflation add-on — not a pinned 5% that manufactured (g−r)<0 and
             // a permanent snowball regardless of the actual boom.
-            let debt_share = if soc_on { soc.debt_financing_share() } else { 0.6 };
+            let debt_share = if soc_on { soc.debt_financing_share(&p.society) } else { 0.6 };
             let ai_ig = (ai_capex * (1.0 - p.internal_funding_share) / gdp).max(0.0);
             macro_out = Some(macrost.step(
                 &p.macrofin,
