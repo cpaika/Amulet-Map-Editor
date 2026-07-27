@@ -410,7 +410,7 @@ impl Default for Params {
             chip_capacity_2026: 0.28,
             chip_base_growth: 0.30,
             chip_supply_gain: 1.6,
-            chip_growth_ceiling: 0.85,
+            chip_growth_ceiling: 0.60, // audit B4: fab base growth ~60%/yr cap (was an absurd ASI-boosted >150%/yr)
             chip_pipeline_stages: 2,
             hw_cost_decline: 0.15,
             ai_power_2026: 58.0,
@@ -1051,14 +1051,16 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let herd = l.r3_capex_momentum * p.momentum_gain * perceived_growth.max(0.0);
         // ---- Financial-fragility spine: AI-capex bubble/bust reflexivity (gated) ----
         // Update the equity-sentiment stock from LAST year's realized glut and margin
-        // (lagged, so no in-loop ordering hazard). Asymmetric Minsky dynamics: a
-        // capacity glut past 1.3 cracks sentiment fast toward a fear floor; otherwise
-        // it builds slowly on AI-complex profitability + demand momentum.
+        // (lagged, so no in-loop ordering hazard). Asymmetric Minsky dynamics: once
+        // overcapacity emerges (glut past the historical ~1.15 floor) sentiment
+        // cracks fast toward a fear floor; otherwise it builds slowly on AI-complex
+        // profitability + demand momentum. (Trigger tracks the glut regime, which
+        // audit B4 made shallower — peak ~1.35 — by taming the fab overbuild.)
         // equity_sentiment_gain = 0 (default) leaves the stock frozen at 1.0.
         if p.equity_sentiment_gain > 0.0 {
             let prev_glut = out.last().map_or(0.9, |s| s.capacity_glut);
-            if prev_glut > 1.3 {
-                let floor = (1.0 - 1.2 * (prev_glut - 1.3)).max(0.35);
+            if prev_glut > 1.15 {
+                let floor = (1.0 - 3.0 * (prev_glut - 1.15)).max(0.35);
                 equity_sentiment += 0.6 * (floor - equity_sentiment); // fast crack
             } else {
                 let boom = 1.0
@@ -1122,30 +1124,28 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // Onshoring scares boost the supply response x1.5 for 4 years
         // (China WFE localization tripled post-Oct-2022); post-invasion
         // rebuild is EUV-capped at ~18%/yr regardless of price signal.
-        // DEFERRED (audit B4): leading-edge fab expansion is physically the
-        // HARDEST capacity to accelerate (ASML EUV output ~50-60/yr, 3-5yr fab
-        // builds → ~20-45%/yr even under a strong price signal), yet this uses the
-        // full compute-flywheel `ceiling_mult` and a 0.85 base ceiling, licensing
-        // an absurd >150%/yr ASI-boosted fab growth. A trial fix (ceiling 0.45 +
-        // a halved fab_ceiling_mult) is correct in isolation but its baseline
-        // effect is to dampen the model's CORE overshoot signature — peak capacity
-        // glut 1.53 → 1.28 — below the established 1.3 glut-detection convention
-        // used by several backtest/behavior conclusion tests (bust_lag,
-        // silicon_glut_emerges). Compute is power-gated so the upside is low while
-        // the repricing of the validated overshoot/backtest envelope is real; that
-        // is a deliberate call for the model owner, not an overnight threshold
-        // retune. Revisit with the user: retune {chip_growth_ceiling, fab boost,
-        // the 1.3 glut convention} jointly against the historical [1.15,3.5] band.
+        // Audit B4: leading-edge fab expansion is the HARDEST capacity to accelerate
+        // — ASML EUV output (~50-60 scanners/yr), 3-5yr fab builds, GO-steel/tooling
+        // lead times cap it near ~20-45%/yr even under a strong price signal, and an
+        // ASI cannot conjure EUV optics on demand. So fabs get a HALVED ASI/robot
+        // ceiling boost (the same 0.5 haircut power already gets), not the full
+        // compute-flywheel ceiling_mult that licensed an absurd >150%/yr, and a 0.60
+        // base ceiling. This tames the phantom fab OVERBUILD, so the peak capacity
+        // glut falls from ~1.52 to ~1.35 — still an unambiguous glut, above the 1.3
+        // detection convention and inside the historical [1.15, 3.5] envelope, just
+        // no longer inflated by unrealistic fab growth.
+        let fab_ceiling_mult =
+            (1.0 + asi * p.asi_ceiling_boost * 0.5) * (1.0 + robot_infra_boost * 0.5);
         let mut chip_growth = (p.chip_base_growth
             + l.b1_supply_response * p.chip_supply_gain * excess_margin
                 * onshoring_boost)
-            .min(p.chip_growth_ceiling * ceiling_mult);
+            .min(p.chip_growth_ceiling * fab_ceiling_mult);
         if invaded {
             // Post-invasion fab rebuild is capped at ~18%/yr while human-paced,
             // but the latch must not be PERMANENT: as ASI diffuses it rebuilds
             // fabs faster (the model's own premise), so the cap recovers toward
             // the boosted ceiling rather than pinning growth for all time.
-            chip_growth = chip_growth.min((0.18 + asi * 0.5).min(p.chip_growth_ceiling * ceiling_mult));
+            chip_growth = chip_growth.min((0.18 + asi * 0.5).min(p.chip_growth_ceiling * fab_ceiling_mult));
         }
         let chip_delivery = chip_pipe.step_accel(chip_capacity * chip_growth, speedup);
         chip_capacity += chip_delivery;
