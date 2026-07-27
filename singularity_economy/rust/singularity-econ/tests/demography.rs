@@ -1,10 +1,34 @@
 //! Demography-layer validation contract
 //! (output/history/demography_design.md §5 + tension supplement).
 
+use singularity_econ::demography::{DemographyParams, DemographyState};
 use singularity_econ::{simulate, Loops, Params, YearState};
 
 fn base() -> Vec<YearState> {
     simulate(&Params::default())
+}
+
+// C13: the bio layer's age_creep_mult (healthcare-deflation fiscal relief) must
+// actually reach demography — it was computed then discarded. Stepping the layer
+// with more relief (a lower mult) must leave a HIGHER transfer_cap_eff than the
+// no-relief (mult = 1.0) path, i.e. the wire is live.
+#[test]
+fn age_creep_relief_reaches_the_transfer_cap() {
+    fn cap_after(mult: f64) -> f64 {
+        let dp = DemographyParams::default();
+        let mut st = DemographyState::new(&dp, 100.0, 100.0);
+        let mut out = st.step(&dp, 0.3, 0.1, 0.2, 0.05, 0.05, false, 0.1, 0.0, mult);
+        for _ in 0..15 {
+            out = st.step(&dp, 0.3, 0.1, 0.2, 0.05, 0.05, false, 0.1, 0.0, mult);
+        }
+        out.transfer_cap_eff
+    }
+    let no_relief = cap_after(1.0);
+    let relief = cap_after(0.85);
+    assert!(
+        relief > no_relief,
+        "healthcare-deflation relief must raise the transfer cap: {relief} !> {no_relief}"
+    );
 }
 
 fn demo_off() -> Vec<YearState> {

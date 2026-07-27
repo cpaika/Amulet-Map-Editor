@@ -1434,6 +1434,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 election,
                 pd,
                 bio_out.as_ref().map_or(0.0, |b| b.enhancement_solidarity_erosion),
+                bio_out.as_ref().map_or(1.0, |b| b.age_creep_mult),
             );
             Some(d)
         } else {

@@ -186,6 +186,7 @@ impl DemographyState {
         election_year: bool,
         phys_disp_level: f64,
         enh_solidarity_erosion: f64,
+        age_creep_mult: f64,
     ) -> DemographyOutputs {
         let t = self.years as f64;
         let year_i = 2026 + self.years;
@@ -321,7 +322,10 @@ impl DemographyState {
             * (blocked_share - dp.youth_protest_threshold).max(0.0).powf(1.5);
 
         // ---- transfer politics gates ----
-        let transfer_cap_eff = (0.15 - dp.age_creep * t).max(0.08)
+        // age_creep_mult (<=1.0, audit C13) is the bio layer's weak, lagged
+        // healthcare-deflation relief on the demographic aging drain — it slows
+        // the fiscal-space erosion age_creep imposes. 1.0 when bio is off/absent.
+        let transfer_cap_eff = (0.15 - dp.age_creep * age_creep_mult * t).max(0.08)
             * (0.70 + 0.30 * self.solidarity);
         let transfer_step_mult = 0.5 + 0.5 * self.solidarity;
 
