@@ -135,6 +135,13 @@ pub struct Company {
 /// scenario — a multi-year, EUV-capped rebuild (design table S4).
 pub const TAIWAN_FAB_LOSS: f64 = 0.55;
 
+/// Annual erosion of a captured emerging-pool SHARE past its ~4yr phase-in
+/// (audit C2). A fixed-capacity name's share of a GROWING pool declines as
+/// competitors add supply — the scarcity rent is not permanent. This also haircuts
+/// rent-dominated terminal value (the terminal earnings a full multiple is applied
+/// to are already decayed), so a peak-rent 2036 is not capitalized to perpetuity.
+pub const CAPTURE_DECAY: f64 = 0.06;
+
 pub fn earnings_path(c: &Company, states: &[YearState]) -> Vec<f64> {
     let base = &states[0].pools;
     let base_silicon_margin = states[0].silicon_margin.max(1e-6);
@@ -161,13 +168,17 @@ pub fn earnings_path(c: &Company, states: &[YearState]) -> Vec<f64> {
         let growth = growth.max(0.0).powf(c.pool_beta);
         let mut e = c.ntm_earnings_b * growth * (1.0 + c.share_drift).powi(i as i32);
         let phase = (i as f64 / 4.0).min(1.0);
+        // Competitive erosion of the captured share past phase-in (audit C2): the
+        // rent is not permanent — a fixed-capacity name's share of a growing pool
+        // decays as supply responds.
+        let persistence = (1.0 - CAPTURE_DECAY).powf((i as f64 - 4.0).max(0.0));
         // Capture earnings ride the model's ENDOGENOUS profit pool (audit V): the
         // captured share times the pool's PROFIT ($T, margin already applied by the
         // sim) — not a frozen per-company margin constant. So VST/NRG/CEG electricity
         // capture now tracks the endogenous electricity_margin (0.30 -> ~0.60) and
         // component capture tracks component_margin, instead of a hand-set number.
         for &(pool, share) in &c.capture {
-            e += phase * share * s.profits.emerging(pool) * 1000.0;
+            e += phase * persistence * share * s.profits.emerging(pool) * 1000.0;
         }
         path.push(e);
     }
