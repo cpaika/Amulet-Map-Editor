@@ -146,6 +146,27 @@ fn food_tension_coupling_raises_backlash() {
     );
 }
 
+// C3: the energy layer must be able to feed the CORE, not just food. With the
+// coupling gain on, the solar+battery-driven generation cost index pulls the AI
+// sector's effective electricity price below the pure-utilization baseline — the
+// "cheap clean power relieves the power constraint" channel. Gain 0 is a pure
+// satellite (baseline unchanged, enforced by the golden snapshot elsewhere).
+#[test]
+fn energy_price_coupling_relieves_the_core_price() {
+    let base = to2050(Params::default()); // energy_price_gain = 0
+    let mut coupled_p = Params::default();
+    coupled_p.energy_price_gain = 0.5;
+    let coupled = to2050(coupled_p);
+    // by late horizon the generation cost index is well below 1.0, so the coupled
+    // electricity price must sit below the uncoupled one.
+    assert!(
+        at(&coupled, 2050).electricity_price < at(&base, 2050).electricity_price,
+        "energy coupling must relieve the core electricity price: {} !< {}",
+        at(&coupled, 2050).electricity_price,
+        at(&base, 2050).electricity_price
+    );
+}
+
 // C4: the food fertilizer driver is the ENERGY cost index, not datacenter compute
 // pricing — so as solar+battery Wright's law pulls the blended energy cost below
 // 1.0, the fertilizer(Haber-Bosch)/green-ammonia channel must pass that RELIEF

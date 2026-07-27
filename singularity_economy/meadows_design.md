@@ -218,8 +218,12 @@ Verdict encoded: energy is **not a hard global ceiling** — it is a self-reliev
 exponential (clean share 40%→78%, cost index 0.85→0.44 across 2028-2050) gated by
 three *temporary* hard constraints that bite 2026-32 (turbines, nuclear lead
 times, and — regionally decisive — the US grid: 2.6 TW queue, 4-9yr waits vs
-China's ~2yr). Satellite (ablatable); a gated coupling to the core power price is
-available for scenario work.
+China's ~2yr). Satellite by default (ablatable); a gated coupling to the core
+electricity price now exists (`Params::energy_price_gain`, default 0): when set >0
+it blends the layer's generation `cost_index` — driven below 1.0 by solar+battery
+Wright's law — into the AI sector's effective electricity price with a one-year
+lag, so cheap clean power relieves the core power/cost constraint. The energy mix
+also feeds the food layer's fertilizer signal unconditionally (see food).
 
 *Regional political economy (`regions.rs`).* Decomposes the single global
 aggregate into US / China / EU blocs, because the binding constraint DIFFERS by

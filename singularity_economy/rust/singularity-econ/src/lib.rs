@@ -190,6 +190,13 @@ pub struct Params {
     /// Food-unrest → tension coupling gain (0 = satellite only; feeds the
     /// demography/society tension channel with a one-year lag).
     pub food_tension_gain: f64,
+    /// Energy-layer → core electricity-price coupling gain (C3). 0 = the energy
+    /// mix stays a pure satellite (baseline unchanged). >0 blends the energy
+    /// layer's blended generation cost_index (solar+battery Wright's law drives
+    /// it below 1.0) into the AI sector's effective electricity price, with a
+    /// one-year lag — so cheap clean power actually relieves the core power/cost
+    /// constraint instead of the price reflecting only datacenter utilization.
+    pub energy_price_gain: f64,
     /// MC-drawn bio/cyber dread shocks (empty = baseline unchanged).
     pub dread_shocks: Vec<bio::shocks::DreadShock>,
     /// Open-weight model share (erodes bio safeguard efficacy).
@@ -382,6 +389,7 @@ impl Default for Params {
             food: food::FoodParams::default(),
             regions: regions::RegionParams::default(),
             food_tension_gain: 0.0,
+            energy_price_gain: 0.0,
             dread_shocks: Vec::new(),
             open_weight_share: 0.3,
             incident_year: 0,
@@ -708,6 +716,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut food_state = food::FoodState::new();
     let mut region_state = regions::RegionState::new(&p.regions);
     let mut food_unrest_prev = 0.0_f64; // one-year-lagged food→tension coupling
+    let mut energy_cost_index_prev = 1.0_f64; // one-year-lagged energy→core price coupling (C3)
     let mut prev_adopt_region = 0.08_f64;
     #[allow(unused_assignments)]
     let mut human_cog_m = p.cognitive_workers_m;
@@ -1126,6 +1135,18 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             * (1.0 + 1.2 * (((power_utilization - p.target_utilization).max(0.0))
                 / (1.0 - p.target_utilization))
                 .min(2.0));
+        // C3: blend the energy layer's generation cost_index (last year's, to
+        // avoid reordering the satellite section) into the AI-sector electricity
+        // price. The scarcity term above prices datacenter UTILIZATION; the energy
+        // layer prices GENERATION — as solar+battery Wright's law pulls cost_index
+        // below 1.0, cheap clean power relieves the effective price the sector
+        // pays. Gated: energy_price_gain = 0 (default) leaves the price untouched.
+        let electricity_price = if p.energy.enabled > 0.0 && p.energy_price_gain > 0.0 {
+            let g = p.energy_price_gain.clamp(0.0, 1.0);
+            electricity_price * ((1.0 - g) + g * energy_cost_index_prev)
+        } else {
+            electricity_price
+        };
 
         // ---- robotics ----
         let mut robot_prod = 0.0;
@@ -1551,6 +1572,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // electricity signal is exactly the ammonia driver. This gives the energy
         // layer a genuine downstream consumer.
         let fuel_price_index = energy_out.cost_index;
+        // Carry this year's generation cost into next year's core price blend (C3).
+        energy_cost_index_prev = energy_out.cost_index;
         let food_out = food_state.step(&p.food, fuel_price_index, adopt.min(1.0), year);
         // Regions: decompose the transition into US/China/EU bloc trajectories.
         // C10: feed the Taiwan chip-supply shock (chip_mult net of the one-time
