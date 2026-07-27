@@ -17,6 +17,26 @@ fn by_year(states: &[YearState], year: i32) -> &YearState {
     states.iter().find(|s| s.year == year).unwrap()
 }
 
+// New-dynamic: compute-governance / licensing regime (B12). With the gain on, a
+// compute-cap regime that tightens as capability rises throttles compute added at
+// the SOURCE of the R1 flywheel — so compute_stock ends well below baseline (caps
+// the silicon/HBM volume tail). Off => baseline byte-identical.
+#[test]
+fn compute_governance_throttles_the_flywheel() {
+    let b = base();
+    let mut p = Params::default();
+    p.compute_governance_gain = 0.5;
+    let g = run(p);
+    assert!(
+        by_year(&g, 2036).compute_stock < 0.8 * by_year(&b, 2036).compute_stock,
+        "governance must throttle compute: {} vs {}",
+        by_year(&g, 2036).compute_stock,
+        by_year(&b, 2036).compute_stock
+    );
+    // still grows (a cap, not a shutdown)
+    assert!(by_year(&g, 2036).compute_stock > by_year(&g, 2028).compute_stock, "compute still grows under the cap");
+}
+
 // Interaction guard: the five gated new dynamics must COMPOSE without pathology.
 // Turning them all on together (the documented "enhanced-realism" scenario) must
 // stay finite, keep compute growing and GDP positive, and still produce the

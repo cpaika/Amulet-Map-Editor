@@ -229,6 +229,13 @@ pub struct Params {
     /// This is the Minsky/Soros loop the core otherwise lacks; it fattens the left
     /// tail on every silicon/power name.
     pub equity_sentiment_gain: f64,
+    /// Compute-governance / licensing regime (new-dynamic B12 balancing loop; 0 =
+    /// off, baseline preserved). The society layer throttles DIFFUSION (adoption);
+    /// this throttles the R1 training flywheel at its SOURCE — a compute-cap /
+    /// licensing regime that tightens as frontier capability (ASI) rises, so fewer
+    /// compute units are added per dollar of capex. Caps the silicon/HBM
+    /// scarcity-rent tail (NVDA/TSM/MU downside) and raises licensed-incumbent value.
+    pub compute_governance_gain: f64,
     /// Equity wealth-effect on consumption (new-dynamic quick-win; 0 = off). Chains
     /// off the reflexivity spine: the YoY change in `equity_sentiment` (a valuation
     /// proxy for the AI-equity complex) transmits to real GDP via a marginal
@@ -436,6 +443,7 @@ impl Default for Params {
             energy_price_gain: 0.0,
             equity_sentiment_gain: 0.0, // off by default (satellite); ~1.0 is a live boom-bust scenario
             wealth_effect_gain: 0.0,    // off by default; chains off the spine
+            compute_governance_gain: 0.0, // off by default; ~0.5 is a licensing-regime scenario
             dread_shocks: Vec::new(),
             open_weight_share: 0.3,
             incident_year: 0,
@@ -1193,7 +1201,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             + (ai_capex * (1.0 - p.internal_funding_share)).max(0.0);
 
         let pre_stock = compute_stock;
-        let units_added = ai_capex / cost_per_unit;
+        // Compute-governance throttle (gated): a licensing/compute-cap regime that
+        // tightens as frontier capability rises, cutting compute added per capex
+        // dollar at the SOURCE of the R1 flywheel. gain 0 => throttle 1 => baseline.
+        let governance_throttle = 1.0 - p.compute_governance_gain * asi.clamp(0.0, 1.0);
+        let units_added = ai_capex / cost_per_unit * governance_throttle;
         compute_stock = compute_stock * (1.0 - p.compute_deprec) + units_added;
         // Transmission/HVDC delivery lag (gated): transformers/HVDC converters ramp
         // at a lead-time-bound rate; when the gain is on, generation that outruns the
