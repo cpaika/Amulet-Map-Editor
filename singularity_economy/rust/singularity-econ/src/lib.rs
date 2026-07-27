@@ -718,6 +718,11 @@ pub struct YearState {
     pub bio_hazard: f64,
     pub cyber_hazard: f64,
     pub drug_pool_b: f64,
+    /// Bio optionality pools ($B), computed by the bio layer (audit C14: previously
+    /// returned but discarded). Observability only — not fed back into the core.
+    pub longevity_pool_b: f64,
+    pub bci_pool_b: f64,
+    pub bio_materials_pool_b: f64,
     // macro-finance layer
     pub long_rate: f64,
     pub gov_debt_gdp: f64,
@@ -1810,6 +1815,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             bio_hazard: bio_out.as_ref().map_or(0.0, |b| b.bio_operational_uplift),
             cyber_hazard: bfx.spread,
             drug_pool_b: bio_out.as_ref().map_or(0.0, |b| b.ai_drug_pool_b),
+            longevity_pool_b: bio_out.as_ref().map_or(0.0, |b| b.longevity_pool_b),
+            bci_pool_b: bio_out.as_ref().map_or(0.0, |b| b.bci_pool_b),
+            bio_materials_pool_b: bio_out.as_ref().map_or(0.0, |b| b.bio_materials_pool_b),
             long_rate: macro_out.as_ref().map_or(0.048, |m| m.long_rate),
             gov_debt_gdp: macro_out.as_ref().map_or(1.0, |m| m.gov_debt_gdp),
             debt_service: macro_out.as_ref().map_or(0.048, |m| m.debt_service),

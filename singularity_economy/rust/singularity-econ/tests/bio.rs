@@ -136,3 +136,20 @@ fn enhancement_negligible_in_horizon_but_ivg_erodes_solidarity() {
         sol(&on, 2050)
     );
 }
+
+// Audit C14: the bio optionality pools (longevity, BCI, bio-materials) must be
+// SURFACED on YearState, not computed then discarded. With the bio layer on they
+// are non-negative and the longevity pool is populated (init ~$60B, growing).
+#[test]
+fn bio_optionality_pools_are_surfaced() {
+    let v = simulate(&Params {
+        bio: BioParams { bio_layer: 1.0, ..BioParams::default() },
+        end_year: 2040,
+        ..Params::default()
+    });
+    let last = v.last().unwrap();
+    assert!(last.longevity_pool_b > 0.0, "longevity pool must be surfaced: {}", last.longevity_pool_b);
+    assert!(last.bci_pool_b >= 0.0 && last.bio_materials_pool_b >= 0.0, "BCI/bio-materials pools surfaced");
+    // longevity pool grows over the horizon (funding-cyclical, toward its cap)
+    assert!(last.longevity_pool_b >= v[0].longevity_pool_b, "longevity pool should not shrink");
+}
