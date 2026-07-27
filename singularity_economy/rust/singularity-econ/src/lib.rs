@@ -1008,6 +1008,20 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // Onshoring scares boost the supply response x1.5 for 4 years
         // (China WFE localization tripled post-Oct-2022); post-invasion
         // rebuild is EUV-capped at ~18%/yr regardless of price signal.
+        // DEFERRED (audit B4): leading-edge fab expansion is physically the
+        // HARDEST capacity to accelerate (ASML EUV output ~50-60/yr, 3-5yr fab
+        // builds → ~20-45%/yr even under a strong price signal), yet this uses the
+        // full compute-flywheel `ceiling_mult` and a 0.85 base ceiling, licensing
+        // an absurd >150%/yr ASI-boosted fab growth. A trial fix (ceiling 0.45 +
+        // a halved fab_ceiling_mult) is correct in isolation but its baseline
+        // effect is to dampen the model's CORE overshoot signature — peak capacity
+        // glut 1.53 → 1.28 — below the established 1.3 glut-detection convention
+        // used by several backtest/behavior conclusion tests (bust_lag,
+        // silicon_glut_emerges). Compute is power-gated so the upside is low while
+        // the repricing of the validated overshoot/backtest envelope is real; that
+        // is a deliberate call for the model owner, not an overnight threshold
+        // retune. Revisit with the user: retune {chip_growth_ceiling, fab boost,
+        // the 1.3 glut convention} jointly against the historical [1.15,3.5] band.
         let mut chip_growth = (p.chip_base_growth
             + l.b1_supply_response * p.chip_supply_gain * excess_margin
                 * onshoring_boost)
