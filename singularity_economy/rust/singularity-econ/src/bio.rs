@@ -277,7 +277,7 @@ impl BioState {
             elite_longevity_frame: 0.15,
             merge_frame: 0.10,
             ai_drug_pool_b: bp.drug_pool_2026_b,
-            longevity_pool_b: 0.06 * 1000.0 / 1000.0, // ~$0.06T narrow base
+            longevity_pool_b: 60.0, // ~$0.06T narrow base = $60B (audit A12: was 0.06, 1000x too small for a $B-unit pool)
             bci_pool_b: 0.5,
             hc_cost_history: Vec::new(),
             years: 0,
@@ -462,7 +462,9 @@ impl BioState {
         // within-family ceiling; "hundreds" of babies). Material cognitive
         // effect ~0; the coupling is the wealth-gated designer-baby SYMBOL,
         // whose SALIENCE erodes solidarity out of proportion to its size.
-        let t = self.years as f64;
+        // Audit A13: reuse the line-334 `t` — a second `let t = self.years` here
+        // (after the +=1 at line 336) ran the enhancement ramp one year ahead of
+        // every other ramp in this step. One clock.
         let enhancement_adoption =
             ramp(bp.enh_adopt_2026, bp.enh_adopt_2050, t, 24.0);
         // IVG / iterated selection: the 2040s+ discontinuity (multi-SD gains
