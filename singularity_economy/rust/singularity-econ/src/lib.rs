@@ -207,6 +207,15 @@ pub struct Params {
     /// one-year lag — so cheap clean power actually relieves the core power/cost
     /// constraint instead of the price reflecting only datacenter utilization.
     pub energy_price_gain: f64,
+    /// AI-capex bubble/bust reflexivity gain (new-dynamic spine; 0 = off, baseline
+    /// preserved). Turns the model's smooth capacity glut into a reflexive
+    /// boom-bust: buoyant `equity_sentiment` amplifies desired capex and eases
+    /// credit (the R-loop valuations→capex→growth→valuations), then a capacity
+    /// glut past ~1.3 cracks sentiment ASYMMETRICALLY (Minsky: booms build slowly,
+    /// busts crash fast), cutting capex and tightening credit into the downturn.
+    /// This is the Minsky/Soros loop the core otherwise lacks; it fattens the left
+    /// tail on every silicon/power name.
+    pub equity_sentiment_gain: f64,
     /// MC-drawn bio/cyber dread shocks (empty = baseline unchanged).
     pub dread_shocks: Vec<bio::shocks::DreadShock>,
     /// Open-weight model share (erodes bio safeguard efficacy).
@@ -402,6 +411,7 @@ impl Default for Params {
             regions: regions::RegionParams::default(),
             food_tension_gain: 0.0,
             energy_price_gain: 0.0,
+            equity_sentiment_gain: 0.0, // off by default (satellite); ~1.0 is a live boom-bust scenario
             dread_shocks: Vec::new(),
             open_weight_share: 0.3,
             incident_year: 0,
@@ -641,6 +651,9 @@ pub struct YearState {
     pub perceived_growth: f64,
     pub queue_ratio: f64,
     pub capacity_glut: f64,
+    /// AI-capex reflexivity stock (1.0 = neutral; >1 euphoria, <1 Minsky bust).
+    /// Frozen at 1.0 unless `equity_sentiment_gain > 0`.
+    pub equity_sentiment: f64,
     pub ip_toll_margin: f64,
     pub gdp: f64,
     // society layer (end-of-year stocks; neutral defaults when layer off)
@@ -731,6 +744,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut energy_cost_index_prev = 1.0_f64; // one-year-lagged energy→core price coupling (C3)
     let mut wage_index_cog = 1.0_f64; // wage-compression stock (1.0 = no compression)
     let mut wage_index_phys = 1.0_f64;
+    let mut equity_sentiment = 1.0_f64; // AI-capex bubble/bust reflexivity stock (1.0 = neutral)
     let mut prev_adopt_region = 0.08_f64;
     #[allow(unused_assignments)]
     let mut human_cog_m = p.cognitive_workers_m;
@@ -977,11 +991,32 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         perceived_growth += p.perception_smoothing
             * (demand_signal_growth - perceived_growth);
         let herd = l.r3_capex_momentum * p.momentum_gain * perceived_growth.max(0.0);
+        // ---- Financial-fragility spine: AI-capex bubble/bust reflexivity (gated) ----
+        // Update the equity-sentiment stock from LAST year's realized glut and margin
+        // (lagged, so no in-loop ordering hazard). Asymmetric Minsky dynamics: a
+        // capacity glut past 1.3 cracks sentiment fast toward a fear floor; otherwise
+        // it builds slowly on AI-complex profitability + demand momentum.
+        // equity_sentiment_gain = 0 (default) leaves the stock frozen at 1.0.
+        if p.equity_sentiment_gain > 0.0 {
+            let prev_glut = out.last().map_or(0.9, |s| s.capacity_glut);
+            if prev_glut > 1.3 {
+                let floor = (1.0 - 1.2 * (prev_glut - 1.3)).max(0.35);
+                equity_sentiment += 0.6 * (floor - equity_sentiment); // fast crack
+            } else {
+                let boom = 1.0
+                    + 0.6 * (silicon_margin - p.normal_margin).max(0.0)
+                    + 0.3 * perceived_growth.max(0.0);
+                equity_sentiment += 0.2 * (boom - equity_sentiment); // slow build
+            }
+        }
+        // Deviation actually applied (0 when the spine is gated off → byte-identical).
+        let es_dev = p.equity_sentiment_gain * (equity_sentiment - 1.0);
         // B3 closure: bottleneck prices throttle desired capex growth.
         // Desire base avoids the absorbing zero-capex state (round-2 fix 2).
         let desire_base = last_capex.max(0.3 * last_desired);
         let desired_capex = desire_base * (1.0 + (perceived_growth + herd) / afford)
-            * gfx.demand_mult;
+            * gfx.demand_mult
+            * (1.0 + es_dev).max(0.2); // sentiment amplifies the boom, cuts the bust
         last_desired = desired_capex;
 
         // ---- B4: credit ----
@@ -1004,13 +1039,20 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             0.0
         };
         let macro_credit = macro_out.as_ref().map_or(0.0, |m| m.credit_injection);
-        let credit_mult = 1.0
-            / (1.0 + l.b4_credit
+        // Reflexive credit: buoyant sentiment eases spreads (es_dev>0 shrinks the
+        // denominator → higher credit_mult), a Minsky bust tightens them into a
+        // crunch (es_dev<0 widens it). Floored so the denominator stays positive in
+        // an extreme boom. es_dev = 0 when the spine is gated off → byte-identical.
+        let credit_denom = (1.0
+            + l.b4_credit
                 * (p.credit_gain * (leverage - p.debt_revenue_tolerance).max(0.0)
                     + soc_credit
                     + macro_credit
                     + gfx.spread
-                    + bfx.spread));
+                    + bfx.spread)
+            - es_dev * l.b4_credit * 2.0)
+            .max(0.2);
+        let credit_mult = 1.0 / credit_denom;
 
         // ---- constraints ----
         let hw_cost_index = (1.0 - p.hw_cost_decline).powi(year - p.start_year);
@@ -1681,6 +1723,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             perceived_growth,
             queue_ratio,
             capacity_glut,
+            equity_sentiment,
             ip_toll_margin,
             gdp,
             sentiment: soc.sentiment,

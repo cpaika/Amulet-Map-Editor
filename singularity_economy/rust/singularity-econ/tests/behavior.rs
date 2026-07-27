@@ -17,6 +17,32 @@ fn by_year(states: &[YearState], year: i32) -> &YearState {
     states.iter().find(|s| s.year == year).unwrap()
 }
 
+// New-dynamic spine: AI-capex bubble/bust reflexivity. With the gain on, equity
+// sentiment must build a euphoria (>1) and then crack asymmetrically past a glut
+// (<1), and the post-glut capex path must fall materially BELOW the smooth baseline
+// — the Minsky boom-bust the core otherwise lacks. Gain 0 is byte-identical
+// (enforced by the golden snapshot).
+#[test]
+fn equity_sentiment_spine_makes_a_boom_bust() {
+    let b = base();
+    let mut p = Params::default();
+    p.equity_sentiment_gain = 1.0;
+    let c = run(p);
+    let peak_es = c.iter().map(|s| s.equity_sentiment).fold(0.0_f64, f64::max);
+    let trough_es = c.iter().map(|s| s.equity_sentiment).fold(9.0_f64, f64::min);
+    assert!(peak_es > 1.1, "must build euphoria: peak {peak_es}");
+    assert!(trough_es < 0.7, "must crack into a Minsky bust: trough {trough_es}");
+    // the crack must come AFTER the euphoria (asymmetric build-then-collapse)
+    let peak_yr = c.iter().max_by(|a, b| a.equity_sentiment.partial_cmp(&b.equity_sentiment).unwrap()).unwrap().year;
+    let trough_yr = c.iter().max_by(|a, b| b.equity_sentiment.partial_cmp(&a.equity_sentiment).unwrap()).unwrap().year;
+    assert!(trough_yr > peak_yr, "bust must follow boom: peak {peak_yr}, trough {trough_yr}");
+    // and the bust deepens the capex drawdown vs the smooth baseline
+    let last = |v: &[YearState]| v.last().unwrap().ai_capex;
+    assert!(last(&c) < last(&b) * 0.7, "bust must cut capex vs baseline: {} vs {}", last(&c), last(&b));
+    // baseline (gain 0) leaves sentiment frozen at 1.0
+    assert!(b.iter().all(|s| (s.equity_sentiment - 1.0).abs() < 1e-12), "gated off => frozen at 1.0");
+}
+
 // New-dynamic: wage compression. With the gain on, the human wage POOLS must fall
 // further than the headcount-only baseline (the displaced-labor reserve compresses
 // the price of the remaining jobs) — the labor-income channel the wage-linked shorts
