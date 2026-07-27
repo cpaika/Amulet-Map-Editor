@@ -13,7 +13,7 @@
 
 use singularity_econ::materials::{MaterialsParams, MaterialsState};
 use singularity_econ::{simulate, Params, YearState};
-use singularity_econ::geopolitics::{GeoShock, ShockKind};
+use singularity_econ::geopolitics::GeoShock;
 
 fn to2050(mut p: Params) -> Vec<YearState> {
     p.end_year = 2050;

@@ -195,9 +195,12 @@ pub struct Evaluation {
 /// the flat-rate model silently ignored (gap-scan #1).
 ///
 /// `dr_beta` is the equity-duration beta from `MacroParams` (audit A3: this
-/// was a frozen `const 0.60`, decoupling the discount from the layer that
-/// owns it and making it un-perturbable in the MC sampler). Default 0.60,
-/// so threading the default is behavior-preserving.
+/// was a frozen `const 0.60`, decoupling the discount from the layer that owns
+/// it). Threading it makes the coupling tunable; default 0.60 is
+/// behavior-preserving. NB: the current callers still pass the DEFAULT
+/// (`book()` and `main`), so the discount is not yet perturbed per-draw — wiring
+/// the MC sampler to pass `p.macrofin.dr_beta` into the valuation path is a
+/// separate follow-up.
 fn scenario_discount(states: &[YearState], dr_beta: f64) -> f64 {
     let n = states.len().max(1) as f64;
     let mean_long: f64 = states.iter().map(|s| s.long_rate).sum::<f64>() / n;

@@ -161,7 +161,7 @@ impl Default for BioParams {
             synth_gate_2026: 0.20,
             synth_gate_2036: 0.35,
             synth_reclose_step: 0.06,
-            longevity_pool_2035_b: 64.0,
+            longevity_pool_2035_b: 140.0, // ~9.5% CAGR from the $60B 2026 base over ~9yr (was 64.0, which the $60B init slammed in year 1, killing the funding-cyclical growth dynamic)
             bci_pool_2035_b: 8.0,
             bci_pma_year: 2029,
             bci_roadmap_haircut: 0.30,
