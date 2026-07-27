@@ -278,6 +278,20 @@ funded share accumulates sector debt → debt/revenue drives spreads → capital
 ceiling tightens. The levered-periphery accident is now a model outcome with
 a probability, not a narrative risk.
 
+**R9 — AI-capex reflexivity / Minsky boom-bust (reinforcing, asymmetric; gated,
+default OFF).** An `equity_sentiment` stock closes a Soros/Minsky loop the smooth
+R3 overshoot otherwise lacks: buoyant valuations amplify desired capex and ease the
+B4 credit denominator → growth → higher valuations. A capacity glut past ~1.3
+cracks sentiment ASYMMETRICALLY (booms build slowly, busts crash fast), cutting
+capex and tightening credit into the downturn. Two channels chain off it — an
+equity **wealth-effect** on GDP (`wealth_effect_gain`: ΔSentiment → consumption via
+MPC × AI wealth share, making GdpIndex cyclical) and, still to build, circular
+**vendor financing** (chip→cloud recycled-capital revenue whose quality collapses in
+a bust). Gated by `equity_sentiment_gain`/`wealth_effect_gain = 0` (baseline
+byte-identical); at gain 1 the model produces a real cycle — sentiment ~1.28 by
+2032 then ~0.39 by 2036, ai_capex ~2.9 vs the smooth baseline's ~7.6 — the fat left
+tail behind every silicon/power name's downside.
+
 ## Loop diagram
 
 ```mermaid
