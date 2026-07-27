@@ -47,6 +47,32 @@ fn q_governor_brakes_investment_below_the_return_hurdle() {
     assert!(hi < lo, "a higher return hurdle must brake investment: {hi} vs {lo}");
 }
 
+// Interaction guard: the four first-principles supply/cost/pricing mechanisms added in
+// this cycle must COMPOSE without pathology. They share state — Wright's law feeds the
+// q-governor's replacement-cost denominator, two-sided pricing feeds electricity margin,
+// commoditization feeds the q-governor's profit numerator — so their combination is
+// tested here, not just each in isolation. Must stay finite, keep compute & GDP growing.
+#[test]
+fn first_principles_supply_mechanisms_compose() {
+    let p = Params {
+        wright_gain: 1.0,
+        q_governor_gain: 0.5,
+        power_glut_price_gain: 0.6,
+        ai_commoditization_gain: 0.5,
+        ..Params::default()
+    };
+    let v = run(p);
+    for s in &v {
+        for x in [s.gdp, s.compute_stock, s.ai_capex, s.profits.ai_services,
+                  s.profits.electricity, s.power_margin] {
+            assert!(x.is_finite(), "non-finite at {}", s.year);
+        }
+        assert!(s.gdp > 0.0 && s.compute_stock > 0.0, "positive at {}", s.year);
+    }
+    assert!(v.last().unwrap().compute_stock > v[0].compute_stock, "compute must still grow");
+    assert!(v.last().unwrap().gdp > v[0].gdp, "GDP must still grow");
+}
+
 // AI-services commoditization. The AI provider's share of displaced-wage surplus is a
 // constant 0.45 by default (durable pricing power). gain=0 => byte-identical (golden).
 // With the gain on, the captured share erodes as the market matures (adoption rises),
