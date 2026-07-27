@@ -4,7 +4,9 @@
 //! event, not a test to silence.
 
 use singularity_econ::companies::universe;
-use singularity_econ::scenarios::{scenario_params, scenario_states};
+use singularity_econ::scenarios::{
+    scenario_params, scenario_states, scenario_states_enhanced,
+};
 use singularity_econ::valuation::{
     earnings_path, evaluate, evaluate_all, implied_cagr, pv, Company,
     EmergingPool, RatioPool, Stance, DISCOUNT_RATE, HORIZON, SCENARIO_PROBS,
@@ -187,6 +189,40 @@ fn robotics_longs_split_component_vs_integrator() {
     for t in ["SYM", "MP"] {
         let u = upside(&rows, t);
         assert!(u < nab, "{t} ({u}) must trail the component supplier ({nab})");
+    }
+}
+
+// Enhanced-realism enable set (gated_dynamics_menu.md): turning the reflexive
+// AI-capex spine + wealth effect + transmission lag + wage compression + JG tilt on
+// TOGETHER must re-rank the book, not just perturb it. The load-bearing effect is the
+// Minsky bust: the silicon/AI-capex complex (NVDA, AVGO, TSM, BESI) must lose upside
+// vs the shipped baseline (fatter left tail), while the wage-linked shorts stay short.
+// This is the review lens, not the shipped default — it must run without pathology.
+#[test]
+fn enhanced_realism_reranks_the_book() {
+    let base = book();
+    let enh: Vec<(String, f64)> = evaluate_all(&universe(), &scenario_states_enhanced(), DR_BETA)
+        .into_iter()
+        .map(|e| (e.ticker.to_string(), e.expected_upside))
+        .collect();
+    // All finite, and the ranking actually MOVED (not a no-op enable set).
+    assert!(enh.iter().all(|(_, u)| u.is_finite()), "enhanced book must stay finite");
+    let base_top = &base[0].0;
+    let enh_top = &enh[0].0;
+    let moved = enh.iter().any(|(t, u)| (u - upside(&base, t)).abs() > 0.05);
+    assert!(moved, "enhanced enable set must re-rank the book, base_top={base_top} enh_top={enh_top}");
+    // The reflexive-bust left tail: the AI-capex complex must lose upside vs baseline.
+    for t in ["NVDA", "AVGO", "TSM", "BESI.AS"] {
+        assert!(
+            upside(&enh, t) < upside(&base, t) - 0.10,
+            "{t} must lose upside under the reflexive bust: enh {} vs base {}",
+            upside(&enh, t),
+            upside(&base, t)
+        );
+    }
+    // The wage-linked shorts remain short (wage compression can only deepen them).
+    for t in ["RHI", "ADP", "PAYX"] {
+        assert!(upside(&enh, t) < -0.3, "{t} must stay short under enhanced realism: {}", upside(&enh, t));
     }
 }
 

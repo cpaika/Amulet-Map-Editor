@@ -77,3 +77,33 @@ pub fn scenario_states() -> Vec<(&'static str, Vec<YearState>)> {
         .map(|(name, p)| (name, simulate(&p)))
         .collect()
 }
+
+/// The coherent "enhanced-realism" enable set (output/history/gated_dynamics_menu.md).
+/// Turns the gated satellites on TOGETHER — the reflexive AI-capex spine + wealth
+/// effect (fatter left tails), transmission-delivery lag (firmer power-rent), wage
+/// compression (deeper wage-linked shorts), and a partial job-guarantee tilt (lower
+/// sovereign rate). Every gain is a hypothesis, not the shipped baseline; this is the
+/// review lens, not the default. Applied on top of whatever a scenario already sets.
+pub fn enhanced_realism(mut p: Params) -> Params {
+    p.equity_sentiment_gain = 1.0;
+    p.wealth_effect_gain = 1.0;
+    p.transmission_gain = 0.5;
+    p.wage_compression_cog_gain = 0.4;
+    p.wage_compression_phys_gain = 0.4;
+    p.society.jg_share = 0.3;
+    p
+}
+
+pub fn scenario_params_enhanced() -> Vec<(&'static str, Params)> {
+    scenario_params()
+        .into_iter()
+        .map(|(name, p)| (name, enhanced_realism(p)))
+        .collect()
+}
+
+pub fn scenario_states_enhanced() -> Vec<(&'static str, Vec<YearState>)> {
+    scenario_params_enhanced()
+        .into_iter()
+        .map(|(name, p)| (name, simulate(&p)))
+        .collect()
+}

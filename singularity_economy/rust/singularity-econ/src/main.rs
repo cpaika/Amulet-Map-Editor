@@ -7,7 +7,7 @@ use rand::distributions::{Distribution, Uniform};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use singularity_econ::companies::{load_financials, universe};
-use singularity_econ::scenarios::scenario_states;
+use singularity_econ::scenarios::{scenario_states, scenario_states_enhanced};
 use singularity_econ::valuation::{evaluate_all, Stance};
 use singularity_econ::{simulate, Params};
 use std::collections::BTreeMap;
@@ -22,7 +22,10 @@ fn main() {
             golden(args.get(2).map(String::as_str).unwrap_or(default));
         }
         Some("book") => {
-            book(args.get(2).map(String::as_str));
+            book(args.get(2).map(String::as_str), false);
+        }
+        Some("book-enhanced") => {
+            book(args.get(2).map(String::as_str), true);
         }
         Some("sa") => {
             let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(20_000);
@@ -35,7 +38,7 @@ fn main() {
             monte_carlo(n, seed);
         }
         Some(cmd) => {
-            eprintln!("unknown command: {cmd} (use: run | book [financials.json] | golden [path] | mc <n> <seed> | sa <n> <seed>)");
+            eprintln!("unknown command: {cmd} (use: run | book [financials.json] | book-enhanced [financials.json] | golden [path] | mc <n> <seed> | sa <n> <seed>)");
             std::process::exit(2);
         }
     }
@@ -107,7 +110,7 @@ fn golden(path: &str) {
     eprintln!("snapshot written to {path}");
 }
 
-fn book(financials_path: Option<&str>) {
+fn book(financials_path: Option<&str>, enhanced: bool) {
     let mut comps = universe();
     let default = concat!(env!("CARGO_MANIFEST_DIR"), "/../../output/financials.json");
     let path = financials_path.unwrap_or(default);
@@ -118,7 +121,10 @@ fn book(financials_path: Option<&str>) {
         }
         Err(_) => eprintln!("note: {path} not found; using built-in (synced) financials"),
     }
-    let states = scenario_states();
+    if enhanced {
+        eprintln!("note: enhanced-realism enable set (spine+wealth+transmission+wage-compression+JG)");
+    }
+    let states = if enhanced { scenario_states_enhanced() } else { scenario_states() };
     let dr_beta = singularity_econ::macrofin::MacroParams::default().dr_beta;
     let rows = evaluate_all(&comps, &states, dr_beta);
     println!("{:<10} {:<6} {:>12} {:>8} {:>8} {:>8}",

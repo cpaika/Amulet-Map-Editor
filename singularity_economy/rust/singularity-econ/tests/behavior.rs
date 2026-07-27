@@ -44,13 +44,9 @@ fn compute_governance_throttles_the_flywheel() {
 // dynamic is tested in isolation elsewhere; this guards their combination.
 #[test]
 fn enhanced_scenario_composes_without_pathology() {
-    let mut p = Params::default();
-    p.equity_sentiment_gain = 1.0;
-    p.wealth_effect_gain = 1.0;
-    p.transmission_gain = 0.5;
-    p.wage_compression_cog_gain = 0.4;
-    p.wage_compression_phys_gain = 0.4;
-    p.society.jg_share = 0.3;
+    // Single source of truth for the enable set — the same helper `book-enhanced`
+    // applies to every scenario, so this lock can never drift from what ships.
+    let p = singularity_econ::scenarios::enhanced_realism(Params::default());
     let v = run(p);
     for s in &v {
         for x in [s.gdp, s.compute_stock, s.equity_sentiment, s.pools.human_cognitive_wages,
