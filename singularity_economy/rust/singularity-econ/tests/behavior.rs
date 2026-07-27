@@ -43,6 +43,40 @@ fn equity_sentiment_spine_makes_a_boom_bust() {
     assert!(b.iter().all(|s| (s.equity_sentiment - 1.0).abs() < 1e-12), "gated off => frozen at 1.0");
 }
 
+// New-dynamic: equity wealth-effect chains off the spine and makes GDP cyclical —
+// the worst year-over-year GDP growth under (spine + wealth effect) must be BELOW
+// the spine alone (the wealth channel deepens the bust). Off => byte-identical.
+#[test]
+fn wealth_effect_deepens_the_gdp_bust() {
+    let min_yoy = |v: &[YearState]| {
+        v.windows(2)
+            .map(|w| w[1].gdp / w[0].gdp - 1.0)
+            .fold(f64::MAX, f64::min)
+    };
+    let mut spine = Params::default();
+    spine.equity_sentiment_gain = 1.0;
+    let s = run(spine);
+    let mut both = Params::default();
+    both.equity_sentiment_gain = 1.0;
+    both.wealth_effect_gain = 1.0;
+    let bth = run(both);
+    assert!(
+        min_yoy(&bth) < min_yoy(&s),
+        "wealth effect must deepen the GDP bust: {} !< {}",
+        min_yoy(&bth),
+        min_yoy(&s)
+    );
+    // wealth effect with the spine OFF does nothing (frozen sentiment => no change)
+    let mut we_only = Params::default();
+    we_only.wealth_effect_gain = 1.0;
+    let base_gdp: Vec<f64> = base().iter().map(|s| s.gdp).collect();
+    let we_gdp: Vec<f64> = run(we_only).iter().map(|s| s.gdp).collect();
+    assert!(
+        base_gdp.iter().zip(&we_gdp).all(|(a, b)| (a - b).abs() < 1e-9),
+        "wealth effect must be inert without the spine"
+    );
+}
+
 // New-dynamic: wage compression. With the gain on, the human wage POOLS must fall
 // further than the headcount-only baseline (the displaced-labor reserve compresses
 // the price of the remaining jobs) — the labor-income channel the wage-linked shorts

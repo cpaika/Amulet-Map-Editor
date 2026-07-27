@@ -216,6 +216,14 @@ pub struct Params {
     /// This is the Minsky/Soros loop the core otherwise lacks; it fattens the left
     /// tail on every silicon/power name.
     pub equity_sentiment_gain: f64,
+    /// Equity wealth-effect on consumption (new-dynamic quick-win; 0 = off). Chains
+    /// off the reflexivity spine: the YoY change in `equity_sentiment` (a valuation
+    /// proxy for the AI-equity complex) transmits to real GDP via a marginal
+    /// propensity to consume (~4c/$) scaled by the AI complex's share of wealth. It
+    /// only bites when the spine is also on (a frozen sentiment has zero change), so
+    /// it deepens the bust and froths the boom — making the broad GdpIndex pool
+    /// genuinely cyclical rather than a smooth trend.
+    pub wealth_effect_gain: f64,
     /// MC-drawn bio/cyber dread shocks (empty = baseline unchanged).
     pub dread_shocks: Vec<bio::shocks::DreadShock>,
     /// Open-weight model share (erodes bio safeguard efficacy).
@@ -412,6 +420,7 @@ impl Default for Params {
             food_tension_gain: 0.0,
             energy_price_gain: 0.0,
             equity_sentiment_gain: 0.0, // off by default (satellite); ~1.0 is a live boom-bust scenario
+            wealth_effect_gain: 0.0,    // off by default; chains off the spine
             dread_shocks: Vec::new(),
             open_weight_share: 0.3,
             incident_year: 0,
@@ -1512,13 +1521,19 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             0.0
         };
         let unrest_cost = if soc_on { soc.unrest_gdp_cost() } else { 0.0 };
+        // Equity wealth-effect (gated, chains off the spine): the YoY change in
+        // equity_sentiment moves consumption via MPC x the AI complex's wealth share.
+        // Zero when either gain is off (a frozen sentiment has no change).
+        let prev_es = out.last().map_or(1.0, |s| s.equity_sentiment);
+        let wealth_effect = p.wealth_effect_gain * (equity_sentiment - prev_es) * ai_share;
         gdp *= 1.0
             + (p.base_gdp_growth + p.productivity_passthrough * ai_share * 0.5
                 - p.transition_drag * new_disp * (p.cognitive_wage_bill / gdp)
                     * drag_mult
                 - compliance
                 - unrest_cost
-                - bfx.gdp_drag);
+                - bfx.gdp_drag
+                + wealth_effect);
 
         // ---- demography advances first: it filters what politics sees ----
         let election = (year - p.start_year) % p.society.election_period == 0;
