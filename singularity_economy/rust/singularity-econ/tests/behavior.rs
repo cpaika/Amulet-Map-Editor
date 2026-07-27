@@ -17,6 +17,26 @@ fn by_year(states: &[YearState], year: i32) -> &YearState {
     states.iter().find(|s| s.year == year).unwrap()
 }
 
+// New-dynamic: transmission/HVDC delivery lag. With the gain on, generation that
+// outruns the transformer/HVDC ramp cannot energize — so usable AI power is lower
+// and the power constraint is TIGHTER (higher power margin, longer rents, bullish
+// grid-equipment/IPP names). Compute still grows (not collapsed). Off => baseline.
+#[test]
+fn transmission_lag_tightens_power() {
+    let b = base();
+    let mut p = Params::default();
+    p.transmission_gain = 1.0;
+    let t = run(p);
+    // usable AI power is capped below the unconstrained baseline
+    assert!(by_year(&t, 2036).ai_power_gw < by_year(&b, 2036).ai_power_gw, "transmission must cap usable power");
+    // power stays scarcer (peak margin at/above baseline across the boom)
+    let pm_t = t.iter().map(|s| s.power_margin).fold(f64::MIN, f64::max);
+    let pm_b = b.iter().map(|s| s.power_margin).fold(f64::MIN, f64::max);
+    assert!(pm_t >= pm_b - 1e-9, "power margin must not fall: {pm_t} vs {pm_b}");
+    // compute still grows strongly (constraint, not collapse)
+    assert!(by_year(&t, 2036).compute_stock > 0.7 * by_year(&b, 2036).compute_stock, "compute must not collapse");
+}
+
 // New-dynamic spine: AI-capex bubble/bust reflexivity. With the gain on, equity
 // sentiment must build a euphoria (>1) and then crack asymmetrically past a glut
 // (<1), and the post-glut capex path must fall materially BELOW the smooth baseline

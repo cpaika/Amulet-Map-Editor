@@ -138,6 +138,19 @@ pub struct Params {
     // power
     pub ai_power_2026: f64,
     pub power_additions_2026: f64,
+    /// Transmission/HVDC delivery-lag coupling (new-dynamic; 0 = off, baseline
+    /// preserved). Today a generated GW is instantly a usable GW. In reality
+    /// large power transformers, HVDC converters and substations are a SEPARATE
+    /// lead-time bottleneck (GO-steel, ~2-4yr transformer lead times, Hitachi/
+    /// Siemens/GEV backlogs), so deliverable power lags generation. When >0, the
+    /// energized additions are capped by a transmission-throughput stock that ramps
+    /// at `transmission_buildout_gwpy`; the gain in [0,1] scales how hard the cap
+    /// binds. Tighter deliverable power = longer power rents (bullish GEV/POWL/
+    /// VST/CEG — the bottleneck IS the grid-equipment makers' product).
+    pub transmission_gain: f64,
+    /// Transmission-capacity growth RATE (transformer/HVDC throughput). Kept below
+    /// peak AI-power demand growth so it lags and binds in the boom.
+    pub transmission_growth: f64,
     pub power_base_growth: f64,
     pub power_supply_gain: f64,
     pub power_growth_ceiling: f64,
@@ -386,6 +399,8 @@ impl Default for Params {
             hw_cost_decline: 0.15,
             ai_power_2026: 58.0,
             power_additions_2026: 30.0,
+            transmission_gain: 0.0,      // off by default; ~1.0 is a live transmission-bound scenario
+            transmission_growth: 0.26,   // ~26%/yr base transformer/HVDC ramp; below peak power demand growth
             power_base_growth: 0.08,
             power_supply_gain: 0.55,
             power_growth_ceiling: 0.40,
@@ -727,6 +742,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut compute_stock = 1.0_f64;
     let mut algo_eff = 1.0_f64;
     let mut ai_power = p.ai_power_2026;
+    let mut transmission_capacity = p.ai_power_2026; // deliverable-power ceiling stock (transformers/HVDC)
     let mut chip_capacity = p.chip_capacity_2026;
     let mut ip_capacity = chip_capacity * 0.18;
     let mut component_capacity = 0.0_f64;
@@ -1179,7 +1195,24 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let pre_stock = compute_stock;
         let units_added = ai_capex / cost_per_unit;
         compute_stock = compute_stock * (1.0 - p.compute_deprec) + units_added;
-        ai_power += power_additions + robot_power_built_gw;
+        // Transmission/HVDC delivery lag (gated): transformers/HVDC converters ramp
+        // at a lead-time-bound rate; when the gain is on, generation that outruns the
+        // transmission stock cannot energize — capping the usable additions and
+        // stranding the excess as built-but-undeliverable generation. gain 0 →
+        // deliverable == power_additions → baseline byte-identical.
+        // Transmission capacity compounds (more transformer/HVDC factories) with a
+        // modest ASI lift, but at a rate kept BELOW peak AI-power demand growth so it
+        // lags and binds in the boom — the lead-time bottleneck.
+        transmission_capacity *= 1.0 + p.transmission_growth * (1.0 + 0.25 * asi);
+        let total_additions = power_additions + robot_power_built_gw;
+        let deliverable_additions = if p.transmission_gain > 0.0 {
+            let headroom = (transmission_capacity - ai_power).max(0.0);
+            let capped = total_additions.min(headroom);
+            total_additions + p.transmission_gain.clamp(0.0, 1.0) * (capped - total_additions)
+        } else {
+            total_additions
+        };
+        ai_power += deliverable_additions;
         let used_power = (compute_stock * gw_per_unit * power_jevons_mult).min(ai_power);
 
         // ---- utilizations, prices, margins ----
