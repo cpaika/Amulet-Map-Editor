@@ -101,6 +101,16 @@ pub struct Params {
     pub world_gdp: f64,
     pub cognitive_wage_bill: f64,
     pub physical_wage_bill: f64,
+    /// Wage-COMPRESSION gains (new-dynamic quick-win, default 0.0 = off, baseline
+    /// preserved). Today the human wage pools fall only via HEADCOUNT
+    /// (displacement); the average wage is frozen. But a growing reserve of
+    /// displaced/underemployed labor also compresses the PRICE of the remaining
+    /// jobs (a monopsony/oversupply channel), so the wage BILL falls faster than
+    /// employment. When >0, the effective average wage tracks a target
+    /// `1 - gain*displacement` (floored), reviving the wage-linked short sleeve
+    /// (RHI/ADP/PAYX/MAN) that a headcount-only pool leaves under-punished.
+    pub wage_compression_cog_gain: f64,
+    pub wage_compression_phys_gain: f64,
     pub cognitive_workers_m: f64,
     pub physical_workers_m: f64,
     pub base_gdp_growth: f64,
@@ -333,6 +343,8 @@ impl Default for Params {
             world_gdp: 115.0,
             cognitive_wage_bill: 28.0,
             physical_wage_bill: 34.0,
+            wage_compression_cog_gain: 0.0, // off by default (satellite); ~0.5 is a live scenario
+            wage_compression_phys_gain: 0.0,
             cognitive_workers_m: 950.0,
             physical_workers_m: 2400.0,
             base_gdp_growth: 0.03,
@@ -717,6 +729,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut region_state = regions::RegionState::new(&p.regions);
     let mut food_unrest_prev = 0.0_f64; // one-year-lagged food→tension coupling
     let mut energy_cost_index_prev = 1.0_f64; // one-year-lagged energy→core price coupling (C3)
+    let mut wage_index_cog = 1.0_f64; // wage-compression stock (1.0 = no compression)
+    let mut wage_index_phys = 1.0_f64;
     let mut prev_adopt_region = 0.08_f64;
     #[allow(unused_assignments)]
     let mut human_cog_m = p.cognitive_workers_m;
@@ -1380,6 +1394,19 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // ---- pools & profits ----
         let avg_cog_wage = p.cognitive_wage_bill / p.cognitive_workers_m;
         let avg_phys_wage = p.physical_wage_bill / p.physical_workers_m;
+        // Wage compression (new-dynamic, gated): a growing displaced/underemployed
+        // reserve compresses the PRICE of the remaining jobs. The effective average
+        // wage tracks a target `1 - gain*displacement` with sticky-wage lag, floored
+        // (minimum wage + transfers + essential-worker premium keep it off zero).
+        // Applied ONLY to the human WAGE POOLS below (not to the displaced-work value
+        // benchmark or robot_services), so the effect is the labor-income price
+        // channel the wage-linked shorts key on. gain = 0 (default) pins the index at
+        // 1.0 → baseline byte-identical.
+        const WAGE_FLOOR: f64 = 0.45;
+        let cog_wage_target = (1.0 - p.wage_compression_cog_gain * disp).max(WAGE_FLOOR);
+        let phys_wage_target = (1.0 - p.wage_compression_phys_gain * pd).max(WAGE_FLOOR);
+        wage_index_cog += 0.5 * (cog_wage_target - wage_index_cog);
+        wage_index_phys += 0.5 * (phys_wage_target - wage_index_phys);
         let displaced_value = disp * p.cognitive_workers_m * avg_cog_wage;
         let ai_services = displaced_value * 0.45
             + (cognitive_task_index - 1.0) * p.cognitive_wage_bill * 0.06;
@@ -1404,8 +1431,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             bpo: casualty(p.bpo_pool, p.bpo_beta, 0.03),
             seat_saas: casualty(p.seat_saas_pool, p.saas_beta, 0.08),
             prof_info: casualty(p.prof_info_pool, p.prof_info_beta, 0.05),
-            human_cognitive_wages: human_cog_m * avg_cog_wage,
-            human_physical_wages: phys_workers_m * avg_phys_wage,
+            human_cognitive_wages: human_cog_m * avg_cog_wage * wage_index_cog,
+            human_physical_wages: phys_workers_m * avg_phys_wage * wage_index_phys,
             gdp_index: gdp,
         };
         let electricity_margin = (0.30

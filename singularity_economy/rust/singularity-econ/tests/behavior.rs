@@ -17,6 +17,25 @@ fn by_year(states: &[YearState], year: i32) -> &YearState {
     states.iter().find(|s| s.year == year).unwrap()
 }
 
+// New-dynamic: wage compression. With the gain on, the human wage POOLS must fall
+// further than the headcount-only baseline (the displaced-labor reserve compresses
+// the price of the remaining jobs) — the labor-income channel the wage-linked shorts
+// key on. Gain 0 is byte-identical to baseline (enforced by the golden snapshot).
+#[test]
+fn wage_compression_deepens_the_wage_pool_decline() {
+    let b = base();
+    let mut cp = Params::default();
+    cp.wage_compression_cog_gain = 0.5;
+    cp.wage_compression_phys_gain = 0.5;
+    let c = run(cp);
+    let cog = |v: &[YearState]| by_year(v, 2036).pools.human_cognitive_wages;
+    let phys = |v: &[YearState]| by_year(v, 2036).pools.human_physical_wages;
+    assert!(cog(&c) < cog(&b), "cog wages must compress: {} !< {}", cog(&c), cog(&b));
+    assert!(phys(&c) < phys(&b), "phys wages must compress: {} !< {}", phys(&c), phys(&b));
+    // and the compression is bounded (floor), not a collapse to zero
+    assert!(cog(&c) > 0.3 * cog(&b), "compression must respect the wage floor");
+}
+
 // ---------------- pipeline ----------------
 
 #[test]
