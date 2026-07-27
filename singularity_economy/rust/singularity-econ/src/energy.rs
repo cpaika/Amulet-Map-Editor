@@ -31,6 +31,10 @@ pub struct EnergyParams {
     pub solar_capacity_factor: f64, // ~0.20 (annual avg)
     pub solar_buildout_2026_gwpy: f64, // GW/yr additions base
     pub solar_buildout_ceiling_gwpy: f64, // max GW/yr the world can install
+    /// Annual derate of the PRODUCING solar fleet: panel degradation (~0.5-0.7%/yr)
+    /// plus amortized 25yr cohort retirement (A15). Applies to `solar_gw` only;
+    /// `cum_solar_gw` stays GROSS so the Wright learning curve keeps ratcheting.
+    pub solar_degradation: f64,
     // --- batteries (firm-maker) ---
     pub battery_gwh_2026: f64,
     pub battery_cost_2026: f64, // $/kWh pack
@@ -55,6 +59,7 @@ impl Default for EnergyParams {
             cum_solar_gw_2026: 2200.0,
             solar_cost_2026: 0.10,            // ~$0.10/W module
             solar_wright_lr: 0.20,            // ~20%/doubling (Swanson); installed slower
+            solar_degradation: 0.007,         // ~0.7%/yr panel degradation + amortized retirement
             solar_capacity_factor: 0.20,
             solar_buildout_2026_gwpy: 650.0,  // ~600-700 GW/yr, ~60% China
             solar_buildout_ceiling_gwpy: 1800.0, // ~mfg cap 1.8 TW/yr (not binding)
@@ -155,7 +160,10 @@ impl EnergyState {
             * cheap
             * (1.0 + 0.6 * asi))
             .min(p.solar_buildout_ceiling_gwpy * region_mult.max(0.3));
-        self.solar_gw += self.solar_addition;
+        // A15: the producing fleet degrades/retires (panel derate + amortized 25yr
+        // cohort turnover) so clean share is not high-biased late; the cumulative
+        // GROSS stock keeps compounding for the Wright learning curve.
+        self.solar_gw = self.solar_gw * (1.0 - p.solar_degradation) + self.solar_addition;
         self.cum_solar_gw += self.solar_addition;
 
         // --- batteries: track solar for firmness, own Wright curve ---
