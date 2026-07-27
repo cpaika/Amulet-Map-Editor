@@ -135,6 +135,18 @@ pub struct Params {
     pub chip_growth_ceiling: f64,
     pub chip_pipeline_stages: usize,
     pub hw_cost_decline: f64,
+    /// Wright's-law learning curve (gated). The default `hw_cost_decline` makes compute
+    /// cost fall on CALENDAR time — independent of how much is built. With `wright_gain`
+    /// on, cost falls with CUMULATIVE production instead (each doubling of cumulative
+    /// units cuts unit cost by `wright_learning_rate`). This makes cost decline
+    /// ENDOGENOUS and reflexive (more buildout → cheaper compute → more units per capex
+    /// dollar) AND scenario-dependent: a low-buildout fizzle learns slower (higher unit
+    /// cost) than a fast-takeoff boom. Unlike the calendar's constant-forever decline,
+    /// the learning curve also SATURATES as the installed base explodes (each relative
+    /// doubling takes ever-more absolute volume), so late-horizon decline decelerates.
+    /// `wright_gain` blends calendar↔Wright geometrically; 0 => calendar (byte-identical).
+    pub wright_gain: f64,
+    pub wright_learning_rate: f64,
     // power
     pub ai_power_2026: f64,
     pub power_additions_2026: f64,
@@ -428,6 +440,8 @@ impl Default for Params {
             chip_growth_ceiling: 0.60, // audit B4: fab base growth ~60%/yr cap (was an absurd ASI-boosted >150%/yr)
             chip_pipeline_stages: 2,
             hw_cost_decline: 0.15,
+            wright_gain: 0.0,           // off by default (satellite); ~1.0 = pure learning curve
+            wright_learning_rate: 0.20, // 20% unit-cost cut per doubling of cumulative compute
             ai_power_2026: 58.0,
             power_additions_2026: 30.0,
             transmission_gain: 0.0,      // off by default; ~1.0 is a live transmission-bound scenario
@@ -784,6 +798,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let l = &p.loops;
 
     let mut compute_stock = 1.0_f64;
+    // Cumulative GROSS compute produced (Wright's-law learning base). Seeded at the
+    // initial stock so the year-1 learning ratio is 1.0 (cost == calendar cost at t0).
+    let mut cumulative_units = 1.0_f64;
     let mut algo_eff = 1.0_f64;
     let mut ai_power = p.ai_power_2026;
     let mut transmission_capacity = p.ai_power_2026; // deliverable-power ceiling stock (transformers/HVDC)
@@ -1088,6 +1105,21 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         }
         // Deviation actually applied (0 when the spine is gated off → byte-identical).
         let es_dev = p.equity_sentiment_gain * (equity_sentiment - 1.0);
+        // ---- compute unit cost: calendar decay blended with Wright's-law learning ----
+        // Calendar term (default): cost falls with time. Wright term (gated): cost falls
+        // with CUMULATIVE production — each doubling cuts cost by wright_learning_rate.
+        // Blended geometrically by wright_gain, so wright_gain=0 => calendar exactly
+        // (byte-identical). Computed once here (earliest use is the q-governor below) so
+        // the governor's replacement-cost and the compute-build step share one cost.
+        let calendar_cost = (p.ai_capex_2026 / 0.80)
+            * (1.0 - p.hw_cost_decline).powi(year - p.start_year);
+        let cost_per_unit = if p.wright_gain > 0.0 {
+            let b = -(1.0 - p.wright_learning_rate).ln() / 2.0_f64.ln(); // learning exponent
+            let wright_cost = (p.ai_capex_2026 / 0.80) * cumulative_units.max(1e-9).powf(-b);
+            calendar_cost.powf(1.0 - p.wright_gain) * wright_cost.powf(p.wright_gain)
+        } else {
+            calendar_cost
+        };
         // ---- G: Tobin's-q investment governor (gated) ----
         // First-principles capex: firms invest while the marginal value of installed
         // compute exceeds its replacement cost. Return on installed compute = the AI-
@@ -1102,12 +1134,10 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             out.last().map_or(1.0, |prev| {
                 let ai_profit =
                     prev.profits.ai_services + prev.profits.silicon + prev.profits.ip_tolls;
-                // Current replacement cost of a compute unit (Tobin's q denominator is
-                // CURRENT replacement cost, not historical) — the same deterministic
-                // cost curve used below at the compute-build step.
-                let unit_cost = (p.ai_capex_2026 / 0.80)
-                    * (1.0 - p.hw_cost_decline).powi(year - p.start_year);
-                let compute_value = (prev.compute_stock * unit_cost).max(1e-9);
+                // Replacement value of installed compute at the CURRENT unit cost
+                // (Tobin's q denominator is current replacement cost) — the shared
+                // cost_per_unit computed just above, so it tracks the learning curve.
+                let compute_value = (prev.compute_stock * cost_per_unit).max(1e-9);
                 // Effective hurdle = cost of capital + economic depreciation, where the
                 // cost of capital is the model's own sovereign long rate (B11) plus an
                 // equity risk premium — so debt-crowding rate spikes tighten the
@@ -1164,8 +1194,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let credit_mult = 1.0 / credit_denom;
 
         // ---- constraints ----
-        let hw_cost_index = (1.0 - p.hw_cost_decline).powi(year - p.start_year);
-        let cost_per_unit = (p.ai_capex_2026 / 0.80) * hw_cost_index;
+        // (cost_per_unit computed above, before the q-governor, with the learning curve)
 
         // deliver chip + ip capacity at the START of the year (same-year
         // convention as power); orders use last year's margins.
@@ -1309,6 +1338,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             (1.0 - p.compute_governance_gain * asi.clamp(0.0, 1.0)).max(0.0);
         let units_added = ai_capex / cost_per_unit * governance_throttle;
         compute_stock = compute_stock * (1.0 - p.compute_deprec) + units_added;
+        // Wright's-law learning base accumulates GROSS production (never depreciates —
+        // knowledge learned from building a chip persists after the chip retires).
+        cumulative_units += units_added;
         // Transmission/HVDC delivery lag (gated): transformers/HVDC converters ramp
         // at a lead-time-bound rate; when the gain is on, generation that outruns the
         // transmission stock cannot energize — capping the usable additions and

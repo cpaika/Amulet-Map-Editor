@@ -47,6 +47,43 @@ fn q_governor_brakes_investment_below_the_return_hurdle() {
     assert!(hi < lo, "a higher return hurdle must brake investment: {hi} vs {lo}");
 }
 
+// Wright's-law learning curve. Default compute cost falls on calendar time; with the
+// gain on it falls with CUMULATIVE production. gain=0 => byte-identical (golden). The
+// first-principles invariant: a higher learning rate (more cost reduction per doubling)
+// yields cheaper compute and thus MORE compute for the same capex/scenario — monotone.
+// And a low-buildout fizzle must end with HIGHER unit cost (less learning) than a
+// fast-takeoff boom at the same learning rate — cost is now endogenous to volume.
+#[test]
+fn wright_learning_curve_ties_cost_to_cumulative_volume() {
+    let terminal_compute = |lr: f64| {
+        run(Params { wright_gain: 1.0, wright_learning_rate: lr, ..Params::default() })
+            .last()
+            .unwrap()
+            .compute_stock
+    };
+    let (lo, mid, hi) = (terminal_compute(0.10), terminal_compute(0.20), terminal_compute(0.35));
+    for s in run(Params { wright_gain: 1.0, ..Params::default() }) {
+        assert!(s.compute_stock.is_finite(), "finite compute at {}", s.year);
+    }
+    assert!(
+        hi > mid && mid > lo,
+        "faster learning must yield more compute: {lo} < {mid} < {hi}"
+    );
+    // Endogenous & scenario-dependent: fizzle (tiny buildout → little learning) must end
+    // with less compute-per-dollar than fast-takeoff. We proxy unit cost by compute
+    // built relative to cumulative capex; simplest robust check is that the boom's
+    // terminal compute exceeds the fizzle's under the SAME learning rate.
+    let fizzle = run(Params {
+        wright_gain: 1.0, singularity_year: 2099, robotics_year: 2099,
+        adoption_halflife: 4.0, max_displacement_rate: 0.05, ..Params::default()
+    });
+    let fast = run(Params { wright_gain: 1.0, singularity_boost: 3.0, adoption_halflife: 1.0, ..Params::default() });
+    assert!(
+        fast.last().unwrap().compute_stock > fizzle.last().unwrap().compute_stock,
+        "a boom must out-learn and out-build a fizzle"
+    );
+}
+
 // New-dynamic: compute-governance / licensing regime (B12). With the gain on, a
 // compute-cap regime that tightens as capability rises throttles compute added at
 // the SOURCE of the R1 flywheel — so compute_stock ends well below baseline (caps
