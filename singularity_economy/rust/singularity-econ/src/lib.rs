@@ -774,6 +774,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     // (P0). Seeded near the energy layer's 2026 firm power; non-binding in the
     // baseline (AI is a small share early), so byte-identical there.
     let mut firm_power_prev = 2700.0_f64;
+    #[allow(unused_assignments)]
     let mut physical_power_binds = false;
     let mut chip_capacity = p.chip_capacity_2026;
     let mut ip_capacity = chip_capacity * 0.18;
