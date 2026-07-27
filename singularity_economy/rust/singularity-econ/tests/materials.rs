@@ -51,7 +51,13 @@ fn ceiling_is_finite() {
     assert!(out.robot_ceiling_m.is_finite() && out.robot_ceiling_m > 0.0);
 }
 
-// A China embargo lowers the ceiling and makes magnets the binding input.
+// A China embargo lowers the overall ceiling (the broad China-cut bites every
+// China-dominant input by its china_share). Note post-audit-B5: with a DEFENSIBLE
+// reducer supply curve (18%/yr, capped), precision reducers start ~24x tighter than
+// magnets (0.5M vs 12M robots) and remain the near-term Liebig binder even under a
+// 90% magnet embargo — a legitimate finding (the reducer line is so tight a magnet
+// embargo raises COST and matters long-run, but doesn't reorder the near-term
+// binder). The magnet-specific embargo channel is tested separately below.
 #[test]
 fn embargo_lowers_the_ceiling() {
     let mp = MaterialsParams::default();
@@ -60,6 +66,34 @@ fn embargo_lowers_the_ceiling() {
     assert!(
         embargoed.robot_ceiling_m < calm.robot_ceiling_m,
         "embargo must cut the ceiling: {} !< {}",
+        embargoed.robot_ceiling_m, calm.robot_ceiling_m
+    );
+}
+
+/// Params where the manufactured/mined lines OTHER than magnets are given ample
+/// capacity, so the rare-earth-magnet embargo channel can be tested in isolation
+/// (magnets bind). Mirrors a world where the reducer/sensor ramp has caught up and
+/// the China rare-earth chokepoint is the live constraint.
+fn magnet_binding_params() -> MaterialsParams {
+    let mut mp = MaterialsParams::default();
+    for inp in mp.inputs.iter_mut() {
+        if inp.name != "rare_earth_magnets" {
+            inp.robots_supported_2028_m *= 100.0; // relieve the non-magnet lines
+        }
+    }
+    mp
+}
+
+// With the non-magnet lines relieved, the rare-earth embargo makes magnets bind
+// and cuts the ceiling — the magnet-specific China-embargo channel.
+#[test]
+fn magnet_embargo_binds_and_cuts_when_isolated() {
+    let mp = magnet_binding_params();
+    let calm = stepn(&mp, 0.6, 3.0, 1.0, false, 4);
+    let embargoed = stepn(&mp, 0.6, 3.0, 1.0, true, 4);
+    assert!(
+        embargoed.robot_ceiling_m < calm.robot_ceiling_m,
+        "magnet embargo must cut the ceiling: {} !< {}",
         embargoed.robot_ceiling_m, calm.robot_ceiling_m
     );
     assert_eq!(embargoed.binding, "rare_earth_magnets");
@@ -138,8 +172,9 @@ fn rare_earth_embargo_separates_from_chip_shock() {
     // minerals shock sets the rare-earth-embargo flag; a chip invasion does not
     assert!(effects_for_year(&minerals, 2034).rare_earth_embargo);
     assert!(!effects_for_year(&taiwan, 2034).rare_earth_embargo);
-    // and the flag cuts the magnet ceiling (China ~90% concentrated)
-    let mp = MaterialsParams::default();
+    // and the flag cuts the magnet ceiling (China ~90% concentrated). Tested with
+    // the non-magnet lines relieved (post-B5 reducers otherwise bind near-term).
+    let mp = magnet_binding_params();
     let calm = stepn(&mp, 0.6, 3.0, 1.0, false, 4);
     let cut = stepn(&mp, 0.6, 3.0, 1.0, true, 4);
     assert!(cut.robot_ceiling_m < calm.robot_ceiling_m && cut.binding == "rare_earth_magnets");

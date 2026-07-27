@@ -98,7 +98,14 @@ pub fn default_inputs() -> Vec<Input> {
                 Input {
                     name: "precision_reducers",
                     robots_supported_2028_m: 0.5,
-                    supply_growth: 0.45, // dedicated line buildout, aggressive
+                    // Audit B5: 45%/yr SUSTAINED reducer growth is not defensible —
+                    // harmonic/cycloidal reducers are a ~2yr-tooling oligopoly
+                    // (Harmonic Drive/Nabtesco/Leaderdrive). 18%/yr is an aggressive
+                    // dedicated-line ramp; the ASI boost + the combined-rate cap
+                    // (see step) still let a superintelligence-directed buildout
+                    // reach the physical ceiling, but reducers now bind in the
+                    // 2029-2033 window as Epoch AI's tightest-line analysis expects.
+                    supply_growth: 0.18,
                     asi_supply_boost: 0.9,
                     // cycloidal / planetary / novel transmissions dodge the
                     // harmonic-flexspline bottleneck almost entirely.
@@ -229,7 +236,12 @@ impl MaterialsState {
             // via logistic saturation, at this year's realized rate. Bounded, so
             // the ceiling can actually bind instead of running to infinity.
             let reserve = inp.robots_supported_2028_m * inp.reserve_mult;
-            let rate = inp.supply_growth + inp.asi_supply_boost * asi;
+            // Physical sanity cap on the ASI-boosted buildout: even a
+            // superintelligence-directed dedicated line cannot sustain >60%/yr
+            // capacity growth (tooling lead times, machine-tool supply, skilled
+            // commissioning). Without this the boost drove reducers/sensors to
+            // 130%+/yr, erasing the very chokepoints the layer exists to model.
+            let rate = (inp.supply_growth + inp.asi_supply_boost * asi).min(0.60);
             let headroom = (1.0 - self.supply[i] / reserve).max(0.0);
             self.supply[i] += self.supply[i] * rate * headroom;
             // Substitution designs intensity down toward the ceiling, raising
