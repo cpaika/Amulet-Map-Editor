@@ -34,15 +34,16 @@ fn q_governor_brakes_investment_below_the_return_hurdle() {
         on.last().unwrap().compute_stock > on[0].compute_stock,
         "compute must still grow with the governor on"
     );
-    // A higher cost-of-capital hurdle must reduce cumulative investment.
-    let cum_capex = |hurdle: f64| {
-        run(Params { q_governor_gain: 0.6, q_hurdle_rate: hurdle, ..Params::default() })
+    // A higher required return (equity risk premium) must reduce cumulative investment.
+    // The hurdle is endogenous: sovereign long_rate + this premium + compute depreciation.
+    let cum_capex = |prem: f64| {
+        run(Params { q_governor_gain: 0.6, q_risk_premium: prem, ..Params::default() })
             .iter()
             .map(|s| s.ai_capex)
             .sum::<f64>()
     };
-    let lo = cum_capex(0.05);
-    let hi = cum_capex(0.40);
+    let lo = cum_capex(0.00);
+    let hi = cum_capex(0.30);
     assert!(hi < lo, "a higher return hurdle must brake investment: {hi} vs {lo}");
 }
 

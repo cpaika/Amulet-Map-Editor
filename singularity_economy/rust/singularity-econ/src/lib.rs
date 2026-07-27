@@ -383,11 +383,13 @@ pub struct Params {
     // cost of capital) brakes it — the first-principles accelerator the momentum
     // heuristic lacks.
     pub q_governor_gain: f64,
-    /// Cost-of-capital component of the q hurdle. The EFFECTIVE required return on
-    /// compute is this PLUS `compute_deprec` (compute is a fast-obsolescing asset, so
-    /// its hurdle must clear depreciation as well as the cost of capital) — endogenous,
-    /// so faster obsolescence raises the bar automatically.
-    pub q_hurdle_rate: f64,
+    /// Equity risk premium in the q hurdle. The EFFECTIVE required return on compute is
+    /// the model's own sovereign `long_rate` (B11) PLUS this premium PLUS `compute_deprec`
+    /// — cost of capital = risk-free + equity premium, and compute is a fast-obsolescing
+    /// asset so the hurdle must clear depreciation too. Fully endogenous: a scenario that
+    /// drives sovereign rates up (debt crowding) automatically TIGHTENS the investment
+    /// hurdle and brakes capex, and faster obsolescence raises the bar automatically.
+    pub q_risk_premium: f64,
 
     pub loops: Loops,
 }
@@ -540,7 +542,7 @@ impl Default for Params {
             momentum_gain: 0.5,
             demand_growth_base: 0.32,
             q_governor_gain: 0.0,   // off by default (satellite); ~0.5 is a live scenario
-            q_hurdle_rate: 0.15,    // cost of capital; effective hurdle adds compute_deprec
+            q_risk_premium: 0.10,   // equity premium; hurdle = long_rate + this + compute_deprec
             loops: Loops::default(),
         }
     }
@@ -1106,8 +1108,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 let unit_cost = (p.ai_capex_2026 / 0.80)
                     * (1.0 - p.hw_cost_decline).powi(year - p.start_year);
                 let compute_value = (prev.compute_stock * unit_cost).max(1e-9);
-                // Effective hurdle = cost of capital + economic depreciation of compute.
-                let hurdle = p.q_hurdle_rate + p.compute_deprec;
+                // Effective hurdle = cost of capital + economic depreciation, where the
+                // cost of capital is the model's own sovereign long rate (B11) plus an
+                // equity risk premium — so debt-crowding rate spikes tighten the
+                // investment hurdle endogenously (macro-financial transmission).
+                let hurdle = prev.long_rate + p.q_risk_premium + p.compute_deprec;
                 let q = (ai_profit / compute_value) / hurdle;
                 (1.0 + p.q_governor_gain * (q - 1.0)).clamp(0.2, 3.0)
             })
