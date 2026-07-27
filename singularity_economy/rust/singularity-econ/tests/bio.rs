@@ -153,3 +153,26 @@ fn bio_optionality_pools_are_surfaced() {
     // longevity pool grows over the horizon (funding-cyclical, toward its cap)
     assert!(last.longevity_pool_b >= v[0].longevity_pool_b, "longevity pool should not shrink");
 }
+
+// Audit C7: a bio/cyber dread shock's SEVERITY-scaled stringency_step must ratchet
+// reg_stringency — a mass-casualty pandemic (0.70) far more than a contained scare
+// (0.10), where before every dread event moved it the same flat amount. Baseline
+// (no drawn shocks) is unchanged.
+#[test]
+fn dread_stringency_ratchet_scales_with_severity() {
+    use singularity_econ::bio::shocks::{DreadShock, DreadShockKind};
+    let peak = |shocks: Vec<DreadShock>| {
+        simulate(&Params { dread_shocks: shocks, ..Params::default() })
+            .iter().map(|s| s.reg_enforcement).fold(0.0_f64, f64::max)
+    };
+    let mk = |step: f64, mass: bool| DreadShock {
+        kind: DreadShockKind::BioPandemic, year: 2030, gdp_drag: 0.05,
+        stringency_step: step, mass_casualty: mass, spread: 0.2,
+        defensive_pool_mult: 2.0, broad_beta_hit: 0.1,
+    };
+    let base = peak(vec![]);
+    let scare = peak(vec![mk(0.10, false)]);
+    let mass = peak(vec![mk(0.70, true)]);
+    assert!(scare > base, "a dread scare must ratchet stringency: {scare} vs {base}");
+    assert!(mass > scare + 0.2, "mass-casualty must ratchet FAR more than a scare: {mass} vs {scare}");
+}

@@ -381,6 +381,7 @@ impl SocietyState {
         election_year: bool,
         incident: bool,
         dread: bool,
+        dread_stringency_step: f64,
     ) {
         // ---- S1 sentiment: rate-triggered inflow with a 1-yr anticipation
         // lead (WGA struck at ~0% realized displacement) and logistic-style
@@ -460,12 +461,21 @@ impl SocietyState {
                 };
                 self.reg_stringency += sp.reg_drip * (1.0 - capture);
             }
-            if incident {
-                self.reg_stringency += if dread {
-                    sp.incident_s2_dread
-                } else {
-                    sp.incident_s2_major
-                };
+            // Incident ratchet. The AI-incident applies its bool-scaled step; a bio/
+            // cyber dread shock applies its OWN severity-scaled step (audit C7:
+            // dread_stringency_step ~0.10 for a contained scare, ~0.70 for a
+            // mass-casualty event — previously discarded, so every dread event
+            // ratcheted the same flat amount). MAX across co-occurring classes, not
+            // sum (design note). dread_stringency_step = 0 on the baseline (no drawn
+            // shocks) => byte-identical.
+            let ai_step = if incident {
+                if dread { sp.incident_s2_dread } else { sp.incident_s2_major }
+            } else {
+                0.0
+            };
+            let step = ai_step.max(dread_stringency_step);
+            if step > 0.0 {
+                self.reg_stringency += step;
             }
             // Emergency-powers throttle (design §3): a displacement-rate
             // crisis >4pp/yr triggers executive action in WEEKS, bypassing

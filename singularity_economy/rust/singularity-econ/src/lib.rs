@@ -1708,6 +1708,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 election,
                 incident,
                 incident && p.incident_dread,
+                bfx.stringency_step, // C7: severity-scaled bio/cyber dread ratchet (0 baseline)
             );
             if let Some(d) = &this_demo {
                 // Channel B (youth blockage) is a SEPARATE sentiment
