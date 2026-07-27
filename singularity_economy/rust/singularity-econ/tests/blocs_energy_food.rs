@@ -167,6 +167,29 @@ fn energy_price_coupling_relieves_the_core_price() {
     );
 }
 
+// Green ammonia must SEVER the gas spike without decoupling fertilizer from CHEAP
+// power (the C4 sub-1.0 driver). Post-green-ammonia cheap power must pass through at
+// least as much relief as pre — the earlier flat-wire bug perversely raised the
+// fertilizer target for sub-1.0 fuel, shrinking the relief.
+#[test]
+fn green_ammonia_keeps_cheap_power_flowing_to_fertilizer() {
+    let p = FoodParams::default();
+    let cheap = 0.6; // sub-1.0 energy cost index (post-Wright clean power)
+    let pre = {
+        let mut st = FoodState::new();
+        st.step(&p, cheap, 0.3, 2032).fertilizer_index // pre green ammonia
+    };
+    let post = {
+        let mut st = FoodState::new();
+        st.step(&p, cheap, 0.3, 2040).fertilizer_index // post green ammonia
+    };
+    assert!(
+        post <= pre + 1e-9,
+        "green ammonia must not shrink cheap-power fertilizer relief: post {post} > pre {pre}"
+    );
+    assert!(post < 1.0, "cheap power must pull the fertilizer index below 1.0: {post}");
+}
+
 // C4: the food fertilizer driver is the ENERGY cost index, not datacenter compute
 // pricing — so as solar+battery Wright's law pulls the blended energy cost below
 // 1.0, the fertilizer(Haber-Bosch)/green-ammonia channel must pass that RELIEF

@@ -116,9 +116,17 @@ impl FoodState {
                 altprotein_share: 0.0,
             };
         }
-        // Fertilizer tracks fuel with ~0.8 elasticity — UNLESS green ammonia has
-        // severed the wire, after which fertilizer decouples toward clean cost.
-        let wire = if year >= p.green_ammonia_year { 0.3 } else { 1.0 };
+        // Fertilizer tracks fuel with ~0.8 elasticity. Green (electrolytic) ammonia
+        // severs the gas-SPIKE wire — a >=1.0 fuel spike passes through far less once
+        // clean-N scales — but it does NOT decouple fertilizer from CHEAP power:
+        // electrolytic ammonia cost tracks electricity, so a sub-1.0 energy index
+        // must still flow through to fertilizer relief. (Audit fix: after C4 fed the
+        // sub-1.0 energy cost_index here, a flat 0.3 wire perversely RAISED
+        // fert_target for cheap power, e.g. 0.6^0.24 = 0.88 vs 0.6^0.8 = 0.66,
+        // shrinking the relief exactly when clean power should deepen it. Split by
+        // direction: damp only spikes, keep full coupling below 1.0.)
+        let severed_spike = year >= p.green_ammonia_year && fuel_price_index >= 1.0;
+        let wire = if severed_spike { 0.3 } else { 1.0 };
         let fert_target = fuel_price_index.max(0.1).powf(p.ammonia_gas_elasticity * wire);
         self.fertilizer_index += 0.5 * (fert_target - self.fertilizer_index); // ~1-2 season lag
 
