@@ -127,8 +127,10 @@ impl FoodState {
         let altprotein_share =
             p.altprotein_2050_share / (1.0 + (-0.28 * t_alt).exp());
 
-        // Climate drag worsens over time in the vulnerable regions.
-        let clim = p.climate_drag * (1.0 + 0.03 * (year - 2026) as f64).max(1.0);
+        // Climate drag worsens over time in the vulnerable regions. (Audit A14:
+        // dropped a dead `.max(1.0)` — the factor 1 + 0.03*(year-2026) is already
+        // >= 1 for every in-horizon year, so the clamp never bound.)
+        let clim = p.climate_drag * (1.0 + 0.03 * (year - 2026) as f64);
 
         // Net annual food-price change: fertilizer pass-through pushes up;
         // productivity, AI cost-out, and alt-protein push down; climate up.
