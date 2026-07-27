@@ -17,6 +17,35 @@ fn by_year(states: &[YearState], year: i32) -> &YearState {
     states.iter().find(|s| s.year == year).unwrap()
 }
 
+// G — Tobin's-q investment governor. First-principles capex: firms invest while the
+// return on installed compute (last year's AI-complex profit over its replacement
+// value) exceeds the cost-of-capital + depreciation hurdle. gain=0 => byte-identical
+// (parity-safe, guarded by the golden). With the governor on, a HIGHER required return
+// must brake cumulative investment — the defining property of a return-on-capital
+// investment rule that pure demand-momentum lacks. The model stays pathology-free.
+#[test]
+fn q_governor_brakes_investment_below_the_return_hurdle() {
+    let on = run(Params { q_governor_gain: 0.5, ..Params::default() });
+    for s in &on {
+        assert!(s.ai_capex.is_finite() && s.compute_stock.is_finite(), "finite at {}", s.year);
+        assert!(s.gdp > 0.0, "GDP positive at {}", s.year);
+    }
+    assert!(
+        on.last().unwrap().compute_stock > on[0].compute_stock,
+        "compute must still grow with the governor on"
+    );
+    // A higher cost-of-capital hurdle must reduce cumulative investment.
+    let cum_capex = |hurdle: f64| {
+        run(Params { q_governor_gain: 0.6, q_hurdle_rate: hurdle, ..Params::default() })
+            .iter()
+            .map(|s| s.ai_capex)
+            .sum::<f64>()
+    };
+    let lo = cum_capex(0.05);
+    let hi = cum_capex(0.40);
+    assert!(hi < lo, "a higher return hurdle must brake investment: {hi} vs {lo}");
+}
+
 // New-dynamic: compute-governance / licensing regime (B12). With the gain on, a
 // compute-cap regime that tightens as capability rises throttles compute added at
 // the SOURCE of the R1 flywheel — so compute_stock ends well below baseline (caps

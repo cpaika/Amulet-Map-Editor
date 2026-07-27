@@ -376,6 +376,19 @@ pub struct Params {
     pub momentum_gain: f64,
     pub demand_growth_base: f64,
 
+    // G — Tobin's-q investment governor (gated satellite; gain 0 => baseline
+    // byte-identical). Overlays a return-on-capital channel on the momentum-driven
+    // capex desire: q = (last year's return on installed compute) / hurdle. q>1
+    // (fat AI margins) accelerates investment, q<1 (glut-compressed margins below the
+    // cost of capital) brakes it — the first-principles accelerator the momentum
+    // heuristic lacks.
+    pub q_governor_gain: f64,
+    /// Cost-of-capital component of the q hurdle. The EFFECTIVE required return on
+    /// compute is this PLUS `compute_deprec` (compute is a fast-obsolescing asset, so
+    /// its hurdle must clear depreciation as well as the cost of capital) — endogenous,
+    /// so faster obsolescence raises the bar automatically.
+    pub q_hurdle_rate: f64,
+
     pub loops: Loops,
 }
 
@@ -526,6 +539,8 @@ impl Default for Params {
             perception_smoothing: 0.5,
             momentum_gain: 0.5,
             demand_growth_base: 0.32,
+            q_governor_gain: 0.0,   // off by default (satellite); ~0.5 is a live scenario
+            q_hurdle_rate: 0.15,    // cost of capital; effective hurdle adds compute_deprec
             loops: Loops::default(),
         }
     }
@@ -1071,12 +1086,41 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         }
         // Deviation actually applied (0 when the spine is gated off → byte-identical).
         let es_dev = p.equity_sentiment_gain * (equity_sentiment - 1.0);
+        // ---- G: Tobin's-q investment governor (gated) ----
+        // First-principles capex: firms invest while the marginal value of installed
+        // compute exceeds its replacement cost. Return on installed compute = the AI-
+        // complex profit it earned LAST year (ai_services + silicon + ip_tolls, the
+        // compute-attributable pools) over its replacement value (compute_stock ×
+        // cost_per_unit); q = that return vs the cost-of-capital hurdle. q>1 (early
+        // boom, fat AI margins) accelerates investment, q<1 (glut compresses margins
+        // below the hurdle) brakes it — the accelerator the momentum heuristic lacks,
+        // grounded in return-on-capital. Lagged on out.last() (no in-loop ordering
+        // hazard, mirroring the spine). gain=0 (default) => q_mult=1 => byte-identical.
+        let q_mult = if p.q_governor_gain > 0.0 {
+            out.last().map_or(1.0, |prev| {
+                let ai_profit =
+                    prev.profits.ai_services + prev.profits.silicon + prev.profits.ip_tolls;
+                // Current replacement cost of a compute unit (Tobin's q denominator is
+                // CURRENT replacement cost, not historical) — the same deterministic
+                // cost curve used below at the compute-build step.
+                let unit_cost = (p.ai_capex_2026 / 0.80)
+                    * (1.0 - p.hw_cost_decline).powi(year - p.start_year);
+                let compute_value = (prev.compute_stock * unit_cost).max(1e-9);
+                // Effective hurdle = cost of capital + economic depreciation of compute.
+                let hurdle = p.q_hurdle_rate + p.compute_deprec;
+                let q = (ai_profit / compute_value) / hurdle;
+                (1.0 + p.q_governor_gain * (q - 1.0)).clamp(0.2, 3.0)
+            })
+        } else {
+            1.0
+        };
         // B3 closure: bottleneck prices throttle desired capex growth.
         // Desire base avoids the absorbing zero-capex state (round-2 fix 2).
         let desire_base = last_capex.max(0.3 * last_desired);
         let desired_capex = desire_base * (1.0 + (perceived_growth + herd) / afford)
             * gfx.demand_mult
-            * (1.0 + es_dev).max(0.2); // sentiment amplifies the boom, cuts the bust
+            * (1.0 + es_dev).max(0.2) // sentiment amplifies the boom, cuts the bust
+            * q_mult;
         last_desired = desired_capex;
 
         // ---- B4: credit ----
