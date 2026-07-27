@@ -239,18 +239,32 @@ frontier + capital but is energy-permitting-bound and politically brittle on a
 buffer as an edge. Model behavior: US keeps the lead (0.56→0.54 share), China
 closes partway on its energy edge (0.33→0.38), EU fades (0.11→0.08); the West
 accumulates high political stress while China suppresses it (democracies vent,
-the autocracy stores brittleness). Satellite decomposition; ablatable.
+the autocracy stores brittleness). Three couplings now make this more than a
+passive decomposition: (C9) the autocratic-brittleness fracture hazard is LIVE —
+`fracture_threshold` sits below China's peak suppressed stress, so its stored
+stress converts to a nonzero regime-shift risk on the horizon (surfaced as
+`bloc_fracture_risk`); (C10) a Taiwan chip-supply shock is regionally decisive —
+each bloc has a `chip_dependence` (US 0.85 > EU 0.65 > China 0.45, since China is
+already export-controlled off EUV) and a blockade/invasion throttles capability
+growth hardest for the US frontier lead, letting China close the gap (inert on the
+shock-free baseline); (C11) displacement is bloc-specific (China 1.4x, EU 0.8x the
+global rate) so the stress ordering is no longer a frozen multiple of the US.
+Satellite decomposition; ablatable.
 
 *Food (`food.rs`).* A low-automation, nitrogen-and-water-bound production system
 AND a political-stability driver. Two couplings: food←energy (Haber-Bosch ammonia
 is ~3-5% of gas and 70-90% of ammonia cost; elasticity ~0.8, 1-2 season lag) and
 food→tension (real food-price index crossing its disruption band drives unrest,
 gained by import-dependence, damped by subsidy buffers — the 2008/2011 → Arab
-Spring pattern). The marquee chain fires in-model: the 2030s power crunch pushes
-food to ~2x by 2036 (unrest peaks), then green ammonia (2035) + AI cost-out +
-alt-protein relieve it. The farm gate is only ~12% of the food dollar, so AI/robots
-cut cost only ~1-3%/yr — a trend accelerator, not a discontinuity. Food-unrest
-feeds political sentiment via a gated, one-year-lagged coupling
+Spring pattern). The fertilizer driver is the ENERGY layer's blended generation
+`cost_index` (C4), not a one-sided datacenter-scarcity ratio — so the wire runs
+BOTH ways: on the baseline, cheap solar+battery power pulls the cost index below
+1.0, fertilizer relief flows through, and food price FALLS over the horizon
+(~0.96→0.63 by 2035) with no baseline unrest; a gas/energy-crunch scenario (or the
+pre-relief early years) instead pushes fertilizer→food→unrest up. Green ammonia
+(2035) severs the gas wire; the farm gate is only ~12% of the food dollar, so
+AI/robots cut cost only ~1-3%/yr — a trend accelerator, not a discontinuity.
+Food-unrest feeds political sentiment via a gated, one-year-lagged coupling
 (`food_tension_gain`, 0 by default; the layers stay pure satellites otherwise).
 
 **R3 — Capex momentum (reinforcing → overshoot).** Investment follows
