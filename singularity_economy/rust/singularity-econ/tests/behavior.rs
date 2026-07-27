@@ -17,6 +17,34 @@ fn by_year(states: &[YearState], year: i32) -> &YearState {
     states.iter().find(|s| s.year == year).unwrap()
 }
 
+// Interaction guard: the five gated new dynamics must COMPOSE without pathology.
+// Turning them all on together (the documented "enhanced-realism" scenario) must
+// stay finite, keep compute growing and GDP positive, and still produce the
+// boom-bust — no NaN, no collapse-to-zero, no runaway from cross-coupling. Each
+// dynamic is tested in isolation elsewhere; this guards their combination.
+#[test]
+fn enhanced_scenario_composes_without_pathology() {
+    let mut p = Params::default();
+    p.equity_sentiment_gain = 1.0;
+    p.wealth_effect_gain = 1.0;
+    p.transmission_gain = 0.5;
+    p.wage_compression_cog_gain = 0.4;
+    p.wage_compression_phys_gain = 0.4;
+    p.society.jg_share = 0.3;
+    let v = run(p);
+    for s in &v {
+        for x in [s.gdp, s.compute_stock, s.equity_sentiment, s.pools.human_cognitive_wages,
+                  s.ai_power_gw, s.power_margin, s.gov_debt_gdp] {
+            assert!(x.is_finite(), "non-finite state at {}", s.year);
+        }
+        assert!(s.gdp > 0.0, "GDP must stay positive at {}", s.year);
+    }
+    assert!(v.last().unwrap().compute_stock > v[0].compute_stock, "compute must still grow");
+    let peak = v.iter().map(|s| s.equity_sentiment).fold(0.0_f64, f64::max);
+    let trough = v.iter().map(|s| s.equity_sentiment).fold(9.0_f64, f64::min);
+    assert!(peak > 1.1 && trough < 0.7, "combined run must still show the boom-bust: {peak}/{trough}");
+}
+
 // New-dynamic: transmission/HVDC delivery lag. With the gain on, generation that
 // outruns the transformer/HVDC ramp cannot energize — so usable AI power is lower
 // and the power constraint is TIGHTER (higher power margin, longer rents, bullish
