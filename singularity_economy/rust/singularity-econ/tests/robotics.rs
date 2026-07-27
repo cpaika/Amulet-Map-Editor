@@ -35,18 +35,18 @@ fn off_params() -> Params {
 }
 
 // Ablation (byte-exact fleet): switching self-replication off must recover the
-// legacy robotics trajectory exactly. The always-on power terms (robot grid draw
-// and the powered-fleet gate) do not perturb the legacy fleet: at the small
-// legacy scale the grid dwarfs robot demand, so the gate is a no-op, and the
-// capacity/demand path never reads power. This 2036 value is the frozen
-// pre-self-replication baseline.
+// legacy robotics trajectory exactly. This 2036 value is the frozen
+// pre-self-replication baseline; it was re-frozen after the A7+C8 power-gate rework
+// (freed depreciated compute power lifts compute → autonomy, and the co-equal
+// pro-rata grid gate rations robots under power scarcity), which shifts the legacy
+// fleet slightly (12.524 → 12.464).
 #[test]
 fn self_replication_off_recovers_legacy_fleet_exactly() {
     let off = simulate(&off_params()); // default horizon 2036
     let f36 = off.iter().find(|s| s.year == 2036).unwrap().robot_fleet_m;
     assert_eq!(
         f36.to_bits(),
-        12.524033295701301_f64.to_bits(),
+        12.463585704462666_f64.to_bits(),
         "self_replication=0 must reproduce the legacy 2036 fleet byte-for-byte, got {f36}"
     );
     // and the default (self-replication ON) must have MOVED it

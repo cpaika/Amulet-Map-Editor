@@ -104,8 +104,19 @@ pub struct Company {
     /// (pool, share_of_pool, net_margin) — adds share*margin*pool($T)*1000
     /// to earnings ($B), phased in over ~4 years.
     pub capture: Vec<(EmergingPool, f64, f64)>,
+    /// Share of the company's productive capacity physically located in Taiwan
+    /// (0 = none). In the `taiwan_shock` (invasion) scenario this capacity is
+    /// destroyed, so the name takes a fair-value haircut the global Silicon pool
+    /// CANNOT express — the pool's scarcity margin RISES in the shock, which would
+    /// otherwise perversely mark TSMC (the fab being destroyed) UP. Fabless names
+    /// take the volume hit through the pool instead and keep exposure ~0.
+    pub taiwan_fab_exposure: f64,
     pub notes: &'static str,
 }
+
+/// Fraction of Taiwan-located capacity lost in the taiwan_shock (invasion)
+/// scenario — a multi-year, EUV-capped rebuild (design table S4).
+pub const TAIWAN_FAB_LOSS: f64 = 0.55;
 
 pub fn earnings_path(c: &Company, states: &[YearState]) -> Vec<f64> {
     let base = &states[0].pools;
@@ -221,7 +232,12 @@ pub fn evaluate(
             c.terminal_multiple
         };
         let dr = scenario_discount(states, dr_beta);
-        let fair = pv(&path, tm, dr);
+        let mut fair = pv(&path, tm, dr);
+        // Company-specific Taiwan-fab destruction in the invasion scenario — the
+        // damage the global Silicon pool can't express (it marks scarcity UP).
+        if *name == "taiwan_shock" && c.taiwan_fab_exposure > 0.0 {
+            fair *= (1.0 - c.taiwan_fab_exposure * TAIWAN_FAB_LOSS).max(0.0);
+        }
         per.push(ScenarioValue {
             scenario: name,
             fair_value_b: fair,

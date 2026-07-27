@@ -10,9 +10,10 @@ pub fn universe() -> Vec<Company> {
     use Stance::*;
     let c = |ticker, name, mcap_b, ntm, pools, beta, drift, tm, stance, capture, notes| Company {
         ticker, name, mcap_b, ntm_earnings_b: ntm, pools, pool_beta: beta,
-        share_drift: drift, terminal_multiple: tm, stance, capture, notes,
+        share_drift: drift, terminal_multiple: tm, stance, capture,
+        taiwan_fab_exposure: 0.0, notes,
     };
-    vec![
+    let mut universe = vec![
         // ---- LONGS: compute complex ----
         c("TSM", "TSMC", 2184.0, 112.0, vec![(R::Silicon, 0.9), (R::GdpIndex, 0.1)],
           0.9, 0.01, 18.0, Long, vec![],
@@ -166,7 +167,15 @@ pub fn universe() -> Vec<Company> {
           vec![(R::SeatSaas, 0.3), (R::GdpIndex, 0.7)],
           1.1, 0.0, 27.0, Short, vec![(E::AiServices, 0.015, 0.30)],
           "Relative short vs MSFT/GOOGL sleeve; options only post-Aug-3"),
-    ]
+    ];
+    // Taiwan-fab exposure: TSMC's leading-edge capacity is overwhelmingly on-island
+    // (Arizona/Japan a small, growing share), so an invasion destroys most of it —
+    // a company-specific hit the global Silicon pool (whose scarcity margin RISES)
+    // cannot express. Fabless names take the volume hit through the pool, exposure 0.
+    if let Some(tsm) = universe.iter_mut().find(|c| c.ticker == "TSM") {
+        tsm.taiwan_fab_exposure = 0.85;
+    }
+    universe
 }
 
 /// Override mcap / NTM / terminal multiple from the phase-2 verified

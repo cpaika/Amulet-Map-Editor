@@ -1164,19 +1164,17 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let robot_power_built_gw = (p.robot_self_replication * autonomy_prev
             * p.reinvest_share * robot_fleet * p.energy_selfbuild_kw)
             .min(p.energy_buildout_ceiling_gw);
-        // NOTE (audit A7, DEFERRED): this subtracts the full pre-depreciation
-        // compute draw, slightly over-tightening power vs power_demand_gw's
-        // depreciated treatment. The one-line fix (multiply by (1-compute_deprec))
-        // is verified-correct in isolation, but it interacts adversely with the
-        // robot power gate below: freeing compute power lets compute consume more
-        // grid, and the gate hands robots only the RESIDUAL (grid - compute_draw),
-        // starving them of the ~1 GW they need when compute is itself power-bound
-        // — halving the mid-2030s robot fleet and masking the embargo/component
-        // gates. Ship only after reworking the gate so robot demand joins grid
-        // ORDERS rather than taking the residual.
+        // Audit A7+C8 (reworked together): the grid serves compute AND robots as
+        // CO-EQUAL claimants. Robot demand joins the power-ORDERS signal
+        // (power_demand_gw below now includes robot_power_gw), so the grid grows to
+        // meet total demand rather than leaving robots the residual. That makes the
+        // A7 fix safe: subtract only the DEPRECIATED retained compute draw (the
+        // power depreciating GPUs actually release is freed), matching
+        // power_demand_gw's depreciated treatment, without starving robots — the
+        // orders channel now covers their draw.
         let power_headroom = (ai_power + robot_power_built_gw + space.orbital_gw_equiv
             + power_additions
-            - compute_stock * gw_per_unit * power_jevons_mult
+            - compute_stock * (1.0 - p.compute_deprec) * gw_per_unit * power_jevons_mult
             - robot_power_gw)
             .max(0.0);
         let power_cap = (power_headroom / gw_per_unit) * cost_per_unit;
@@ -1246,9 +1244,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             / ip_capacity.max(1e-9))
             .min(1.35);
         prev_ip_util = ip_utilization;
+        // C8: total grid demand = compute (retained-depreciated + new) PLUS the
+        // fielded robot fleet's draw. Previously robots were omitted here, so the
+        // scarcity signal (utilization → margin → power_orders) understated demand
+        // and under-built the grid. Robots now drive orders as a co-equal claimant.
         let power_demand_gw = (pre_stock * (1.0 - p.compute_deprec) * gw_per_unit
             + (desired_capex / cost_per_unit) * gw_per_unit)
-            * power_jevons_mult;
+            * power_jevons_mult
+            + robot_power_gw;
         let power_utilization = (power_demand_gw
             / (ai_power + space.orbital_gw_equiv).max(1e-9))
             .min(1.35);
@@ -1442,23 +1445,27 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             robot_prod = robot_demand
                 .min(component_capacity * gfx.comp_supply_mult)
                 .min(mat.robot_ceiling_m);
-            // ---- POWER GATE: robots and compute share ONE grid ----
-            // A fielded fleet must be RUN, not just built: you cannot power 8B
-            // robots (~16 TW at 2 kW each) unless the grid exists. After compute
-            // takes its share of the grid, whatever remains caps how large a
-            // fleet can actually operate. This is where the robot power draw
-            // BITES on the fleet itself (not merely on compute headroom), and
-            // where robots building their OWN generation pays off — the grid the
-            // fleet is capped against includes the power robots stood up last
-            // year (folded into ai_power above). Closes R-energy ⇄ B-grid.
+            // ---- POWER GATE: robots and compute are CO-EQUAL claimants on ONE grid ----
+            // A fielded fleet must be RUN, not just built: you cannot power 8B robots
+            // (~16 TW at 2 kW each) unless the grid exists. Audit A7+C8 rework: rather
+            // than giving compute first claim and leaving robots the RESIDUAL (which,
+            // once A7 freed depreciated compute power, let compute monopolize the grid
+            // and starve robots to ~0 until the mid-2030s), the grid rations compute
+            // and robots PRO-RATA when short — both scale by the same factor. Robot
+            // demand also now drives grid ORDERS (power_demand_gw), so the grid is
+            // built to serve the total. Robots building their OWN generation (folded
+            // into ai_power) still relieves the constraint — closes R-energy ⇄ B-grid.
             if p.robot_kw_each > 0.0 {
                 let compute_draw_gw = compute_stock * gw_per_unit * power_jevons_mult;
-                let robot_grid_gw =
-                    (ai_power + space.orbital_gw_equiv - compute_draw_gw).max(0.0);
-                // fleet in millions = grid_GW / kW_per_robot (units as above).
-                let max_powered_fleet = robot_grid_gw / p.robot_kw_each;
-                let powered_room =
-                    (max_powered_fleet - robot_fleet * (1.0 - p.robot_attrition)).max(0.0);
+                let grid = (ai_power + space.orbital_gw_equiv).max(1e-9);
+                let held_fleet = robot_fleet * (1.0 - p.robot_attrition);
+                let desired_fleet = held_fleet + robot_prod; // fleet after this year's build
+                let robot_demand_gw = desired_fleet * p.robot_kw_each;
+                let total_demand_gw = compute_draw_gw + robot_demand_gw;
+                // ration in (0,1]; = 1 when the grid can serve compute + robots.
+                let ration = (grid / total_demand_gw).min(1.0);
+                let powered_fleet = desired_fleet * ration;
+                let powered_room = (powered_fleet - held_fleet).max(0.0);
                 robot_prod = robot_prod.min(powered_room);
             }
             let comp_utilization = robot_demand / component_capacity.max(1e-9);

@@ -28,6 +28,7 @@ fn test_company(pools: Vec<(RatioPool, f64)>, beta: f64, drift: f64) -> Company 
         terminal_multiple: 15.0,
         stance: Stance::Watch,
         capture: vec![],
+        taiwan_fab_exposure: 0.0,
         notes: "",
     }
 }
