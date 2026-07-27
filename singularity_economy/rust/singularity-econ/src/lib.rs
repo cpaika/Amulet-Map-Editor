@@ -151,6 +151,15 @@ pub struct Params {
     /// Transmission-capacity growth RATE (transformer/HVDC throughput). Kept below
     /// peak AI-power demand growth so it lags and binds in the boom.
     pub transmission_growth: f64,
+    /// Max share of the WORLD's firm power (from the energy layer) the AI sector can
+    /// physically command — grid-sharing, transmission, and political limits. This
+    /// makes the load-bearing "power binds" result a FALSIFIABLE output of real
+    /// solar/battery/gas/nuclear buildout (energy.rs) rather than an artifact of the
+    /// abstract power_growth_ceiling: power_cap = min(abstract, firm_power*share).
+    /// Calibrated (~0.35) so the abstract cap still binds in the deterministic
+    /// baseline (AI peaks at ~25% of firm power) — the physical term is a second
+    /// bindable constraint that flips when the energy layer under-builds.
+    pub ai_grid_share_max: f64,
     pub power_base_growth: f64,
     pub power_supply_gain: f64,
     pub power_growth_ceiling: f64,
@@ -408,6 +417,7 @@ impl Default for Params {
             power_additions_2026: 30.0,
             transmission_gain: 0.0,      // off by default; ~1.0 is a live transmission-bound scenario
             transmission_growth: 0.26,   // ~26%/yr base transformer/HVDC ramp; below peak power demand growth
+            ai_grid_share_max: 0.35,     // AI can command <=35% of world firm power (baseline peaks ~25%)
             power_base_growth: 0.08,
             power_supply_gain: 0.55,
             power_growth_ceiling: 0.40,
@@ -645,6 +655,10 @@ pub struct YearState {
     pub silicon_margin: f64,
     pub power_margin: f64,
     pub component_margin: f64,
+    /// True when the PHYSICAL power ceiling (energy-layer firm power × AI grid
+    /// share) is tighter than the abstract power-order cap — i.e. real generation,
+    /// not the growth-ceiling parameter, is what bounds AI capex this year (P0).
+    pub physical_power_binds: bool,
     pub electricity_price: f64,
     pub ai_hew_m: f64,
     pub cog_displacement: f64,
@@ -756,6 +770,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut algo_eff = 1.0_f64;
     let mut ai_power = p.ai_power_2026;
     let mut transmission_capacity = p.ai_power_2026; // deliverable-power ceiling stock (transformers/HVDC)
+    // Last year's WORLD firm power (energy layer), for the physical AI-power ceiling
+    // (P0). Seeded near the energy layer's 2026 firm power; non-binding in the
+    // baseline (AI is a small share early), so byte-identical there.
+    let mut firm_power_prev = 2700.0_f64;
+    let mut physical_power_binds = false;
     let mut chip_capacity = p.chip_capacity_2026;
     let mut ip_capacity = chip_capacity * 0.18;
     let mut component_capacity = 0.0_f64;
@@ -1179,6 +1198,25 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             .max(0.0);
         let power_cap = (power_headroom / gw_per_unit) * cost_per_unit;
         let capital_cap = gdp * p.capex_gdp_cap * credit_mult;
+
+        // P0: PHYSICAL power ceiling from the energy layer. The AI sector can draw
+        // at most `ai_grid_share_max` of the world's firm power (last year's, from
+        // energy.rs — real solar+battery+gas+nuclear buildout). The capex that
+        // physically-available AI power can stand up, net of the existing compute +
+        // robot draw, is a SECOND power constraint. In the deterministic baseline
+        // firm_power*share exceeds the abstract ai_power path, so min() keeps the
+        // abstract cap and the trajectory is byte-identical — but when the energy
+        // layer under-builds (a stressed-supply scenario) the physical term BINDS,
+        // making the headline "power binds" a falsifiable output of physical supply
+        // rather than an artifact of the abstract power_growth_ceiling.
+        let physical_ai_ceiling_gw = firm_power_prev * p.ai_grid_share_max;
+        let physical_headroom_gw = (physical_ai_ceiling_gw
+            - compute_stock * (1.0 - p.compute_deprec) * gw_per_unit * power_jevons_mult
+            - robot_power_gw)
+            .max(0.0);
+        let power_cap_physical = (physical_headroom_gw / gw_per_unit) * cost_per_unit;
+        physical_power_binds = power_cap_physical < power_cap;
+        let power_cap = power_cap.min(power_cap_physical);
 
         let caps = [
             (Binding::Chips, chips_cap),
@@ -1733,6 +1771,10 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let fuel_price_index = energy_out.cost_index;
         // Carry this year's generation cost into next year's core price blend (C3).
         energy_cost_index_prev = energy_out.cost_index;
+        // Carry this year's WORLD firm power into next year's physical AI-power
+        // ceiling (P0). Lagged so the energy layer need not be reordered above the
+        // Liebig block.
+        firm_power_prev = energy_out.firm_power_gw;
         let food_out = food_state.step(&p.food, fuel_price_index, adopt.min(1.0), year);
         // Regions: decompose the transition into US/China/EU bloc trajectories.
         // C10: feed the Taiwan chip-supply shock (chip_mult net of the one-time
@@ -1769,6 +1811,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             silicon_margin,
             power_margin,
             component_margin,
+            physical_power_binds,
             electricity_price,
             ai_hew_m: ai_hew,
             cog_displacement: disp,

@@ -65,6 +65,34 @@ fn enhanced_scenario_composes_without_pathology() {
     assert!(peak > 1.1 && trough < 0.7, "combined run must still show the boom-bust: {peak}/{trough}");
 }
 
+// P0 — the headline "power binds" must be a FALSIFIABLE output of the physical
+// energy layer, not an artifact of the abstract power_growth_ceiling. At the
+// baseline AI grid share (0.35) the physical firm-power ceiling never binds
+// (byte-identical baseline, guarded by the golden). Tighten AI's allowable share of
+// the world's firm power and the PHYSICAL supply must bind and cut compute — the
+// claim now rides on real solar/gas/nuclear buildout.
+#[test]
+fn physical_power_supply_can_bind() {
+    let b = base();
+    assert!(
+        b.iter().all(|s| !s.physical_power_binds),
+        "physical ceiling must not bind in the baseline (parity-safe)"
+    );
+    let mut tight = Params::default();
+    tight.ai_grid_share_max = 0.10; // AI capped at 10% of world firm power
+    let t = run(tight);
+    assert!(
+        t.iter().any(|s| s.physical_power_binds),
+        "a tight grid share must make the physical energy supply bind"
+    );
+    assert!(
+        by_year(&t, 2036).compute_stock < 0.8 * by_year(&b, 2036).compute_stock,
+        "physical energy scarcity must materially cut compute: {} vs {}",
+        by_year(&t, 2036).compute_stock,
+        by_year(&b, 2036).compute_stock
+    );
+}
+
 // New-dynamic: transmission/HVDC delivery lag. With the gain on, generation that
 // outruns the transformer/HVDC ramp cannot energize — so usable AI power is lower
 // and the power constraint is TIGHTER (higher power margin, longer rents, bullish
