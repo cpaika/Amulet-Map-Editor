@@ -13,6 +13,7 @@ directional effect.
 | `wealth_effect_gain` (chains off spine) | 0.0 | ΔEquity_sentiment → consumption via MPC × AI wealth share; makes GdpIndex cyclical. Inert unless the spine is also on. | Deepens bust-scenario returns on broad-GDP and cyclical shorts. |
 | `transmission_gain` (+ `transmission_growth`) | 0.0 (rate 0.26) | Transformer/HVDC delivery lag: generation that outruns the transmission stock can't energize. At 1.0: 2036 power_margin 0.58→0.62, compute ~-12%. | Bullish **grid-equipment/IPPs** (GEV, POWL, VST, CEG) — the bottleneck is their product. |
 | `society.jg_share` (UBI↔Job-Guarantee) | 0.0 (pure UBI) | JG recovers part of its cost → lowers debt-financing share of transfers → smaller sovereign snowball. At 0.6: 2036 debt/GDP 1.95→1.84, long rate 5.39%→5.22%. | Largest **discount lever**: lower rate lifts duration-heavy power/toll longs. |
+| `compute_governance_gain` (B12) | 0.0 | Compute-cap/licensing regime that tightens as capability rises, throttling compute added per capex dollar at the SOURCE of the R1 flywheel. At 0.5: 2036 compute 89→52 (still growing). | Caps the silicon/HBM **volume tail** (NVDA/TSM/MU); raises licensed-incumbent value. |
 
 ## Suggested coherent "enhanced-realism" scenario (for review, not shipped)
 A defensible combined setting to see how the book re-ranks (all still hypotheses):
@@ -22,10 +23,13 @@ A defensible combined setting to see how the book re-ranks (all still hypotheses
 complex (spine+wealth), a firmer/longer power-rent thesis (transmission), a stronger
 short sleeve (wage compression), partly offset on the discount by a JG tilt.
 
+All six compose cleanly together — the `enhanced_scenario_composes_without_pathology`
+test runs all of them on at once and verifies no NaN / no collapse / boom-bust intact.
+
 ## Still to build (need owner input — reprice the trade book directly)
 - **Circular vendor financing** (chip→cloud recycled-capital revenue) — needs a
   `valuation.rs` earnings-quality haircut on NVDA/AVGO; deferred like C2.
-- **Compute-governance / licensing regime**, **treaty-pause hazard scenario**,
+- **Treaty-pause hazard scenario** (clean, gated — a new `scenarios.rs` case),
   **reserve-currency convenience-yield erosion**, **alignment-liability law** — see
   `next_cycle_worklist.md` for mechanisms; each shifts specific tickers.
 
