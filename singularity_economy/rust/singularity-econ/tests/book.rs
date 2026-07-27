@@ -8,8 +8,8 @@ use singularity_econ::scenarios::{
     scenario_params, scenario_states, scenario_states_enhanced,
 };
 use singularity_econ::valuation::{
-    earnings_path, evaluate, evaluate_all, implied_cagr, pv, Company,
-    EmergingPool, RatioPool, Stance, DISCOUNT_RATE, HORIZON, SCENARIO_PROBS,
+    earnings_and_rent, earnings_path, evaluate, evaluate_all, implied_cagr, pv, Company,
+    EmergingPool, RatioPool, Stance, CAPTURE_DECAY, DISCOUNT_RATE, HORIZON, SCENARIO_PROBS,
 };
 use singularity_econ::{simulate, Params};
 
@@ -98,6 +98,37 @@ fn capture_adds_emerging_pool_earnings() {
     let without = test_company(vec![(RatioPool::GdpIndex, 1.0)], 1.0, 0.0);
     assert!(earnings_path(&with, &states).last().unwrap()
             > earnings_path(&without, &states).last().unwrap());
+}
+
+// Re-audit C2: the terminal value must apply a RENT-DOMINANCE haircut. A capture
+// name's near-peak final-year rent is NOT a perpetuity (the scarcity share erodes),
+// so its terminal slice is capitalized at multiple x dr/(dr+decay), strictly below
+// the full multiple — while a name with NO capture is untouched (rent path all zero).
+#[test]
+fn terminal_rent_haircut_derates_only_capture_names() {
+    let states = simulate(&Params::default());
+    let dr = DISCOUNT_RATE;
+    // Non-capture name: rent path is identically zero, so the mechanism is a no-op.
+    let no_cap = test_company(vec![(RatioPool::Silicon, 1.0)], 1.0, 0.0);
+    let (_pn, rent_n) = earnings_and_rent(&no_cap, &states);
+    assert!(rent_n.iter().all(|r| *r == 0.0), "no-capture name must carry zero rent");
+    // Capture name: positive terminal rent, so the haircut PV must sit strictly below
+    // the full-multiple capitalization of the identical earnings path.
+    let mut cap = test_company(vec![(RatioPool::GdpIndex, 1.0)], 1.0, 0.0);
+    cap.capture = vec![(EmergingPool::Electricity, 0.02)];
+    let (path, rent) = earnings_and_rent(&cap, &states);
+    let last_rent = *rent.last().unwrap();
+    assert!(last_rent > 0.0, "capture name must carry terminal rent");
+    let full = pv(&path, cap.terminal_multiple, dr);
+    let flow: f64 = path.iter().enumerate()
+        .map(|(i, e)| e / (1.0 + dr).powi(i as i32 + 1)).sum();
+    let base_last = path.last().unwrap() - last_rent;
+    let rent_mult = cap.terminal_multiple * dr / (dr + CAPTURE_DECAY);
+    let haircut = flow
+        + (base_last * cap.terminal_multiple + last_rent * rent_mult)
+            / (1.0 + dr).powi(path.len() as i32);
+    assert!(rent_mult < cap.terminal_multiple, "rent multiple must be below the full multiple");
+    assert!(haircut < full, "rent haircut must reduce a capture name's PV: {haircut} vs {full}");
 }
 
 // ---------------- scenario evaluation ----------------

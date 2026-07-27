@@ -143,9 +143,20 @@ pub const TAIWAN_FAB_LOSS: f64 = 0.55;
 pub const CAPTURE_DECAY: f64 = 0.06;
 
 pub fn earnings_path(c: &Company, states: &[YearState]) -> Vec<f64> {
+    earnings_and_rent(c, states).0
+}
+
+/// Earnings path AND its capture-RENT component, year-aligned. The rent slice is the
+/// part of each year's earnings coming from decaying emerging-pool capture; it is
+/// separated so the TERMINAL value can capitalize it as a decaying stream rather than
+/// a perpetuity (re-audit C2: the flow-only CAPTURE_DECAY was too weak to keep a
+/// near-peak, still-rent-dominated final year from being capitalized at the full
+/// multiple). `.0` is the total path; `.1` is the rent-only path.
+pub fn earnings_and_rent(c: &Company, states: &[YearState]) -> (Vec<f64>, Vec<f64>) {
     let base = &states[0].pools;
     let base_silicon_margin = states[0].silicon_margin.max(1e-6);
     let mut path = Vec::with_capacity(HORIZON);
+    let mut rent = Vec::with_capacity(HORIZON);
     for (i, s) in states.iter().enumerate().skip(1) {
         if path.len() == HORIZON {
             break;
@@ -166,7 +177,7 @@ pub fn earnings_path(c: &Company, states: &[YearState]) -> Vec<f64> {
             growth += w * (s.pools.ratio(pool) / p0) * margin_mult;
         }
         let growth = growth.max(0.0).powf(c.pool_beta);
-        let mut e = c.ntm_earnings_b * growth * (1.0 + c.share_drift).powi(i as i32);
+        let base_e = c.ntm_earnings_b * growth * (1.0 + c.share_drift).powi(i as i32);
         let phase = (i as f64 / 4.0).min(1.0);
         // Competitive erosion of the captured share past phase-in (audit C2): the
         // rent is not permanent — a fixed-capacity name's share of a growing pool
@@ -177,12 +188,14 @@ pub fn earnings_path(c: &Company, states: &[YearState]) -> Vec<f64> {
         // sim) — not a frozen per-company margin constant. So VST/NRG/CEG electricity
         // capture now tracks the endogenous electricity_margin (0.30 -> ~0.60) and
         // component capture tracks component_margin, instead of a hand-set number.
+        let mut r = 0.0;
         for &(pool, share) in &c.capture {
-            e += phase * persistence * share * s.profits.emerging(pool) * 1000.0;
+            r += phase * persistence * share * s.profits.emerging(pool) * 1000.0;
         }
-        path.push(e);
+        path.push(base_e + r);
+        rent.push(r);
     }
-    path
+    (path, rent)
 }
 
 pub fn pv(path: &[f64], terminal_multiple: f64, r: f64) -> f64 {
@@ -258,14 +271,33 @@ pub fn evaluate(
 ) -> Evaluation {
     let mut per: Vec<ScenarioValue> = Vec::new();
     for (name, states) in scenario_states {
-        let path = earnings_path(c, states);
+        let (path, rent) = earnings_and_rent(c, states);
         let tm = if *name == "fizzle" {
             c.terminal_multiple * 0.75
         } else {
             c.terminal_multiple
         };
         let dr = scenario_discount(states, dr_beta);
-        let mut fair = pv(&path, tm, dr);
+        // Flow PV over the explicit horizon.
+        let mut fair: f64 = path
+            .iter()
+            .enumerate()
+            .map(|(i, e)| e / (1.0 + dr).powi(i as i32 + 1))
+            .sum();
+        // Terminal value with a RENT-DOMINANCE haircut (re-audit C2). Durable base
+        // earnings get the full perpetuity multiple, but the capture RENT is not
+        // perpetual — a fixed-capacity name's scarcity share erodes as supply responds
+        // (CAPTURE_DECAY). Capitalizing the near-peak, still-rent-dominated final year
+        // at the full multiple overstated fair value; the flow-only decay was too weak
+        // to fix it. So the rent slice is capitalized as a DECAYING perpetuity: the
+        // multiple is scaled by dr/(dr+decay) (a stable perpetuity is ~1/dr, a
+        // decaying one ~1/(dr+decay)). A name with no capture is unchanged.
+        if let (Some(&last), Some(&last_rent)) = (path.last(), rent.last()) {
+            let base_last = (last - last_rent).max(0.0);
+            let rent_mult = tm * dr / (dr + CAPTURE_DECAY);
+            let terminal = base_last * tm + last_rent.max(0.0) * rent_mult;
+            fair += terminal / (1.0 + dr).powi(path.len() as i32);
+        }
         // Company-specific Taiwan-fab destruction in the invasion scenario — the
         // damage the global Silicon pool can't express (it marks scarcity UP).
         if *name == "taiwan_shock" && c.taiwan_fab_exposure > 0.0 {

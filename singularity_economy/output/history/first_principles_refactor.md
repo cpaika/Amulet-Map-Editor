@@ -54,8 +54,34 @@ in physical energy supply rather than a growth-ceiling parameter.
    (MAX-aggregated), instead of every dread event moving it a flat amount.
 6. **C2 — competitive erosion of captured share.** CAPTURE_DECAY 6%/yr past phase-in:
    the scarcity rent is not permanent, so the capture names ease to conservative,
-   rent-not-permanent levels (VST 205→137%, NRG 122→83%, CEG 97→58%) and rent-
-   dominated terminal value is haircut. Tempers the "merchant power to infinity" leg.
+   rent-not-permanent levels (VST 205→137%, NRG 122→83%, CEG 97→58%). Tempers the
+   "merchant power to infinity" leg.
+
+## Core re-audit (3 adversarial agents on A7/C8/P0/V/B4/C7/C2 interactions)
+One CONFIRMED defect + two latent hazards + one cosmetic-safeguard gap, all fixed:
+- **C7 low-end clamp (CONFIRMED).** A bio/cyber dread shock set `incident=true` for
+  its sentiment/trust pulse, which ALSO drove the AI-regulatory step and floored every
+  sub-0.15 dread severity to `incident_s2_major = 0.15` — the exact flat-ratchet C7
+  was meant to remove. Fixed: the AI-step is now gated on a genuine AI-capability
+  incident; a dread shock ratchets its own severity-scaled step. Lock strengthened
+  (0.10 vs 0.14 must now differ).
+- **`physical_power_binds` honesty.** Flagged true whenever the physical cap fell below
+  the abstract power cap — even in a chip-starved year with slack power. Now requires
+  power to be the effective Liebig minimum.
+- **`electricity_margin` floor.** Since capture rides `pool × margin` (V), an unfloored
+  margin could go negative (price < 0.4× normal via the C3 coupling) and SUBTRACT from
+  the power names' earnings. Floored at 0.0 (a generator books zero margin in a glut).
+- **C2 terminal rent-dominance haircut (the real fix).** The re-audit showed the
+  flow-only 6%/yr decay was too weak to matter: the electricity pool grows ~20×
+  2027→2036 while `persistence` only reaches 0.69, so the final year is still ~84% rent
+  and STILL GROWING — yet `pv()` capitalized it at the FULL terminal multiple to
+  perpetuity. The item-6 claim that CAPTURE_DECAY "haircuts rent-dominated terminal
+  value" was cosmetic. Now the terminal splits: durable base earnings get the full
+  multiple, the capture-rent slice is capitalized as a DECAYING perpetuity
+  (`multiple × dr/(dr+decay)`, ~⅔). Rent-dominated names de-rate honestly — VST
+  137→97%, NRG 83→61%, CEG 58→34%, MP 59→22% (its final-year pool spike) — while the
+  book's structure and every conclusion-lock hold (POWL/TECK/BESI/GEV still lead; power
+  complex still positive). Non-capture names are byte-identical.
 
 ## Final refactored book (baseline)
 Grid EQUIPMENT + materials + robot-components + compute lead: POWL ~450%, TECK ~277%,
