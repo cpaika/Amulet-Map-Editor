@@ -381,6 +381,7 @@ impl SocietyState {
         election_year: bool,
         incident: bool,
         dread: bool,
+        ai_incident: bool,
         dread_stringency_step: f64,
     ) {
         // ---- S1 sentiment: rate-triggered inflow with a 1-yr anticipation
@@ -461,14 +462,19 @@ impl SocietyState {
                 };
                 self.reg_stringency += sp.reg_drip * (1.0 - capture);
             }
-            // Incident ratchet. The AI-incident applies its bool-scaled step; a bio/
-            // cyber dread shock applies its OWN severity-scaled step (audit C7:
-            // dread_stringency_step ~0.10 for a contained scare, ~0.70 for a
-            // mass-casualty event — previously discarded, so every dread event
-            // ratcheted the same flat amount). MAX across co-occurring classes, not
-            // sum (design note). dread_stringency_step = 0 on the baseline (no drawn
-            // shocks) => byte-identical.
-            let ai_step = if incident {
+            // Incident ratchet. The AI-CAPABILITY incident applies its bool-scaled
+            // step (major/dread class); a bio/cyber dread shock applies its OWN
+            // severity-scaled step (audit C7: dread_stringency_step ~0.10 for a
+            // contained scare, ~0.70 for a mass-casualty event). MAX across the two
+            // channels (co-occurring classes take the strongest, not the sum). The
+            // AI-step is gated on `ai_incident` (a genuine AI incident), NOT the
+            // combined `incident` flag — otherwise a bio/cyber dread shock, which also
+            // sets `incident` for its sentiment/trust pulse, would drag the ratchet up
+            // to the AI floor (incident_s2_major = 0.15) and silently clamp every
+            // sub-0.15 dread step, defeating the low-end severity scaling. Baseline
+            // (no drawn shocks): ai_incident=false, dread_stringency_step=0 => 0 step,
+            // byte-identical.
+            let ai_step = if ai_incident {
                 if dread { sp.incident_s2_dread } else { sp.incident_s2_major }
             } else {
                 0.0

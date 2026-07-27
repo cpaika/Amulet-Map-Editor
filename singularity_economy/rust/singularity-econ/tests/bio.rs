@@ -175,4 +175,14 @@ fn dread_stringency_ratchet_scales_with_severity() {
     let mass = peak(vec![mk(0.70, true)]);
     assert!(scare > base, "a dread scare must ratchet stringency: {scare} vs {base}");
     assert!(mass > scare + 0.2, "mass-casualty must ratchet FAR more than a scare: {mass} vs {scare}");
+    // Low-end scaling must be LIVE, not clamped to the AI-incident floor (0.15): two
+    // sub-0.15 severities must ratchet DIFFERENT amounts. Before the ai_incident gate,
+    // a dread shock also forced the AI-`incident` path, so both 0.10 and 0.14 were
+    // floored to incident_s2_major = 0.15 and this assertion failed (regression lock).
+    let scare_lo = peak(vec![mk(0.10, false)]);
+    let scare_hi = peak(vec![mk(0.14, false)]);
+    assert!(
+        scare_hi > scare_lo + 1e-6,
+        "sub-0.15 dread severity must scale, not clamp to the AI floor: {scare_lo} vs {scare_hi}"
+    );
 }

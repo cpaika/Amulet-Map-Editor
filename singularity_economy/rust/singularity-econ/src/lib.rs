@@ -1708,6 +1708,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 election,
                 incident,
                 incident && p.incident_dread,
+                p.incident_year == year, // C7: AI-capability incident gates the AI-step floor
                 bfx.stringency_step, // C7: severity-scaled bio/cyber dread ratchet (0 baseline)
             );
             if let Some(d) = &this_demo {
