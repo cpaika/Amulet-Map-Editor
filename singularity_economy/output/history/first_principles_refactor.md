@@ -43,10 +43,30 @@ JL MAG / Shuanghuan / Nabtesco 285-385% (fleet-scaling of the component pool), T
 ~277% (copper), GEV ~256%, VST ~205%. The power thesis survives — and is now grounded
 in physical energy supply rather than a growth-ceiling parameter.
 
-## Still open (this push)
-- **G — capex/glut investment function:** demand-anchor + q-theory governor
-  (parity-gated) + the `chip_growth_ceiling` fix (reprices the glut-detection
-  convention across the backtest envelope). Highest risk; do with the envelope
-  recalibration.
-- **Follow-up:** physically-bounded dynamic capture share (name_GW / ai_power) to
-  remove the residual fixed-share-of-growing-pool overstatement.
+## Also cleared (every deferred item — "don't defer anything")
+4. **B4 — defensible fab-growth ceiling.** Fabs got a HALVED ASI/robot ceiling boost
+   (EUV/ASML is the hard limit) + a 0.60 base, taming the phantom >150%/yr overbuild.
+   Peak capacity glut 1.52 → 1.35 — still above the 1.3 convention and inside the
+   historical [1.15, 3.5] envelope, so the backtest tests pass unchanged. Retuned the
+   gated equity_sentiment Minsky trigger (1.3 → 1.15) to the shallower glut regime.
+5. **C7 — dread stringency ratchet.** A bio/cyber dread shock's severity-scaled
+   stringency_step (0.10 scare → 0.70 mass-casualty) now ratchets reg_stringency
+   (MAX-aggregated), instead of every dread event moving it a flat amount.
+6. **C2 — competitive erosion of captured share.** CAPTURE_DECAY 6%/yr past phase-in:
+   the scarcity rent is not permanent, so the capture names ease to conservative,
+   rent-not-permanent levels (VST 205→137%, NRG 122→83%, CEG 97→58%) and rent-
+   dominated terminal value is haircut. Tempers the "merchant power to infinity" leg.
+
+## Final refactored book (baseline)
+Grid EQUIPMENT + materials + robot-components + compute lead: POWL ~450%, TECK ~277%,
+BESI ~270%, JL MAG / Shuanghuan ~250-264%, GEV ~256%, Hitachi/CLS ~193-197%,
+AVGO/NVDA/TSM ~123-167%. Power GENERATION (VST 137 / NRG 83 / CEG 58%) is now
+conservative — the physical bottleneck (grid gear) and the endogenous-then-decaying
+rent are priced, not a "merchant power to infinity" assumption. The power thesis
+survives, grounded in physical energy supply rather than a growth-ceiling parameter.
+
+## Follow-ups (optional, lower value)
+- **G — q-theory investment governor** (parity-gated): replace the desire_base capex
+  heuristic with a proper return-on-capital investment function. Critique rank 4.
+- **Physically-bounded dynamic capture share** (name_GW / ai_power) as a cleaner
+  replacement for the fixed-share + CAPTURE_DECAY approximation.
