@@ -377,6 +377,14 @@ pub struct Params {
     pub rent_margin_slope: f64,
     pub margin_ceiling: f64,
     pub target_utilization: f64,
+    /// Two-sided merchant power pricing (gated). By default the scarcity price is
+    /// one-sided — it rises above normal when power utilization exceeds target but never
+    /// falls below normal in a glut. Real merchant/spot power crashes in oversupply
+    /// (renewables can even go negative). With this gain on, sub-target utilization
+    /// pushes the price BELOW normal (floored at a must-run marginal cost), so the
+    /// merchant power names' (VST/NRG) downside in a power glut is actually priced.
+    /// 0 (default) => one-sided => baseline byte-identical.
+    pub power_glut_price_gain: f64,
     pub ai_services_margin: f64,
     // R4 physical acceleration (post-singularity)
     pub asi_diffusion_years: f64,
@@ -547,6 +555,7 @@ impl Default for Params {
             rent_margin_slope: 0.35,
             margin_ceiling: 0.62,
             target_utilization: 0.85,
+            power_glut_price_gain: 0.0, // off by default; ~0.6 prices the merchant-power glut downside
             ai_services_margin: 0.35,
             asi_diffusion_years: 2.0,
             asi_delay_compression: 0.35,
@@ -1394,10 +1403,22 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         silicon_margin += pa * (margin_from(chip_utilization, 0.9) - silicon_margin);
         ip_toll_margin += pa * (margin_from(ip_utilization, 0.9) - ip_toll_margin);
         power_margin += pa * (margin_from(power_utilization, 1.0) - power_margin);
-        let electricity_price = p.electricity_price_normal
-            * (1.0 + 1.2 * (((power_utilization - p.target_utilization).max(0.0))
-                / (1.0 - p.target_utilization))
-                .min(2.0));
+        let scarcity_up = (((power_utilization - p.target_utilization).max(0.0))
+            / (1.0 - p.target_utilization))
+            .min(2.0);
+        // Two-sided (gated): sub-target utilization drops the price below normal — a
+        // power glut crashes merchant/spot prices. gain=0 => glut_down=0 => one-sided,
+        // byte-identical. Floored at 25% of normal (must-run marginal cost; power isn't
+        // free even in deep oversupply).
+        let glut_down = if p.power_glut_price_gain > 0.0 {
+            p.power_glut_price_gain
+                * (((p.target_utilization - power_utilization).max(0.0)) / p.target_utilization)
+                    .min(1.0)
+        } else {
+            0.0
+        };
+        let electricity_price = (p.electricity_price_normal * (1.0 + 1.2 * scarcity_up - glut_down))
+            .max(p.electricity_price_normal * 0.25);
         // C3: blend the energy layer's generation cost_index (last year's, to
         // avoid reordering the satellite section) into the AI-sector electricity
         // price. The scarcity term above prices datacenter UTILIZATION; the energy

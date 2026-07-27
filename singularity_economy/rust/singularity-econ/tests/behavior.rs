@@ -47,6 +47,39 @@ fn q_governor_brakes_investment_below_the_return_hurdle() {
     assert!(hi < lo, "a higher return hurdle must brake investment: {hi} vs {lo}");
 }
 
+// Two-sided merchant power pricing. Default scarcity price is one-sided (rises above
+// normal in tightness, never falls below in a glut). gain=0 => byte-identical (golden).
+// With the gain on, a genuine power GLUT (AI demand fizzles while generation keeps
+// building, so utilization falls below target) must crash merchant electricity revenue
+// below the one-sided baseline — the downside the merchant-power names structurally
+// carry that the one-sided price could not express. In the power-BINDS base case the
+// mechanism is correctly inert (utilization stays above target).
+#[test]
+fn two_sided_power_price_crashes_merchant_revenue_in_a_glut() {
+    // Base case: power binds, so the glut term never engages => identical electricity.
+    let b = base();
+    let b_glutgain = run(Params { power_glut_price_gain: 0.6, ..Params::default() });
+    for (x, y) in b.iter().zip(&b_glutgain) {
+        assert!(
+            (x.profits.electricity - y.profits.electricity).abs() < 1e-9,
+            "glut pricing must be inert when power binds ({}): {} vs {}",
+            x.year, x.profits.electricity, y.profits.electricity
+        );
+    }
+    // Power-glut scenario: demand fizzles, generation keeps building.
+    let glut_params = |g: f64| Params {
+        power_glut_price_gain: g,
+        singularity_year: 2099, robotics_year: 2099, adoption_halflife: 4.0,
+        max_displacement_rate: 0.05, power_supply_gain: 1.2, power_growth_ceiling: 0.55,
+        power_base_growth: 0.15, ..Params::default()
+    };
+    let one_sided = run(glut_params(0.0));
+    let two_sided = run(glut_params(0.6));
+    let e1 = one_sided.last().unwrap().profits.electricity;
+    let e2 = two_sided.last().unwrap().profits.electricity;
+    assert!(e2 < e1 * 0.9, "two-sided pricing must crash merchant revenue in a glut: {e2} vs {e1}");
+}
+
 // Wright's-law learning curve. Default compute cost falls on calendar time; with the
 // gain on it falls with CUMULATIVE production. gain=0 => byte-identical (golden). The
 // first-principles invariant: a higher learning rate (more cost reduction per doubling)
