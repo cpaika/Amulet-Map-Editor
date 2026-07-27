@@ -56,7 +56,12 @@ impl Default for MacroParams {
             priv_duration_2026: 0.55,
             dur_factor: 0.55,
             ig_dur_factor: 1.2,
-            spread_passthrough: 0.25,
+            // Audit B7: sovereign duration supply lands ~85-95% on the risk-free
+            // curve (convenience-yield channel), i.e. only ~5-15% leaks to private
+            // credit spreads. The old 0.25 contradicted this module's own field
+            // doc and understated the risk-free B4 injection the comment says
+            // dominates. 0.10 sits mid-band.
+            spread_passthrough: 0.10,
             rate_smoothing: 0.5,
             baseline_deficit: 0.06,
             gov_debt_2026: 1.0,
