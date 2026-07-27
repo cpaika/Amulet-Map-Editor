@@ -47,14 +47,15 @@ pub struct Bloc {
     /// Taiwan supply shock hits it LESS — the "silicon shield" cuts the US lead
     /// harder and lets China close the gap. 0 ⇒ chip-shock-immune.
     pub chip_dependence: f64,
-    /// Per-bloc displacement intensity relative to the global rate (C11). The
-    /// blocs no longer share one global displacement scaled only by a fixed
-    /// `backlash_gain` — that pinned China's stress inflow at a constant 0.35x of
-    /// the US forever, so the ordering could never reorder. China adopts robots
-    /// fastest (~54% of global installs, ~2.5x adoption) so it DISPLACES faster;
-    /// the EU adopts slowest. Combined with the low autocratic backlash_gain and
-    /// the brittleness fracture term, this lets stored stress build toward the
-    /// discontinuous regime-shift tail rather than a fixed fraction of the US.
+    /// Per-bloc displacement intensity relative to the global rate (C11). China
+    /// adopts robots fastest (~54% of global installs, ~2.5x adoption) so it
+    /// DISPLACES faster; the EU adopts slowest. This RESCALES the fixed
+    /// per-bloc fraction of stress inflow (e.g. China 0.35x -> 0.49x of the US via
+    /// backlash_gain*modifier) so the stored-stress level feeding the brittleness
+    /// fracture term is calibrated to adoption speed. NOTE: it is a compile-time
+    /// constant, so the bloc stress ORDERING is still a fixed ratio — it is not a
+    /// state-dependent reorder (a genuine reorder would need a trajectory-driven
+    /// modifier; deferred).
     pub displacement_modifier: f64,
 }
 
@@ -78,9 +79,9 @@ impl Default for RegionParams {
         RegionParams {
             enabled: 1.0,
             stress_decay: 0.15,
-            // Below China's peak suppressed stress (~0.86) so the autocratic-
-            // brittleness fracture hazard actually fires — the design's "no
-            // electoral release valve → stored stress cracks nonlinearly."
+            // Below China's peak suppressed stress (~1.0 post-C11) so the
+            // autocratic-brittleness fracture hazard actually fires — the design's
+            // "no electoral release valve → stored stress cracks nonlinearly."
             fracture_threshold: 0.7,
             blocs: default_blocs(),
         }
@@ -264,19 +265,27 @@ impl RegionState {
         let cn = idx("China").map_or(0.0, |i| shares[i]);
         let eu = idx("EU").map_or(0.0, |i| shares[i]);
 
-        // Fracture risk: open systems fracture from raw stress; brittle systems
-        // fracture nonlinearly once suppressed stress crosses the threshold.
+        // Fracture risk = DISCONTINUOUS regime-shift hazard, NOT overt stress.
+        // Open, electoral systems VENT stress continuously (protests, turnover), so
+        // even high overt stress is not regime collapse — they carry only a small
+        // vent-driven floor. Brittle autocracies SUPPRESS stress, which accumulates
+        // and cracks NONLINEARLY once past the threshold — the fat, discontinuous
+        // tail. So BRITTLENESS (not the overt stress LEVEL) must dominate the
+        // ranking: China's suppressed ~1.0 is more regime-threatening than the US's
+        // vented ~1.5. (Prior bug: a `st.min(1.5)` base saturated for the high-
+        // stress democracies and INVERTED the thesis — US/EU scored as more
+        // fracture-prone than China, backwards for the trade book's fat-tail signal.)
         let fracture: Vec<f64> = (0..n)
             .map(|i| {
                 let b = &p.blocs[i];
                 let st = self.blocs[i].stress;
-                let base = st.min(1.5);
+                let vent = 0.25 * st.min(1.5); // small overt-instability floor, all blocs
                 let brittle = if b.brittleness > 0.0 && st > p.fracture_threshold {
-                    b.brittleness * (st - p.fracture_threshold)
+                    b.brittleness * st.powi(2) // suppressed stress cracks nonlinearly
                 } else {
                     0.0
                 };
-                (base + brittle).min(3.0)
+                (vent + brittle).min(3.0)
             })
             .collect();
 

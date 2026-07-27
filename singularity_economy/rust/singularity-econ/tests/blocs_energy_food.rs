@@ -223,9 +223,13 @@ fn taiwan_blockade_closes_china_us_gap() {
 #[test]
 fn china_fracture_hazard_is_live() {
     let v = to2050(Params::default());
-    let china_peak = v.iter().map(|s| s.bloc_fracture_risk[1]).fold(0.0_f64, f64::max);
+    let peak = |i: usize| v.iter().map(|s| s.bloc_fracture_risk[i]).fold(0.0_f64, f64::max);
+    let (us, china, eu) = (peak(0), peak(1), peak(2));
+    assert!(china > 0.0, "China's brittleness fracture hazard never fires: {china}");
+    // The autocratic fat tail must be the HIGHEST regime-shift hazard — brittleness,
+    // not overt (vented) stress, dominates. A prior bug inverted this (US/EU > China).
     assert!(
-        china_peak > 0.0,
-        "China's brittleness fracture hazard never fires: peak {china_peak}"
+        china > us && china > eu,
+        "China's brittle fracture hazard must top the vented democracies: China {china} vs US {us}, EU {eu}"
     );
 }
