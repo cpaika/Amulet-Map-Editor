@@ -104,7 +104,11 @@ pub struct SocietyParams {
     // -- S6 consumer trust / B10+R8 --
     pub consumer_trust_2026: f64,
     pub familiarity_gain: f64,
-    /// Adoption ceiling = min(0.90, ceiling_base + consumer_trust).
+    /// Adoption ceiling = min(0.90, ceiling_base + consumer_trust). Audit B3:
+    /// base 0.40 + the 0.50 initial trust pinned the ceiling at its 0.90 clamp
+    /// from t=0, so the R8 familiarity loop (which raises consumer_trust) could
+    /// never lift the ceiling — it was structurally inert. 0.30 leaves headroom
+    /// (0.80 at t=0) so familiarity endogenously earns the last 10pp of adoption.
     pub consumer_ceiling_base: f64,
 
     // -- macro couplings --
@@ -165,7 +169,7 @@ impl Default for SocietyParams {
             trust_reroute_floor: 0.20,
             consumer_trust_2026: 0.50,
             familiarity_gain: 0.05,
-            consumer_ceiling_base: 0.40,
+            consumer_ceiling_base: 0.30,
             precautionary_gain: 0.04,
             transfer_drag_offset: 0.5,
             gov_debt_2026: 1.0,
