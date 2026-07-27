@@ -32,7 +32,18 @@ pub struct DemographyParams {
     /// incidence fell on entrants).
     pub divert_max: f64,
     /// Blocked entrants drain to underemployment (physical pool) at this
-    /// rate (41.5% underemployed vs 5.7% unemployed = 7:1 buffer).
+    /// rate. Audit B2: at 0.6 the ~0.37/yr retention pinned blocked_share at
+    /// ~0.14 — below the 0.18 protest threshold — so Youth Channel B (the
+    /// "historically revolutionary" underemployed-graduate stock) was
+    /// structurally inert (youth_sentiment_inflow == 0 always). Lowered to 0.45:
+    /// the stock persists enough that blocked_share reaches ~0.25 (inside the
+    /// design's 0.18/0.25/0.40 band) and the channel fires. NOTE (calibration
+    /// boundary): the channel is deliberately kept near its activation edge —
+    /// dropping much below ~0.40 makes youth_sentiment_inflow (scaled by
+    /// youth_gain*youth_salience = 5.0 and applied as a SATURATING rate on
+    /// sentiment) large enough to pin sentiment at 1.0, which would need a joint
+    /// re-tune of {drain, blocked_share cap, youth gains}. 0.45 keeps the peak
+    /// inflow ~0.09 — meaningful but not dominating.
     pub underemploy_drain: f64,
     // youth channel
     pub blocked_init_m: f64,
@@ -76,7 +87,7 @@ impl Default for DemographyParams {
             r_entry_phys: 0.026,
             r_ret_phys: 0.018,
             divert_max: 0.7,
-            underemploy_drain: 0.6,
+            underemploy_drain: 0.45,
             blocked_init_m: 8.0,
             youth_gain: 2.0,
             youth_salience: 2.5,

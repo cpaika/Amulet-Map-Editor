@@ -8,6 +8,31 @@ fn base() -> Vec<YearState> {
     simulate(&Params::default())
 }
 
+// B2: Youth Channel B (the underemployed-graduate "revolutionary" stock) must be
+// LIVE at the default underemploy_drain — a peak youth_sentiment_inflow > 0 over a
+// displacement ramp — whereas the old 0.6 drain kept it structurally dead (blocked
+// share never crossed the 0.18 protest threshold).
+#[test]
+fn youth_channel_is_live_at_default_drain() {
+    fn peak_inflow(drain: f64) -> f64 {
+        let mut dp = DemographyParams::default();
+        dp.underemploy_drain = drain;
+        let mut st = DemographyState::new(&dp, 1200.0, 1800.0);
+        let mut peak = 0.0_f64;
+        for i in 0..14 {
+            let disp = (0.05 + 0.06 * i as f64).min(0.76);
+            let out = st.step(&dp, disp, 0.1, 0.2, 0.05, 0.05, false, 0.1, 0.0, 1.0);
+            peak = peak.max(out.youth_sentiment_inflow);
+        }
+        peak
+    }
+    assert!(
+        peak_inflow(DemographyParams::default().underemploy_drain) > 0.0,
+        "youth channel must fire at the default drain"
+    );
+    assert_eq!(peak_inflow(0.6), 0.0, "the old 0.6 drain kept the channel dead");
+}
+
 // C13: the bio layer's age_creep_mult (healthcare-deflation fiscal relief) must
 // actually reach demography — it was computed then discarded. Stepping the layer
 // with more relief (a lower mult) must leave a HIGHER transfer_cap_eff than the
