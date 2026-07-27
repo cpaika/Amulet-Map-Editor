@@ -27,6 +27,14 @@ short sleeve (wage compression), partly offset on the discount by a JG tilt.
 All six compose cleanly together — the `enhanced_scenario_composes_without_pathology`
 test runs all of them on at once and verifies no NaN / no collapse / boom-bust intact.
 
+**Interaction note — q-governor × spine.** The Tobin's-q governor is deliberately NOT
+in the enhanced-realism set: composed with the reflexive spine it materially DAMPENS
+the boom-bust (the return-on-capital brake cuts the overbuild before the glut can crack
+sentiment, so the trough no longer falls below ~0.7). That is economically correct —
+investment discipline reduces bubbles — but it changes the scenario's signature, so
+whether to include it is a scenario-design choice left to the owner. Run it on its own
+(`q_governor_gain > 0`) or add it explicitly.
+
 ## Still to build (need owner input — reprice the trade book directly)
 - **Circular vendor financing** (chip→cloud recycled-capital revenue) — needs a
   `valuation.rs` earnings-quality haircut on NVDA/AVGO; deferred like C2.
