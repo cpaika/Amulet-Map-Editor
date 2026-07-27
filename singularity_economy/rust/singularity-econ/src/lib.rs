@@ -1216,7 +1216,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             - robot_power_gw)
             .max(0.0);
         let power_cap_physical = (physical_headroom_gw / gw_per_unit) * cost_per_unit;
-        physical_power_binds = power_cap_physical < power_cap;
+        // The physical term is the tighter of the two POWER constraints this year...
+        let physical_tighter_than_abstract = power_cap_physical < power_cap;
         let power_cap = power_cap.min(power_cap_physical);
 
         let caps = [
@@ -1232,6 +1233,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 ai_capex = v;
             }
         }
+        // ...but "physical energy supply binds" is only HONEST when power is the
+        // effective Liebig constraint (re-audit: else a chip-starved Taiwan-shock year
+        // with slack power still flagged true, overstating the headline). Require both:
+        // the physical term is the tighter power cap AND power is the overall min.
+        physical_power_binds =
+            physical_tighter_than_abstract && matches!(binding, Binding::Power);
         let queue_ratio = (desired_capex
             / chips_cap.min(power_cap).min(capital_cap).max(1e-9))
             .min(50.0);
@@ -1586,9 +1593,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             human_physical_wages: phys_workers_m * avg_phys_wage * wage_index_phys,
             gdp_index: gdp,
         };
+        // Floored at 0.0 as well as capped at 0.6: since capture earnings now ride
+        // `pool x electricity_margin` (audit V), an unfloored margin would go NEGATIVE
+        // once the effective price fell below 0.4x normal (reachable only via the C3
+        // energy coupling, never in shipped scenarios) and SUBTRACT from the power
+        // names' earnings — a generator books zero margin in a glut, not negative.
         let electricity_margin = (0.30
             + 0.5 * (electricity_price / p.electricity_price_normal - 1.0))
-            .min(0.6);
+            .clamp(0.0, 0.6);
         let profits = Profits {
             ai_services: pools.ai_services * p.ai_services_margin,
             silicon: pools.silicon * silicon_margin,
