@@ -107,3 +107,29 @@ pub fn scenario_states_enhanced() -> Vec<(&'static str, Vec<YearState>)> {
         .map(|(name, p)| (name, simulate(&p)))
         .collect()
 }
+
+/// "First-principles v2" — the most complete first-principles configuration: the
+/// enhanced-realism dynamics PLUS the four supply/cost/pricing mechanisms grounded from
+/// first principles this cycle. Compute cost rides Wright's law (cumulative-volume
+/// learning, not calendar); investment rides a Tobin's-q return-on-capital brake with an
+/// endogenous (sovereign-rate + premium + depreciation) hurdle; merchant power prices
+/// two-sided (crashes in a glut); and AI-provider rent commoditizes as the market
+/// matures. Net effect vs enhanced-realism: the q-brake tempers the reflexive bubble
+/// (investment discipline offsets animal spirits — a deliberately-included interaction),
+/// while commoditization + two-sided power deepen the AI-services and merchant-power
+/// downside. Still a review lens of hypotheses, not the shipped default.
+pub fn first_principles_v2(p: Params) -> Params {
+    let mut p = enhanced_realism(p);
+    p.wright_gain = 1.0;             // compute cost tied to cumulative volume
+    p.q_governor_gain = 0.5;         // return-on-capital investment brake
+    p.power_glut_price_gain = 0.6;   // two-sided merchant power price
+    p.ai_commoditization_gain = 0.5; // AI-provider rent competes away as adoption saturates
+    p
+}
+
+pub fn scenario_states_v2() -> Vec<(&'static str, Vec<YearState>)> {
+    scenario_params()
+        .into_iter()
+        .map(|(name, p)| (name, simulate(&first_principles_v2(p))))
+        .collect()
+}

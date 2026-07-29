@@ -5,7 +5,7 @@
 
 use singularity_econ::companies::universe;
 use singularity_econ::scenarios::{
-    scenario_params, scenario_states, scenario_states_enhanced,
+    scenario_params, scenario_states, scenario_states_enhanced, scenario_states_v2,
 };
 use singularity_econ::valuation::{
     earnings_and_rent, earnings_path, evaluate, evaluate_all, implied_cagr, pv, Company,
@@ -254,6 +254,39 @@ fn enhanced_realism_reranks_the_book() {
     // The wage-linked shorts remain short (wage compression can only deepen them).
     for t in ["RHI", "ADP", "PAYX"] {
         assert!(upside(&enh, t) < -0.3, "{t} must stay short under enhanced realism: {}", upside(&enh, t));
+    }
+}
+
+// First-principles v2: the most complete first-principles configuration (enhanced set +
+// Wright learning + q-governor + two-sided power + AI commoditization). It must reprice
+// the book coherently: (a) all finite; (b) the AI-services RENT names (MSFT, GOOGL) lose
+// upside vs baseline as commoditization competes the provider surplus away; (c) the
+// physical-bottleneck longs (POWL grid gear, robot components) still lead positive;
+// (d) the wage-linked shorts stay short. This locks the composed lens against drift.
+#[test]
+fn first_principles_v2_reprices_coherently() {
+    let base = book();
+    let v2: Vec<(String, f64)> = evaluate_all(&universe(), &scenario_states_v2(), DR_BETA)
+        .into_iter()
+        .map(|e| (e.ticker.to_string(), e.expected_upside))
+        .collect();
+    assert!(v2.iter().all(|(_, u)| u.is_finite()), "v2 book must stay finite");
+    // AI-services rent commoditizes → MSFT/GOOGL lose upside vs baseline.
+    for t in ["MSFT", "GOOGL"] {
+        assert!(
+            upside(&v2, t) < upside(&base, t) - 0.10,
+            "{t} AI rent must commoditize in v2: {} vs {}",
+            upside(&v2, t),
+            upside(&base, t)
+        );
+    }
+    // The physical bottleneck still leads (grid equipment + a robot-component supplier).
+    for t in ["POWL", "GEV", "002472.SZ"] {
+        assert!(upside(&v2, t) > 0.5, "{t} must stay a strong long in v2: {}", upside(&v2, t));
+    }
+    // Wage-linked shorts remain short.
+    for t in ["RHI", "ADP", "PAYX"] {
+        assert!(upside(&v2, t) < -0.3, "{t} must stay short in v2: {}", upside(&v2, t));
     }
 }
 

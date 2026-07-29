@@ -7,7 +7,9 @@ use rand::distributions::{Distribution, Uniform};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use singularity_econ::companies::{load_financials, universe};
-use singularity_econ::scenarios::{scenario_states, scenario_states_enhanced};
+use singularity_econ::scenarios::{
+    scenario_states, scenario_states_enhanced, scenario_states_v2,
+};
 use singularity_econ::valuation::{evaluate_all, Stance};
 use singularity_econ::{simulate, Params};
 use std::collections::BTreeMap;
@@ -22,10 +24,13 @@ fn main() {
             golden(args.get(2).map(String::as_str).unwrap_or(default));
         }
         Some("book") => {
-            book(args.get(2).map(String::as_str), false);
+            book(args.get(2).map(String::as_str), "baseline");
         }
         Some("book-enhanced") => {
-            book(args.get(2).map(String::as_str), true);
+            book(args.get(2).map(String::as_str), "enhanced");
+        }
+        Some("book-v2") => {
+            book(args.get(2).map(String::as_str), "v2");
         }
         Some("sa") => {
             let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(20_000);
@@ -38,7 +43,7 @@ fn main() {
             monte_carlo(n, seed);
         }
         Some(cmd) => {
-            eprintln!("unknown command: {cmd} (use: run | book [financials.json] | book-enhanced [financials.json] | golden [path] | mc <n> <seed> | sa <n> <seed>)");
+            eprintln!("unknown command: {cmd} (use: run | book | book-enhanced | book-v2 [financials.json] | golden [path] | mc <n> <seed> | sa <n> <seed>)");
             std::process::exit(2);
         }
     }
@@ -110,7 +115,7 @@ fn golden(path: &str) {
     eprintln!("snapshot written to {path}");
 }
 
-fn book(financials_path: Option<&str>, enhanced: bool) {
+fn book(financials_path: Option<&str>, mode: &str) {
     let mut comps = universe();
     let default = concat!(env!("CARGO_MANIFEST_DIR"), "/../../output/financials.json");
     let path = financials_path.unwrap_or(default);
@@ -121,10 +126,17 @@ fn book(financials_path: Option<&str>, enhanced: bool) {
         }
         Err(_) => eprintln!("note: {path} not found; using built-in (synced) financials"),
     }
-    if enhanced {
-        eprintln!("note: enhanced-realism enable set (spine+wealth+transmission+wage-compression+JG)");
-    }
-    let states = if enhanced { scenario_states_enhanced() } else { scenario_states() };
+    let states = match mode {
+        "enhanced" => {
+            eprintln!("note: enhanced-realism set (spine+wealth+transmission+wage-compression+JG)");
+            scenario_states_enhanced()
+        }
+        "v2" => {
+            eprintln!("note: first-principles v2 (enhanced + Wright learning + q-governor + two-sided power + AI commoditization)");
+            scenario_states_v2()
+        }
+        _ => scenario_states(),
+    };
     let dr_beta = singularity_econ::macrofin::MacroParams::default().dr_beta;
     let rows = evaluate_all(&comps, &states, dr_beta);
     println!("{:<10} {:<6} {:>12} {:>8} {:>8} {:>8}",
