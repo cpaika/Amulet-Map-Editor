@@ -17,7 +17,7 @@ directional effect.
 | `ai_commoditization_gain` | 0.0 | AI-services provider rent erosion. The provider's share of displaced-wage surplus is a constant 0.45 by default (durable pricing power forever); with this on it falls toward `0.45 × (1 − gain × adoption)` as the market matures (open weights, multiple providers). At 0.5 the ai_services pool ~halves by 2036 (3.59→2.07). | The "**do AI labs keep pricing power?**" knob — bearish AI-services incumbents (MSFT/GOOGL AI rent, the ai_services capture names) if capability commoditizes; leaves the infra/compute layer (which sells picks-and-shovels regardless) intact. |
 | `power_glut_price_gain` | 0.0 | Two-sided merchant power pricing. The scarcity price is one-sided by default (rises above normal when utilization exceeds target, never falls below). With this on, sub-target utilization pushes the price BELOW normal (floored at 25% of normal, a must-run cost) — a power glut crashes merchant/spot power. Inert when power binds (the base case); engages in a demand-fizzle/generation-overbuild glut. | Prices the merchant-power (VST/NRG) **downside** in a power glut — the one-sided price could only ever mark them up. A demand fizzle with generation overbuild now craters their electricity revenue (~47% in the test glut). |
 | `wright_gain` (+ `wright_learning_rate`) | 0.0 (LR 0.20) | Wright's-law learning curve: compute unit cost falls with CUMULATIVE production instead of calendar time (each doubling cuts cost by the learning rate). Makes cost decline endogenous/reflexive (buildout → cheaper compute → more units/dollar) and scenario-dependent (a fizzle learns slower than a boom); the curve saturates late, unlike the constant-forever calendar. | Ties the silicon/compute **cost trajectory** to realized volume — a fizzle keeps compute expensive (bearish the whole AI-capex complex), a boom cheapens it; couples directly into the q-governor's replacement-cost denominator. |
-| `q_governor_gain` (+ `q_risk_premium`, G) | 0.0 (premium 0.10) | Tobin's-q investment governor: overlays a return-on-capital channel on the momentum-driven capex desire. q = (last year's AI-complex profit / replacement value of installed compute) / hurdle, where the hurdle is ENDOGENOUS = sovereign `long_rate` (B11) + equity risk premium + compute depreciation, so a debt-crowding rate spike tightens the investment hurdle automatically. q>1 accelerates investment, q<1 brakes it. Reveals the model's **supply-vs-demand asymmetry**: on the way up capex is chip/power-bound so the accelerator is muted (realistic), on the way down a sub-hurdle return makes DEMAND bind and cuts capex — an endogenous brake momentum lacks. A higher hurdle monotonically lowers cumulative capex. | Grounds the AI-capex **cycle** in profitability, not just demand; brakes the silicon/AI-capex complex when margins compress even while demand still grows (a distinct, earlier bust signal than the glut-triggered spine). |
+| `q_governor_gain` (+ `q_risk_premium`, G) | 0.0 (premium 0.10) | Tobin's-q investment governor: overlays a return-on-capital channel on the momentum-driven capex desire. q = (last year's OPERATING return on installed compute — ai_services value / replacement cost) / hurdle, where the hurdle is ENDOGENOUS = sovereign `long_rate` (B11) + equity risk premium + compute depreciation, so a debt-crowding rate spike tightens the investment hurdle automatically. (Re-audit fix: the numerator is ai_services alone — silicon/ip_tolls are the vendors' capex-flow revenue, not the operator's stock return.) q>1 accelerates investment, q<1 brakes it. Reveals the model's **supply-vs-demand asymmetry**: on the way up capex is chip/power-bound so the accelerator is muted (realistic), on the way down a sub-hurdle return makes DEMAND bind and cuts capex — an endogenous brake momentum lacks. A higher hurdle monotonically lowers cumulative capex. | Grounds the AI-capex **cycle** in profitability, not just demand; brakes the silicon/AI-capex complex when margins compress even while demand still grows (a distinct, earlier bust signal than the glut-triggered spine). |
 
 ## Suggested coherent "enhanced-realism" scenario (for review, not shipped)
 A defensible combined setting to see how the book re-ranks (all still hypotheses):
@@ -30,13 +30,16 @@ short sleeve (wage compression), partly offset on the discount by a JG tilt.
 All six compose cleanly together — the `enhanced_scenario_composes_without_pathology`
 test runs all of them on at once and verifies no NaN / no collapse / boom-bust intact.
 
-**Interaction note — q-governor × spine.** The Tobin's-q governor is deliberately NOT
-in the enhanced-realism set: composed with the reflexive spine it materially DAMPENS
-the boom-bust (the return-on-capital brake cuts the overbuild before the glut can crack
-sentiment, so the trough no longer falls below ~0.7). That is economically correct —
-investment discipline reduces bubbles — but it changes the scenario's signature, so
-whether to include it is a scenario-design choice left to the owner. Run it on its own
-(`q_governor_gain > 0`) or add it explicitly.
+**Interaction note — q-governor × spine.** The Tobin's-q governor is deliberately NOT in
+the enhanced-realism set; it composes into first-principles v2 instead. Composed with the
+reflexive spine it AMPLIFIES the boom-bust: q-theory investment is procyclical — it
+accelerates when the *operating* return on compute is high (mid-boom), which is exactly
+when the future glut is sown, so the glut runs hotter (peak ~2.5 → ~3.6) and the
+sentiment trough falls deeper (~0.65 → ~0.36). (This corrects an earlier note based on a
+mis-specified q numerator — see the re-audit fix below — which wrongly reported the
+governor as *dampening* the bust; on a proper operating-return basis it deepens it.)
+Whether to include it is a scenario-design choice: run it on its own (`q_governor_gain >
+0`), via `book-v2`, or add it explicitly.
 
 ## Still to build (need owner input — reprice the trade book directly)
 - **Circular vendor financing** (chip→cloud recycled-capital revenue) — needs a

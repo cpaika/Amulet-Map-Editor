@@ -280,10 +280,14 @@ fn first_principles_v2_reprices_coherently() {
             upside(&base, t)
         );
     }
-    // The physical bottleneck still leads (grid equipment + a robot-component supplier).
-    for t in ["POWL", "GEV", "002472.SZ"] {
+    // The physical bottleneck still leads. With the re-audited q-governor (operating-
+    // return numerator, which brakes the compute buildout harder and earlier), the
+    // robot-component chokepoint — less capex-reflexive than compute-derived grid demand
+    // — leads, with grid switchgear (POWL) the strongest grid name and GEV a clear long.
+    for t in ["002472.SZ", "POWL"] {
         assert!(upside(&v2, t) > 0.5, "{t} must stay a strong long in v2: {}", upside(&v2, t));
     }
+    assert!(upside(&v2, "GEV") > 0.3, "GEV must stay a clear long in v2: {}", upside(&v2, "GEV"));
     // Wage-linked shorts remain short.
     for t in ["RHI", "ADP", "PAYX"] {
         assert!(upside(&v2, t) < -0.3, "{t} must stay short in v2: {}", upside(&v2, t));

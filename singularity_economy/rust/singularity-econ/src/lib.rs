@@ -1131,26 +1131,32 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let calendar_cost = (p.ai_capex_2026 / 0.80)
             * (1.0 - p.hw_cost_decline).powi(year - p.start_year);
         let cost_per_unit = if p.wright_gain > 0.0 {
+            // Clamp to [0,1] at use (re-audit robustness fix, mirroring transmission_gain
+            // / governance / q_governor self-clamp): a gain > 1 would flip the calendar
+            // term's exponent (1 - gain) negative and turn it into a cost AMPLIFIER.
+            let wg = p.wright_gain.clamp(0.0, 1.0);
             let b = -(1.0 - p.wright_learning_rate).ln() / 2.0_f64.ln(); // learning exponent
             let wright_cost = (p.ai_capex_2026 / 0.80) * cumulative_units.max(1e-9).powf(-b);
-            calendar_cost.powf(1.0 - p.wright_gain) * wright_cost.powf(p.wright_gain)
+            calendar_cost.powf(1.0 - wg) * wright_cost.powf(wg)
         } else {
             calendar_cost
         };
         // ---- G: Tobin's-q investment governor (gated) ----
         // First-principles capex: firms invest while the marginal value of installed
-        // compute exceeds its replacement cost. Return on installed compute = the AI-
-        // complex profit it earned LAST year (ai_services + silicon + ip_tolls, the
-        // compute-attributable pools) over its replacement value (compute_stock ×
-        // cost_per_unit); q = that return vs the cost-of-capital hurdle. q>1 (early
-        // boom, fat AI margins) accelerates investment, q<1 (glut compresses margins
-        // below the hurdle) brakes it — the accelerator the momentum heuristic lacks,
-        // grounded in return-on-capital. Lagged on out.last() (no in-loop ordering
-        // hazard, mirroring the spine). gain=0 (default) => q_mult=1 => byte-identical.
+        // compute exceeds its replacement cost. Return on installed compute = the
+        // OPERATING value the compute produced LAST year — ai_services, the value it
+        // earns doing cognitive work — over its replacement value (compute_stock ×
+        // cost_per_unit). (Re-audit fix: the silicon/ip_tolls pools are the VENDORS'
+        // revenue = the operator's capex COST, and both are ~proportional to the ai_capex
+        // FLOW; including them made q ~94% capex-momentum rather than the independent
+        // return-on-capital signal it must be. ai_services alone is the operator's
+        // stock-productivity return, decoupling q from the desired_capex→capex→profit
+        // loop.) q = that return vs the cost-of-capital hurdle; q>1 accelerates, q<1
+        // (glut compresses the operating return below the hurdle) brakes. Lagged on
+        // out.last(). gain=0 (default) => q_mult=1 => byte-identical.
         let q_mult = if p.q_governor_gain > 0.0 {
             out.last().map_or(1.0, |prev| {
-                let ai_profit =
-                    prev.profits.ai_services + prev.profits.silicon + prev.profits.ip_tolls;
+                let ai_profit = prev.profits.ai_services;
                 // Replacement value of installed compute at the CURRENT unit cost
                 // (Tobin's q denominator is current replacement cost) — the shared
                 // cost_per_unit computed just above, so it tracks the learning curve.
@@ -1678,8 +1684,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let displaced_value = disp * p.cognitive_workers_m * avg_cog_wage;
         // AI-provider surplus share erodes as the market commoditizes (gated): a mature,
         // multi-provider AI market competes the captured share of displaced-wage value
-        // down. gain=0 => constant 0.45 => byte-identical.
-        let ai_surplus_share = 0.45 * (1.0 - p.ai_commoditization_gain * adopt.clamp(0.0, 1.0));
+        // down. gain=0 => constant 0.45 => byte-identical. Floored at 0.0 on the whole
+        // expression (re-audit fix: the erosion can't drive the SHARE — hence ai_services
+        // — negative; the earlier adopt.clamp bounded an already-[0,1) operand and gave
+        // no protection when gain × adopt > 1).
+        let ai_surplus_share = (0.45 * (1.0 - p.ai_commoditization_gain * adopt)).max(0.0);
         let ai_services = displaced_value * ai_surplus_share
             + (cognitive_task_index - 1.0) * p.cognitive_wage_bill * 0.06;
 
