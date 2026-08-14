@@ -827,6 +827,19 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut firm_power_prev = 2700.0_f64;
     // Cumulative surviving Taiwan-fab destruction (re-audit #17); 0 with no invasion.
     let mut chip_destroyed_frac = 0.0_f64;
+    // Last year's grid ration on the COMPUTE side (re-audit #4): when the grid is
+    // short, compute browns out next year by the same pro-rata factor robots were
+    // curtailed by (lagged, matching the model's one-year conventions). 1.0 = ample.
+    let mut compute_ration_prev = 1.0_f64;
+    // Last year's fleet-maintenance fraction (re-audit #7): the robot-built-generation
+    // channel spends the SAME maintenance-taxed reinvestment budget as the other two
+    // self-replication channels.
+    let mut maint_prev = 0.0_f64;
+    // Wright-curve EFFECTIVE doublings, accumulated incrementally (re-audit #5): the
+    // autonomy learning bonus applies to each year's NEW doublings as they happen —
+    // not retroactively rescaling the entire cumulative history each year.
+    let mut eff_doublings = 0.0_f64;
+    let mut prev_l = 0.0_f64;
     #[allow(unused_assignments)]
     let mut physical_power_binds = false;
     let mut chip_capacity = p.chip_capacity_2026;
@@ -1050,8 +1063,13 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
 
         // Concave returns to intelligence: anchored at t0 where
         // compute_stock * algo_eff = 1, so rho only shapes GROWTH.
+        // compute_ration_prev < 1 browns out the effective stock when last year's grid
+        // was short (re-audit #4: the pro-rata ration must bind compute too, not just
+        // robot production). 1.0 whenever the grid served both claimants in full.
         let ai_hew_raw = p.ai_hew_2026_m
-            * (compute_stock * algo_eff).max(1e-12).powf(p.intelligence_returns_rho);
+            * (compute_stock * compute_ration_prev * algo_eff)
+                .max(1e-12)
+                .powf(p.intelligence_returns_rho);
         let price_ratio = if t_sing >= 0 { p.ai_task_price_rel * afford } else { 0.25 };
         let task_expansion = price_ratio
             .powf(-(p.cognitive_demand_elasticity - 1.0) * 0.35)
@@ -1284,8 +1302,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // human power-order pipeline. This is the loop that RELIEVES the draw
         // above — a self-replicating fleet ends up NET-powering itself. Rate-
         // limited: siting/thermal cap how much generation goes up per year.
+        // Maintenance-taxed (re-audit #7): this channel spends the same reinvested
+        // slice as robot self-replication, so it carries the same B-maintenance drag
+        // (lagged one year, like autonomy_prev).
         let robot_power_built_gw = (p.robot_self_replication * autonomy_prev
-            * p.reinvest_share * robot_fleet * p.energy_selfbuild_kw)
+            * p.reinvest_share * (1.0 - maint_prev) * robot_fleet * p.energy_selfbuild_kw)
             .min(p.energy_buildout_ceiling_gw);
         // Audit A7+C8 (reworked together): the grid serves compute AND robots as
         // CO-EQUAL claimants. Robot demand joins the power-ORDERS signal
@@ -1389,7 +1410,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             total_additions
         };
         ai_power += deliverable_additions;
-        let used_power = (compute_stock * gw_per_unit * power_jevons_mult).min(ai_power);
+        let used_power = (compute_stock * compute_ration_prev * gw_per_unit * power_jevons_mult)
+            .min(ai_power);
 
         // ---- utilizations, prices, margins ----
         let chip_utilization = (desired_capex * p.silicon_share_of_capex
@@ -1409,8 +1431,10 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             + (desired_capex / cost_per_unit) * gw_per_unit)
             * power_jevons_mult
             + robot_power_gw;
-        let power_utilization = (power_demand_gw
-            / (ai_power + space.orbital_gw_equiv).max(1e-9))
+        // Orbital offsets the compute portion of DEMAND (re-audit #6) — it never
+        // joins the terrestrial supply side (space.rs: no space->grid flow).
+        let power_utilization = ((power_demand_gw - space.orbital_gw_equiv).max(0.0)
+            / ai_power.max(1e-9))
             .min(1.35);
 
         let margin_from = |u: f64, gain_class: f64| -> f64 {
@@ -1625,8 +1649,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // built to serve the total. Robots building their OWN generation (folded
             // into ai_power) still relieves the constraint — closes R-energy ⇄ B-grid.
             if p.robot_kw_each > 0.0 {
-                let compute_draw_gw = compute_stock * gw_per_unit * power_jevons_mult;
-                let grid = (ai_power + space.orbital_gw_equiv).max(1e-9);
+                // Orbital nets against the COMPUTE claim only (re-audit #6): space.rs
+                // is explicit that no space->grid power flow exists — orbital power
+                // monetizes solely through co-located compute, so it reduces compute's
+                // terrestrial draw rather than adding to the grid robots can drink from.
+                let compute_draw_gw = (compute_stock * gw_per_unit * power_jevons_mult
+                    - space.orbital_gw_equiv)
+                    .max(0.0);
+                let grid = ai_power.max(1e-9);
                 let held_fleet = robot_fleet * (1.0 - p.robot_attrition);
                 let desired_fleet = held_fleet + robot_prod; // fleet after this year's build
                 let robot_demand_gw = desired_fleet * p.robot_kw_each;
@@ -1636,6 +1666,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 let powered_fleet = desired_fleet * ration;
                 let powered_room = (powered_fleet - held_fleet).max(0.0);
                 robot_prod = robot_prod.min(powered_room);
+                // Conservation (re-audit #4): "pro-rata" must curtail BOTH claimants.
+                // Robot production is cut in-year above; compute browns out by the
+                // same ration NEXT year (lagged state feeding ai_hew / used_power) —
+                // previously only robots were cut and total load exceeded the grid by
+                // compute_draw x (1 - ration) whenever the ration bound.
+                compute_ration_prev = ration;
             }
             let comp_utilization = robot_demand / component_capacity.max(1e-9);
             component_margin += p.price_adjustment
@@ -1647,15 +1683,26 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // effective doublings on the Wright curve. Cheaper robots → shorter
             // payback (econ_pull above) → more demand → more volume → cheaper
             // still, bounded below by the hard cost floor.
-            let doublings = (cum_robots / 0.06).max(1.0).log2()
+            // Effective doublings accumulate INCREMENTALLY (re-audit #5): the autonomy
+            // bonus multiplies each year's NEW doublings as they are produced. The old
+            // form rescaled the entire cumulative history by this year's autonomy —
+            // phantom doublings from rising autonomy with zero associated production,
+            // and a falling autonomy would have RAISED robot_cost despite cum_robots
+            // strictly increasing. eff_doublings is monotone by construction.
+            let l = (cum_robots / 0.06).max(1.0).log2();
+            let dl = (l - prev_l).max(0.0);
+            eff_doublings += dl
                 * (1.0 + p.robot_self_replication * p.learning_autonomy_gain * mfg_autonomy);
+            prev_l = l;
             robot_cost = (p.robot_cost_2028_k
-                * (1.0 - p.robot_learning_rate).powf(doublings))
+                * (1.0 - p.robot_learning_rate).powf(eff_doublings))
                 .max(p.robot_cost_floor_k);
             robot_fleet = robot_fleet * (1.0 - p.robot_attrition) + robot_prod;
-            // Carry this year's autonomy forward: it drives next year's compute-
-            // infra flywheel (ceilings/speedup) and robot-built grid power.
+            // Carry this year's autonomy + maintenance forward: they drive next year's
+            // compute-infra flywheel (ceilings/speedup) and the maintenance-taxed
+            // robot-built grid power (re-audit #7).
             autonomy_prev = mfg_autonomy;
+            maint_prev = maint_fraction;
         }
 
         let phys_hew = robot_fleet * p.robot_hew;
