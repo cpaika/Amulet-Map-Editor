@@ -47,6 +47,29 @@ fn q_governor_brakes_investment_below_the_return_hurdle() {
     assert!(hi < lo, "a higher return hurdle must brake investment: {hi} vs {lo}");
 }
 
+// Re-audit #1 regression lock: the physical power budget must not hard-zero AI capex
+// at long horizons. Before the robot-built-generation credit, the fleet's TW-scale
+// draw eventually exceeded 35% of world firm power, clamping physical headroom to
+// zero FOREVER (ai_capex = 0.00 from ~2042, compute 233 -> 3.5 by 2055) while the
+// fleet — rationed against a different grid — escaped the cap entirely. With the
+// credit, the AI sector that builds its own generation keeps its own budget.
+#[test]
+fn physical_budget_credits_robot_built_power_at_long_horizon() {
+    let v = run(Params { end_year: 2055, ..Params::default() });
+    let late: Vec<_> = v.iter().filter(|s| s.year >= 2042).collect();
+    assert!(
+        late.iter().all(|s| s.ai_capex > 0.01),
+        "AI capex must never hard-zero: min {:?}",
+        late.iter().map(|s| s.ai_capex).fold(f64::MAX, f64::min)
+    );
+    let c2039 = v.iter().find(|s| s.year == 2039).unwrap().compute_stock;
+    let c2055 = v.last().unwrap().compute_stock;
+    assert!(
+        c2055 > 0.5 * c2039,
+        "compute must not collapse post-2040: 2039 {c2039} vs 2055 {c2055}"
+    );
+}
+
 // Interaction guard: the four first-principles supply/cost/pricing mechanisms added in
 // this cycle must COMPOSE without pathology. They share state — Wright's law feeds the
 // q-governor's replacement-cost denominator, two-sided pricing feeds electricity margin,

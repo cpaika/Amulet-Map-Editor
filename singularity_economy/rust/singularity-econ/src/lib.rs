@@ -840,6 +840,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     // not retroactively rescaling the entire cumulative history each year.
     let mut eff_doublings = 0.0_f64;
     let mut prev_l = 0.0_f64;
+    // Cumulative robot-built generation credited to the AI physical budget (re-audit #1).
+    let mut robot_built_cum_gw = 0.0_f64;
     #[allow(unused_assignments)]
     let mut physical_power_binds = false;
     let mut chip_capacity = p.chip_capacity_2026;
@@ -1338,7 +1340,16 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // layer under-builds (a stressed-supply scenario) the physical term BINDS,
         // making the headline "power binds" a falsifiable output of physical supply
         // rather than an artifact of the abstract power_growth_ceiling.
-        let physical_ai_ceiling_gw = firm_power_prev * p.ai_grid_share_max;
+        // Robot-built generation counts toward the AI sector's PHYSICAL budget
+        // (re-audit #1): the fleet's self-built power is real supply relieving the
+        // very constraint its draw is charged against — without the credit, robot
+        // draw alone eventually exceeded 35% of world firm power, clamped the
+        // physical headroom to zero forever, and AI capex hard-zeroed from ~2042
+        // while the fleet (rationed against a DIFFERENT grid) escaped the cap. The
+        // stock degrades ~2%/yr (mixed solar/thermal fleet).
+        robot_built_cum_gw = robot_built_cum_gw * 0.98 + robot_power_built_gw;
+        let physical_ai_ceiling_gw =
+            firm_power_prev * p.ai_grid_share_max + robot_built_cum_gw;
         let physical_headroom_gw = (physical_ai_ceiling_gw
             - compute_stock * (1.0 - p.compute_deprec) * gw_per_unit * power_jevons_mult
             - robot_power_gw)

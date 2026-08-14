@@ -48,6 +48,12 @@ pub struct EnergyParams {
     pub nuclear_buildout_gwpy: f64,
     /// How strongly demand pull accelerates buildout (scarcity → investment).
     pub demand_pull_gain: f64,
+    /// Share of world firm power the AI sector (compute + robots) can claim —
+    /// mirrors lib.rs `ai_grid_share_max` (re-audit #2). Scarcity compares AI
+    /// demand against THIS slice, not the whole world fleet: the rest of firm
+    /// power serves existing world load, so the demand-pull investment response
+    /// now fires in exactly the regime where the physical 35%-share cap binds.
+    pub ai_share_of_firm: f64,
 }
 
 impl Default for EnergyParams {
@@ -72,6 +78,7 @@ impl Default for EnergyParams {
             nuclear_gw_2026: 400.0,
             nuclear_buildout_gwpy: 10.0,      // slow, back-loaded; SMR 2030+
             demand_pull_gain: 0.8,
+            ai_share_of_firm: 0.35,
         }
     }
 }
@@ -85,6 +92,8 @@ pub struct EnergyState {
     pub gas_gw: f64,
     pub nuclear_gw: f64,
     pub solar_addition: f64,
+    /// Last year's solar cost — the YoY cheapness rate signal (re-audit #3).
+    pub prev_solar_cost: f64,
 }
 
 impl EnergyState {
@@ -97,6 +106,7 @@ impl EnergyState {
             gas_gw: p.gas_gw_2026,
             nuclear_gw: p.nuclear_gw_2026,
             solar_addition: p.solar_buildout_2026_gwpy,
+            prev_solar_cost: p.solar_cost_2026,
         }
     }
 }
@@ -142,18 +152,32 @@ impl EnergyState {
                 solar_cost: p.solar_cost_2026,
             };
         }
-        // Current firm capacity, and the gap demand is pulling against.
+        // Current firm capacity, and the gap AI demand is pulling against. Scarcity is
+        // measured against the AI-AVAILABLE slice of firm power (re-audit #2): demand_gw
+        // is AI-sector demand only (compute + robot draw), while the rest of the fleet
+        // serves existing world baseload — comparing AI demand to 100% of world firm
+        // treated that baseload as zero and left the scarcity->investment response
+        // unreachable in the very regime where lib.rs's 35%-share physical cap binds.
         let firm_now = self.gas_gw + self.nuclear_gw
             + self.solar_gw * p.solar_capacity_factor * self.storage_firmness(p);
-        let scarcity = ((demand_gw - firm_now) / firm_now.max(1e-9)).clamp(0.0, 3.0);
+        let ai_slice = (firm_now * p.ai_share_of_firm).max(1e-9);
+        let scarcity = ((demand_gw - ai_slice) / ai_slice).clamp(0.0, 3.0);
         let pull = 1.0 + p.demand_pull_gain * scarcity;
 
         // --- solar: Wright cost decline + accelerating deployment ---
         let solar_cost = p.solar_cost_2026
             * (self.cum_solar_gw / p.cum_solar_gw_2026).powf(-wright_b(p.solar_wright_lr));
         // deployment grows with demand pull, region capacity, ASI (robots build
-        // panels), and cheapness (lower cost → more deployed), capped physically.
-        let cheap = (p.solar_cost_2026 / solar_cost).sqrt();
+        // panels), and cheapness — a RATE signal (re-audit #3): the year-over-year
+        // cost decline, not the cumulative-since-2026 level ratio. The level ratio
+        // compounded a permanent one-time cost halving into a permanent extra
+        // ~41%/yr GROWTH of the recursive solar_addition state, slamming buildout
+        // into the physical ceiling by 2029 and deadening pull/asi/cheap for the
+        // rest of the horizon. YoY: a steady Wright decline gives a steady modest
+        // boost; when cost stops falling, the boost fades — level ~ deployment,
+        // rate ~ growth.
+        let cheap = (self.prev_solar_cost / solar_cost).max(1.0).sqrt();
+        self.prev_solar_cost = solar_cost;
         self.solar_addition = (self.solar_addition
             * (1.0 + 0.12 * region_mult) // secular buildout momentum
             * pull
