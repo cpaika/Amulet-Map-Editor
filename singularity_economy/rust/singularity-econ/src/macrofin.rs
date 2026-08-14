@@ -63,7 +63,10 @@ impl Default for MacroParams {
             // dominates. 0.10 sits mid-band.
             spread_passthrough: 0.10,
             rate_smoothing: 0.5,
-            baseline_deficit: 0.06,
+            // PRIMARY deficit (ex-interest), ~3% of GDP (re-audit #16). Interest
+            // enters the snowball only through the (r-g) term; the old 0.06 was the
+            // TOTAL-deficit magnitude and double-counted interest.
+            baseline_deficit: 0.03,
             gov_debt_2026: 1.0,
             dr_beta: 0.60,
         }
@@ -90,6 +93,11 @@ pub struct MacroState {
     long_rate: f64,
     gov_debt_gdp: f64,
     tp_bp: f64,
+    /// Effective coupon on the OUTSTANDING debt stock (re-audit #16): legacy debt
+    /// was issued at past rates and reprices only as it rolls (~15%/yr toward the
+    /// current 10y), so debt service is coupon x stock — not the whole stock
+    /// instantly repriced at today's long rate.
+    coupon: f64,
 }
 
 impl MacroState {
@@ -100,6 +108,9 @@ impl MacroState {
             long_rate,
             gov_debt_gdp: mp.gov_debt_2026,
             tp_bp: mp.tp_2026_bp,
+            // ~3.3%: the 2026 average coupon on the legacy stock (issued across the
+            // low-rate decade), below the 4.5%+ marginal 10y.
+            coupon: 0.033,
         }
     }
 
@@ -123,19 +134,30 @@ impl MacroState {
             - self.priv_duration * nominal_growth.max(0.0))
         .max(0.0);
 
-        // term premium on the STOCK excess over the 2026 anchor
+        // term premium on the STOCK excess over the 2026 anchor. Smoothed ONCE
+        // (re-audit #18): smoothing tp_bp and then long_rate toward a target built
+        // from the already-smoothed tp_bp compounded to ~25% year-one passthrough
+        // instead of the documented ~50% 1-yr delay, lagging the B4 credit and
+        // q-governor responses by roughly a year.
         let tp_target = mp.tp_2026_bp
             + mp.term_premium_gain * (self.priv_duration - mp.priv_duration_2026) * 100.0;
         self.tp_bp += mp.rate_smoothing * (tp_target - self.tp_bp);
-        let long_target = mp.r_star_nominal + self.tp_bp / 10_000.0;
-        self.long_rate += mp.rate_smoothing * (long_target - self.long_rate);
+        self.long_rate = mp.r_star_nominal + self.tp_bp / 10_000.0;
 
-        // sovereign snowball: debt/GDP += primary_deficit - (g - r)*debt
+        // sovereign snowball: debt/GDP += PRIMARY deficit - (g - r)*debt. Interest
+        // enters ONLY through the (r-g) term (re-audit #16: baseline_deficit had been
+        // set to the ~6% TOTAL-deficit magnitude while r also entered via -(g-r)d,
+        // double-counting interest).
         let primary = mp.baseline_deficit + transfer_share * debt_share;
         self.gov_debt_gdp = (self.gov_debt_gdp + primary
             - (nominal_growth - self.long_rate) * self.gov_debt_gdp)
             .max(0.3);
-        let debt_service = self.long_rate * self.gov_debt_gdp;
+        // Debt service prices off the effective COUPON, which rolls toward the
+        // current 10y as legacy stock matures (~15%/yr) — not the whole stock
+        // repriced instantly (re-audit #16: that fired the 4.5% fiscal collision
+        // unconditionally from 2026 with transfers still ~0).
+        self.coupon += 0.15 * (self.long_rate - self.coupon);
+        let debt_service = self.coupon * self.gov_debt_gdp;
 
         // the term-premium move splits: (1-passthrough) on the risk-free
         // curve tightening B4 capital, passthrough onto private spreads
