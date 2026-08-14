@@ -1843,10 +1843,23 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             p.base_gdp_growth
         };
         let this_demo = if demo_on {
+            // NET displacing robot HEW (re-audit #10): attrition-replacement rebuild
+            // replaces robots (not humans) and care-pull units fill vacancies nobody
+            // held, so neither is politically-visible displacement — gross production
+            // manufactured phantom displacement whenever the fleet was merely being
+            // maintained. Attrition uses the post-update fleet (documented
+            // approximation); care_pull is last year's demo output (one-year lag,
+            // matching the existing wiring).
+            let care_pull_prev = demo_out.as_ref().map_or(0.0, |d| d.robot_pull_units_m);
+            let net_displacing_hew = ((robot_prod - p.robot_attrition * robot_fleet)
+                .max(0.0)
+                - care_pull_prev)
+                .max(0.0)
+                * p.robot_hew;
             let d = demo.step(
                 &p.demography,
                 disp,
-                robot_prod * p.robot_hew,
+                net_displacing_hew,
                 soc.sentiment,
                 soc.transfer_share(),
                 gdp_growth_this_year,
@@ -1900,11 +1913,17 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                         // bypass and froze the years_disp_hot pressure record).
                         sp.suppress_scheduled_step = true;
                     }
-                    (
-                        d.visible_cog_rate + d.visible_phys_rate,
-                        sp,
-                        d.restriction_fired,
-                    )
+                    // Unit-consistent visible rate (re-audit #11): cog and phys rates
+                    // are shares of DIFFERENT-sized pools; the raw sum was unit-mixed.
+                    // Convert to one denominator — total displaced PEOPLE over the
+                    // cognitive pool, the pool the political thresholds
+                    // (attrition_threshold, transfer triggers) were calibrated on —
+                    // so the phys term carries its true headcount weight instead of
+                    // its share-of-a-smaller-pool weight.
+                    let visible_rate = d.visible_cog_rate
+                        + d.visible_phys_rate * p.physical_workers_m
+                            / p.cognitive_workers_m.max(1e-9);
+                    (visible_rate, sp, d.restriction_fired)
                 }
                 None => (new_disp, p.society.clone(), false),
             };
@@ -2072,9 +2091,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             inst_trust: soc.inst_trust,
             consumer_trust: soc.consumer_trust,
             blocked_entrants_m: demo.blocked_entrants_m,
-            visible_disp_rate: demo_out
-                .as_ref()
-                .map_or(new_disp, |d| d.visible_cog_rate + d.visible_phys_rate),
+            visible_disp_rate: demo_out.as_ref().map_or(new_disp, |d| {
+                // Same denominator as the political detector (re-audit #11).
+                d.visible_cog_rate
+                    + d.visible_phys_rate * p.physical_workers_m
+                        / p.cognitive_workers_m.max(1e-9)
+            }),
             tension: demo.tension,
             solidarity: demo.solidarity,
             migration_openness: demo.migration_openness,
