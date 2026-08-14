@@ -177,6 +177,19 @@ pub fn effects_for_year(shocks: &[GeoShock], year: i32) -> GeoFx {
     // Same-kind episodes must not stack multiplicatively (one embargo
     // counted twice squares a single physical supply gate): only the
     // first ACTIVE episode of each kind applies; tails dedupe likewise.
+    // Two-pass (re-audit #15): episodes arrive chronologically, so an OLDER
+    // episode's post-shock tail used to be processed before a NEWER same-kind
+    // active episode — the tail-branch active_seen guard was dead code, and a
+    // repeat crisis had its demand collapse nearly cancelled by the prior
+    // episode's recovery tail. First pass: mark kinds with an active episode
+    // this year; second pass: tails of those kinds are skipped outright.
+    let mut has_active = [false; 8];
+    for s in shocks {
+        let end = s.start_year as f64 + s.duration_years;
+        if year >= s.start_year && (year as f64) < end {
+            has_active[s.kind as usize] = true;
+        }
+    }
     let mut active_seen = [false; 8];
     let mut tail_seen = [false; 8];
     for s in shocks {
@@ -190,7 +203,7 @@ pub fn effects_for_year(shocks: &[GeoShock], year: i32) -> GeoFx {
             }
             active_seen[idx] = true;
         } else if (0..3).contains(&since_end) {
-            if tail_seen[idx] || active_seen[idx] {
+            if tail_seen[idx] || has_active[idx] {
                 continue;
             }
             tail_seen[idx] = true;
@@ -323,11 +336,18 @@ pub fn sample_shocks(rng: &mut GeoRng, start_year: i32, end_year: i32) -> Vec<Ge
             // Invasions are overwhelmingly ladder-gated; a 10% surprise
             // allowance covers bolt-from-blue (validation contract #3).
             let surprise_ok = escalation >= 3.0 || rng.next_f64() < 0.10;
-            if r < p_s4 && surprise_ok {
-                push(ShockKind::TaiwanInvasion, 4.0, &mut shocks);
-                invaded = true;
-                if rng.next_f64() < 0.80 {
-                    push(ShockKind::MineralsEmbargo, 2.0, &mut shocks);
+            if r < p_s4 {
+                // The invasion band consumes its probability mass whether or not the
+                // bolt-from-blue gate passes (re-audit #14): a blocked surprise means
+                // DETERRENCE — no shock — not a fall-through into the blockade band,
+                // which was silently converting ~90% of blocked invasion mass into
+                // phantom blockades in calm years.
+                if surprise_ok {
+                    push(ShockKind::TaiwanInvasion, 4.0, &mut shocks);
+                    invaded = true;
+                    if rng.next_f64() < 0.80 {
+                        push(ShockKind::MineralsEmbargo, 2.0, &mut shocks);
+                    }
                 }
             } else if r < p_s4 + p_s3 {
                 push(ShockKind::TaiwanBlockade, 1.0, &mut shocks);

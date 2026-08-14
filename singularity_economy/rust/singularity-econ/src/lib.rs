@@ -825,6 +825,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     // (P0). Seeded near the energy layer's 2026 firm power; non-binding in the
     // baseline (AI is a small share early), so byte-identical there.
     let mut firm_power_prev = 2700.0_f64;
+    // Cumulative surviving Taiwan-fab destruction (re-audit #17); 0 with no invasion.
+    let mut chip_destroyed_frac = 0.0_f64;
     #[allow(unused_assignments)]
     let mut physical_power_binds = false;
     let mut chip_capacity = p.chip_capacity_2026;
@@ -1932,10 +1934,15 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         firm_power_prev = energy_out.firm_power_gw;
         let food_out = food_state.step(&p.food, fuel_price_index, adopt.min(1.0), year);
         // Regions: decompose the transition into US/China/EU bloc trajectories.
-        // C10: feed the Taiwan chip-supply shock (chip_mult net of the one-time
-        // invasion destruction) so a blockade/invasion reshapes the China-vs-US
-        // split. Identity (1.0) on the deterministic baseline (empty geo_shocks).
-        let chip_supply_index = (gfx.chip_mult * (1.0 - gfx.chip_destruction)).clamp(0.0, 1.0);
+        // C10: feed the Taiwan chip-supply shock. Destruction PERSISTS (re-audit #17):
+        // chip_destruction is emitted only in the invasion's start year, so indexing on
+        // the instantaneous value made years 2-4 of an ongoing war read as full supply.
+        // Track the cumulative destroyed fraction as state, recovering ~15%/yr (the
+        // multi-year EUV-capped rebuild), and compound any new start-year destruction.
+        // Identity (0.0 destroyed) on the deterministic baseline (empty geo_shocks).
+        chip_destroyed_frac *= 0.85;
+        chip_destroyed_frac = 1.0 - (1.0 - chip_destroyed_frac) * (1.0 - gfx.chip_destruction);
+        let chip_supply_index = (gfx.chip_mult * (1.0 - chip_destroyed_frac)).clamp(0.0, 1.0);
         let region_out = region_state.step(
             &p.regions,
             (adopt - prev_adopt_region).max(0.0),
