@@ -1298,7 +1298,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             - compute_stock * (1.0 - p.compute_deprec) * gw_per_unit * power_jevons_mult
             - robot_power_gw)
             .max(0.0);
-        let power_cap = (power_headroom / gw_per_unit) * cost_per_unit;
+        // Convert GW headroom to buildable capex at the draw NEW units actually take —
+        // gw_per_unit × power_jevons_mult (re-audit #20: dividing by gw_per_unit alone
+        // overstated buildable units whenever a Jevons efficiency jump was active,
+        // since the stock-draw subtractions above already price the multiplied draw).
+        let power_cap = (power_headroom / (gw_per_unit * power_jevons_mult)) * cost_per_unit;
         let capital_cap = gdp * p.capex_gdp_cap * credit_mult;
 
         // P0: PHYSICAL power ceiling from the energy layer. The AI sector can draw
@@ -1316,7 +1320,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             - compute_stock * (1.0 - p.compute_deprec) * gw_per_unit * power_jevons_mult
             - robot_power_gw)
             .max(0.0);
-        let power_cap_physical = (physical_headroom_gw / gw_per_unit) * cost_per_unit;
+        let power_cap_physical =
+            (physical_headroom_gw / (gw_per_unit * power_jevons_mult)) * cost_per_unit;
         // The physical term is the tighter of the two POWER constraints this year...
         let physical_tighter_than_abstract = power_cap_physical < power_cap;
         let power_cap = power_cap.min(power_cap_physical);
@@ -1806,7 +1811,14 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 0.0
             };
             let incident = p.incident_year == year || bfx.incident;
-            if (incident && p.incident_dread) || bfx.arm_dread {
+            // Dread classification belongs to the AI incident ONLY (re-audit findings
+            // #8/#19): `incident` is the combined flag (AI OR bio/cyber shock year), so
+            // gating dread on it let an unrelated bio/cyber scare inherit the
+            // independently-drawn incident_dread classification and arm the R7 spiral +
+            // 1.5x trust hit with no AI incident. Bio/cyber arms dread only through its
+            // own mass-casualty path (bfx.arm_dread).
+            let ai_dread = p.incident_year == year && p.incident_dread;
+            if ai_dread || bfx.arm_dread {
                 dread_armed = true;
             }
             // Demography rewires the political inputs: society sees the
@@ -1822,9 +1834,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                     sp.transfer_step *= d.transfer_step_mult;
                     sp.transfer_crisis_step *= d.transfer_step_mult;
                     if d.restriction_fired {
-                        // restriction-first: the cheap valve fires INSTEAD
-                        // of the transfer step this cycle
-                        sp.b5_relief = 0.0;
+                        // restriction-first: the cheap valve fires INSTEAD of the
+                        // SCHEDULED transfer step this cycle (re-audit #13: was
+                        // b5_relief=0, which also killed the crisis-mode COVID-class
+                        // bypass and froze the years_disp_hot pressure record).
+                        sp.suppress_scheduled_step = true;
                     }
                     (
                         d.visible_cog_rate + d.visible_phys_rate,
@@ -1842,7 +1856,10 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 lagged_rate,
                 election,
                 incident,
-                incident && p.incident_dread,
+                // dread = a genuinely dread-class event this year: the AI incident with
+                // its drawn dread classification, or a mass-casualty bio/cyber shock —
+                // NOT an ordinary bio/cyber scare inheriting the AI draw (re-audit #8/#19).
+                ai_dread || bfx.arm_dread,
                 p.incident_year == year, // C7: AI-capability incident gates the AI-step floor
                 bfx.stringency_step, // C7: severity-scaled bio/cyber dread ratchet (0 baseline)
             );

@@ -136,6 +136,11 @@ pub struct SocietyParams {
 
     // -- loop switches for ablation (1.0 = on) --
     pub b5_relief: f64,
+    /// One-cycle suppression of the SCHEDULED (election-calendar) transfer step —
+    /// set by demography when its restriction valve fires instead (re-audit #13:
+    /// previously this overloaded b5_relief=0, which also killed the crisis-mode
+    /// COVID-class bypass and froze the years_disp_hot pressure record).
+    pub suppress_scheduled_step: bool,
     pub b6_regulation: f64,
     pub b8_capture: f64,
     pub r6_erosion: f64,
@@ -189,6 +194,7 @@ impl Default for SocietyParams {
             gov_debt_tolerance: 1.2,
             crowding_gain: 0.3,
             b5_relief: 1.0,
+            suppress_scheduled_step: false,
             b6_regulation: 1.0,
             b8_capture: 1.0,
             r6_erosion: 1.0,
@@ -418,7 +424,8 @@ impl SocietyState {
             let crisis = disp_rate > sp.crisis_rate;
             let scheduled = self.years_disp_hot >= sp.sustained_years
                 && election_year
-                && !incoherent;
+                && !incoherent
+                && !sp.suppress_scheduled_step;
             if (crisis || scheduled) && self.transfer_share() < sp.transfer_cap {
                 let step = if crisis {
                     sp.transfer_crisis_step
@@ -427,9 +434,14 @@ impl SocietyState {
                 };
                 self.transfer_permanent += sp.ratchet_fraction * step;
                 self.transfer_emergency += (1.0 - sp.ratchet_fraction) * step;
-                // cap binds on the total, trimming the emergency portion
+                // Cap binds on the TOTAL (re-audit #9): trim the emergency portion
+                // first, then the permanent — previously the non-decaying permanent
+                // increment landed unconditionally, so transfer_permanent could
+                // permanently exceed transfer_cap.
                 let over = (self.transfer_share() - sp.transfer_cap).max(0.0);
-                self.transfer_emergency = (self.transfer_emergency - over).max(0.0);
+                let trim_e = over.min(self.transfer_emergency);
+                self.transfer_emergency -= trim_e;
+                self.transfer_permanent = (self.transfer_permanent - (over - trim_e)).max(0.0);
             }
         }
         // Debt-financed at first; the winner-tax arrives with the design's
@@ -440,7 +452,11 @@ impl SocietyState {
         if self.transfers_active() {
             self.years_transfers_active += 1;
         }
-        let debt_share = if self.years_transfers_active > 5 { 0.15 } else { 0.6 };
+        // Single source of truth (re-audit #12): society's own sovereign snowball must
+        // use the SAME dynamic debt-financing share the macro layer prices (including
+        // the jg_share discount) — previously this hardcoded the 0.6/0.15 timer and the
+        // documented "largest discount lever" never reached this accumulation.
+        let debt_share = self.debt_financing_share(sp);
         self.gov_debt_gdp = (self.gov_debt_gdp + self.transfer_share() * debt_share
             - 0.03 * self.gov_debt_gdp)
             .max(0.5);
