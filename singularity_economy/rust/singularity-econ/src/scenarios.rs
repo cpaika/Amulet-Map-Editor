@@ -2,6 +2,11 @@
 
 use crate::{simulate, Params, YearState};
 
+/// First shock year of the `taiwan_shock` scenario (the 2028 quarantine below).
+/// The valuation's per-year fab-destruction haircut keys on this so pre-invasion
+/// flows keep full value (re-audit #30). Keep in sync with the scenario definition.
+pub const TAIWAN_SHOCK_START: i32 = 2028;
+
 pub fn scenario_params() -> Vec<(&'static str, Params)> {
     vec![
         ("baseline", Params::default()),

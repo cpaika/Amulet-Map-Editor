@@ -189,11 +189,16 @@ fn core_semi_longs_positive() {
 
 #[test]
 fn power_complex_positive() {
+    // Thresholds recalibrated after re-audit #26/#28: the capture-rent terminal is now
+    // capped at its self-consistent decaying-perpetuity value (1/(dr+decay)) and the
+    // terminal discounts at the terminal-year rate, so power GENERATION (whose upside
+    // was mostly capitalized rent) prices conservative — positive, no longer >50%.
+    // Grid EQUIPMENT (GEV), which earns flows not rent, stays a strong long.
     let rows = book();
-    for t in ["VST", "NRG", "GEV"] {
-        assert!(upside(&rows, t) > 0.5, "{t}: {}", upside(&rows, t));
-    }
-    assert!(upside(&rows, "CEG") > 0.3);
+    assert!(upside(&rows, "GEV") > 1.0, "GEV: {}", upside(&rows, "GEV"));
+    assert!(upside(&rows, "VST") > 0.4, "VST: {}", upside(&rows, "VST"));
+    assert!(upside(&rows, "NRG") > 0.2, "NRG: {}", upside(&rows, "NRG"));
+    assert!(upside(&rows, "CEG") > 0.0, "CEG: {}", upside(&rows, "CEG"));
 }
 
 #[test]

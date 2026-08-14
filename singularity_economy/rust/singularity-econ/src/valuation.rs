@@ -161,22 +161,29 @@ pub fn earnings_and_rent(c: &Company, states: &[YearState]) -> (Vec<f64>, Vec<f6
         if path.len() == HORIZON {
             break;
         }
+        // pool_beta semantics (re-audit #29, documented decision): beta is COMPANY-
+        // level operating leverage applied to the blended revenue base — the weighted
+        // SUM of pool ratios raised to beta — not per-pool torque. The whole book was
+        // calibrated under this reading; changing it would silently reprice every
+        // multi-pool name (TECK/FCX ~19%). Intentional; do not "fix" to per-pool.
         let mut growth = 0.0;
+        let mut w_silicon = 0.0;
         for &(pool, w) in &c.pools {
             let p0 = base.ratio(pool).max(1e-9);
-            // Route the SILICON revenue pool through its ENDOGENOUS margin
-            // (audit #5): the B1 capacity rent compresses (silicon_margin
-            // ~0.50 -> ~0.24), so pricing silicon names on revenue^beta at a
-            // frozen 2026 margin overstates earnings. Other ratio pools have no
-            // model margin and stay revenue proxies.
-            let margin_mult = if pool == RatioPool::Silicon {
-                s.silicon_margin / base_silicon_margin
-            } else {
-                1.0
-            };
-            growth += w * (s.pools.ratio(pool) / p0) * margin_mult;
+            growth += w * (s.pools.ratio(pool) / p0);
+            if pool == RatioPool::Silicon {
+                w_silicon += w;
+            }
         }
-        let growth = growth.max(0.0).powf(c.pool_beta);
+        // Route the SILICON pool through its ENDOGENOUS margin (audit #5): the B1
+        // capacity rent compresses (silicon_margin ~0.50 -> ~0.24), so pricing silicon
+        // names on revenue^beta at a frozen 2026 margin overstates earnings. Applied
+        // POST-exponent, weighted by the company's silicon exposure (re-audit #27):
+        // inside the beta base the correction was muted to margin^beta·w — a beta<1
+        // name kept most of the vanished margin; a beta>1 name over-shed it. A margin
+        // is a scalar on earnings, not a growth term: earnings = revenue^beta × margin.
+        let margin_ratio = (s.silicon_margin / base_silicon_margin).max(1e-9);
+        let growth = growth.max(0.0).powf(c.pool_beta) * margin_ratio.powf(w_silicon);
         let base_e = c.ntm_earnings_b * growth * (1.0 + c.share_drift).powi(i as i32);
         let phase = (i as f64 / 4.0).min(1.0);
         // Competitive erosion of the captured share past phase-in (audit C2): the
@@ -259,9 +266,20 @@ pub struct Evaluation {
 /// the MC sampler to pass `p.macrofin.dr_beta` into the valuation path is a
 /// separate follow-up.
 fn scenario_discount(states: &[YearState], dr_beta: f64) -> f64 {
-    let n = states.len().max(1) as f64;
-    let mean_long: f64 = states.iter().map(|s| s.long_rate).sum::<f64>() / n;
+    // Mean over the FLOW years only (re-audit #28): states[0] is the scenario-
+    // invariant 2026 base year; including it diluted the cross-scenario rate spread.
+    let flows = &states[1..states.len().max(2)];
+    let n = flows.len().max(1) as f64;
+    let mean_long: f64 = flows.iter().map(|s| s.long_rate).sum::<f64>() / n;
     DISCOUNT_RATE + dr_beta * (mean_long - 0.045)
+}
+
+/// Terminal-slice discount (re-audit #28): the terminal dominates PV, and a flat
+/// path-mean rate on it left the B11 rate coupling a near-no-op. The terminal is a
+/// perpetuity struck at horizon end, so it prices off the TERMINAL-year long rate.
+fn terminal_discount(states: &[YearState], dr_beta: f64) -> f64 {
+    let last = states.last().map_or(0.045, |s| s.long_rate);
+    DISCOUNT_RATE + dr_beta * (last - 0.045)
 }
 
 pub fn evaluate(
@@ -278,30 +296,43 @@ pub fn evaluate(
             c.terminal_multiple
         };
         let dr = scenario_discount(states, dr_beta);
+        // Company-specific Taiwan-fab destruction in the invasion scenario — the
+        // damage the global Silicon pool can't express (it marks scarcity UP).
+        // Applied PER-YEAR from the invasion's start (re-audit #30): the discounted
+        // 2027 flow is earned before the 2028 invasion and keeps full value; only
+        // flows from the shock year on (and the terminal) carry the destruction.
+        let taiwan_factor = if *name == "taiwan_shock" && c.taiwan_fab_exposure > 0.0 {
+            (1.0 - c.taiwan_fab_exposure * TAIWAN_FAB_LOSS).max(0.0)
+        } else {
+            1.0
+        };
+        let base_year = states[0].year;
+        let shock_year = crate::scenarios::TAIWAN_SHOCK_START;
         // Flow PV over the explicit horizon.
         let mut fair: f64 = path
             .iter()
             .enumerate()
-            .map(|(i, e)| e / (1.0 + dr).powi(i as i32 + 1))
+            .map(|(i, e)| {
+                let year = base_year + i as i32 + 1;
+                let f = if year >= shock_year { taiwan_factor } else { 1.0 };
+                e * f / (1.0 + dr).powi(i as i32 + 1)
+            })
             .sum();
         // Terminal value with a RENT-DOMINANCE haircut (re-audit C2). Durable base
         // earnings get the full perpetuity multiple, but the capture RENT is not
         // perpetual — a fixed-capacity name's scarcity share erodes as supply responds
-        // (CAPTURE_DECAY). Capitalizing the near-peak, still-rent-dominated final year
-        // at the full multiple overstated fair value; the flow-only decay was too weak
-        // to fix it. So the rent slice is capitalized as a DECAYING perpetuity: the
-        // multiple is scaled by dr/(dr+decay) (a stable perpetuity is ~1/dr, a
-        // decaying one ~1/(dr+decay)). A name with no capture is unchanged.
+        // (CAPTURE_DECAY). The rent slice is a DECAYING perpetuity: multiple scaled by
+        // dr/(dr+decay), CAPPED at 1/(dr+decay) — the value its own decay assumption
+        // supports (re-audit #26: scaling tm alone still capitalized tm>1/dr names'
+        // decaying rent above the self-consistent maximum). Terminal discounted at the
+        // TERMINAL-year rate (re-audit #28) so the B11 coupling reaches the slice that
+        // dominates PV. A name with no capture keeps the plain tm perpetuity.
         if let (Some(&last), Some(&last_rent)) = (path.last(), rent.last()) {
+            let dr_t = terminal_discount(states, dr_beta);
             let base_last = (last - last_rent).max(0.0);
-            let rent_mult = tm * dr / (dr + CAPTURE_DECAY);
-            let terminal = base_last * tm + last_rent.max(0.0) * rent_mult;
-            fair += terminal / (1.0 + dr).powi(path.len() as i32);
-        }
-        // Company-specific Taiwan-fab destruction in the invasion scenario — the
-        // damage the global Silicon pool can't express (it marks scarcity UP).
-        if *name == "taiwan_shock" && c.taiwan_fab_exposure > 0.0 {
-            fair *= (1.0 - c.taiwan_fab_exposure * TAIWAN_FAB_LOSS).max(0.0);
+            let rent_mult = (tm * dr_t / (dr_t + CAPTURE_DECAY)).min(1.0 / (dr_t + CAPTURE_DECAY));
+            let terminal = (base_last * tm + last_rent.max(0.0) * rent_mult) * taiwan_factor;
+            fair += terminal / (1.0 + dr_t).powi(path.len() as i32);
         }
         per.push(ScenarioValue {
             scenario: name,
