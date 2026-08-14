@@ -581,21 +581,30 @@ pub mod shocks {
     /// Fat-tailed (lognormal) GDP-severity draw for a bio event. Median
     /// event ~ Amerithrax (macro ~0); 90-95th pct COVID-class (-3.4%); tail
     /// engineered-pandemic (-8..-12%+). Returns (gdp_drag, mass_casualty).
+    /// z ~ N(0,1): 12 uniforms − 6 has variance 12/12 = 1 exactly (re-audit #24:
+    /// the old 6-uniform sum had sigma ≈ 0.707, silently narrowing every tail the
+    /// mu/sigma anchors below were chosen for).
+    fn z_unit(rng: &mut GeoRng) -> f64 {
+        (0..12).map(|_| rng.next_f64()).sum::<f64>() - 6.0
+    }
+
     fn draw_bio_severity(rng: &mut GeoRng) -> (f64, bool) {
-        // z ~ approx-normal via sum of uniforms (dependency-free)
-        let z = (0..6).map(|_| rng.next_f64()).sum::<f64>() - 3.0;
-        // ln-severity: mean small, heavy right tail
-        let sev = (-4.0 + 1.6 * z).exp(); // median ~e^-4 ~ 0.018
+        // ln-severity re-anchored (re-audit #24): median e^-8 ~ 0.03% GDP
+        // (Amerithrax-class, macro ~0 — the old -4.0 median was 1.8% of GDP,
+        // a major pandemic as the MEDIAN event), sigma 3.0 puts the COVID-class
+        // tail P(sev > 0.03) at ~6-7% per drawn event.
+        let sev = (-8.0 + 3.0 * z_unit(rng)).exp();
         let gdp_drag = sev.min(0.14);
         let mass_casualty = gdp_drag > 0.03; // COVID-class or worse
         (gdp_drag, mass_casualty)
     }
 
     fn draw_cyber_severity(rng: &mut GeoRng) -> f64 {
-        // CrowdStrike-class modal ~ $5.4B ~ 0.02% world GDP transient;
-        // heavier tail on correlated cloud/CVE events.
-        let z = (0..6).map(|_| rng.next_f64()).sum::<f64>() - 3.0;
-        (-8.0 + 1.4 * z).exp().min(0.03) // median tiny; occasional larger
+        // CrowdStrike-class modal ~ $5.4B ~ 0.02% world GDP transient; re-anchored
+        // so SYSTEMIC events (>1% GDP) land at low-single-digit % of draws
+        // (re-audit #24: the old sigma made them ~0.006% — effectively never,
+        // deadening the systemic spread coupling).
+        (-8.0 + 1.8 * z_unit(rng)).exp().min(0.03)
     }
 
     /// Draw the 2026-2036 bio + cyber dread-shock path. Hazards are
@@ -673,6 +682,10 @@ pub mod shocks {
         pub spread: f64,
         pub bio_defensive_mult: f64,
         pub cyber_defensive_mult: f64,
+        /// Cyber-only credit-spread component (re-audit #25): `spread` sums bio +
+        /// cyber (independent physical causes), so surfacing it as "cyber_hazard"
+        /// mislabeled a bio pandemic year as a cyber event.
+        pub cyber_spread: f64,
         pub broad_beta_hit: f64,
         pub incident: bool,
     }
@@ -700,8 +713,18 @@ pub mod shocks {
                 DreadShockKind::CyberSystemic => {
                     fx.cyber_defensive_mult =
                         fx.cyber_defensive_mult.max(s.defensive_pool_mult);
+                    fx.cyber_spread += s.spread;
                 }
             }
+        }
+        // Defensive-pool multipliers are MULTIPLIERS: identity is 1.0, not the
+        // Default-derive 0.0 (re-audit #25 — a zero default would zero-poison any
+        // consumer in a no-shock year).
+        if fx.bio_defensive_mult == 0.0 {
+            fx.bio_defensive_mult = 1.0;
+        }
+        if fx.cyber_defensive_mult == 0.0 {
+            fx.cyber_defensive_mult = 1.0;
         }
         fx
     }

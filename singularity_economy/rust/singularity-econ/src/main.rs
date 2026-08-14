@@ -241,6 +241,31 @@ impl Draw {
                 y
             },
             incident_dread: self.uniform(0.0, 1.0) < 0.25,
+            // Bio/cyber layer LIVE in production MC (re-audit #21: the Params doc
+            // calls dread_shocks "MC-drawn", but no draw ever populated them and
+            // bio_layer stayed 0 — the entire dread-shock class and bio pools were
+            // dead in every mc/sa run). Capability tracks are simple ramps: bio/cyber
+            // operational capability rises through the horizon; defense lags offense.
+            bio: singularity_econ::BioParams {
+                bio_layer: 1.0,
+                ..singularity_econ::BioParams::default()
+            },
+            dread_shocks: {
+                let mut brng = singularity_econ::GeoRng::new(
+                    (self.uniform(0.0, 1.0) * u64::MAX as f64) as u64,
+                );
+                let ramp = |y: i32| (((y - 2026) as f64) * 0.09).clamp(0.0, 1.0);
+                singularity_econ::bio::shocks::sample_dread_shocks(
+                    &mut brng,
+                    &singularity_econ::BioParams::default(),
+                    2026,
+                    2036,
+                    ramp,
+                    |_| 0.35,
+                    ramp,
+                    |y| (0.40 + 0.05 * (y - 2026) as f64).min(0.9),
+                )
+            },
             // efficiency discontinuity: ~1.2 jumps/yr expected for >=3x
             // commodity events; sample one >=10x jump per path with a
             // tier-mixed Jevons elasticity (commodity ~1.25 / frontier ~0.5)

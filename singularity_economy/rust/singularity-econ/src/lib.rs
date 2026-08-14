@@ -842,6 +842,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut prev_l = 0.0_f64;
     // Cumulative robot-built generation credited to the AI physical budget (re-audit #1).
     let mut robot_built_cum_gw = 0.0_f64;
+    // Transient dread GDP-drag stock (re-audit #22): a dread shock's gdp_drag is a
+    // LEVEL drop that mean-reverts over ~1-3yr (bio.rs doc); applying the stock's
+    // year-over-year CHANGE to growth gives the drop in the shock year and the
+    // recovery after — the old one-time growth subtraction made it permanent and
+    // compounding. 0 with no drawn shocks.
+    let mut dread_drag_stock = 0.0_f64;
     #[allow(unused_assignments)]
     let mut physical_power_binds = false;
     let mut chip_capacity = p.chip_capacity_2026;
@@ -958,7 +964,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 &p.bio,
                 algo_eff,
                 prev_adopt_bio,
-                (last_capex / p.ai_capex_2026).min(3.0),
+                // capex_gate is documented as a [0,1] availability proxy (re-audit
+                // #23): only one of its five consumers clamped it, so the raw
+                // .min(3.0) leaked a 3x funding beta into the longevity/BCI/
+                // bio-materials pools.
+                (last_capex / p.ai_capex_2026).clamp(0.0, 1.0),
                 p.open_weight_share,
             ));
         }
@@ -1826,13 +1836,18 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // Zero when either gain is off (a frozen sentiment has no change).
         let prev_es = out.last().map_or(1.0, |s| s.equity_sentiment);
         let wealth_effect = p.wealth_effect_gain * (equity_sentiment - prev_es) * ai_share;
+        // Transient dread drag (re-audit #22): stock decays 50%/yr, new shocks add;
+        // growth carries the DELTA so the level mean-reverts as documented.
+        let dread_drag_new = dread_drag_stock * 0.5 + bfx.gdp_drag;
+        let dread_drag_delta = dread_drag_new - dread_drag_stock;
+        dread_drag_stock = dread_drag_new;
         gdp *= 1.0
             + (p.base_gdp_growth + p.productivity_passthrough * ai_share * 0.5
                 - p.transition_drag * new_disp * (p.cognitive_wage_bill / gdp)
                     * drag_mult
                 - compliance
                 - unrest_cost
-                - bfx.gdp_drag
+                - dread_drag_delta
                 + wealth_effect);
 
         // ---- demography advances first: it filters what politics sees ----
@@ -2109,7 +2124,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             meltdown_ratio: new_disp.max(0.0)
                 / (soc.transfer_share() + soc.reg_enforcement + 0.02),
             bio_hazard: bio_out.as_ref().map_or(0.0, |b| b.bio_operational_uplift),
-            cyber_hazard: bfx.spread,
+            cyber_hazard: bfx.cyber_spread, // cyber-only component (re-audit #25)
             drug_pool_b: bio_out.as_ref().map_or(0.0, |b| b.ai_drug_pool_b),
             longevity_pool_b: bio_out.as_ref().map_or(0.0, |b| b.longevity_pool_b),
             bci_pool_b: bio_out.as_ref().map_or(0.0, |b| b.bci_pool_b),

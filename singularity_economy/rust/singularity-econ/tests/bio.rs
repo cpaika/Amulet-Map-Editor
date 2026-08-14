@@ -154,6 +154,45 @@ fn bio_optionality_pools_are_surfaced() {
     assert!(last.longevity_pool_b >= v[0].longevity_pool_b, "longevity pool should not shrink");
 }
 
+// Re-audit #24: the severity samplers must match their calibration anchors. Bio:
+// median ~Amerithrax (macro ~0, well under 0.5% GDP) with a COVID-class tail
+// P(drag > 0.03) in the mid-single digits — NOT a 1.8%-of-GDP median event. Cyber:
+// systemic events (>1% GDP) at low-single-digit % of draws — NOT one in 16,000.
+#[test]
+fn dread_severity_samplers_match_anchors() {
+    use singularity_econ::bio::shocks::{DreadShock, DreadShockKind};
+    use singularity_econ::GeoRng;
+    let mut rng = GeoRng::new(42);
+    // Force one shock per year over many synthetic "years" by sampling directly
+    // through the public path: draw a long horizon with capability pinned high so
+    // hazards fire often, then measure the drawn severities.
+    let shocks: Vec<DreadShock> = singularity_econ::bio::shocks::sample_dread_shocks(
+        &mut rng,
+        &singularity_econ::BioParams::default(),
+        0,
+        20_000,
+        |_| 1.0,
+        |_| 0.5,
+        |_| 1.0,
+        |_| 0.4,
+    );
+    let bio: Vec<f64> = shocks.iter()
+        .filter(|s| matches!(s.kind, DreadShockKind::BioPandemic))
+        .map(|s| s.gdp_drag).collect();
+    let cyber: Vec<f64> = shocks.iter()
+        .filter(|s| matches!(s.kind, DreadShockKind::CyberSystemic))
+        .map(|s| s.gdp_drag).collect();
+    assert!(bio.len() > 500 && cyber.len() > 500, "need samples: {} / {}", bio.len(), cyber.len());
+    let mut b = bio.clone();
+    b.sort_by(|a, c| a.partial_cmp(c).unwrap());
+    let bio_median = b[b.len() / 2];
+    assert!(bio_median < 0.005, "bio median must be Amerithrax-class, got {bio_median}");
+    let covid_frac = bio.iter().filter(|&&d| d > 0.03).count() as f64 / bio.len() as f64;
+    assert!((0.02..=0.12).contains(&covid_frac), "COVID-class tail must be mid-single-digit %: {covid_frac}");
+    let systemic_frac = cyber.iter().filter(|&&d| d > 0.01).count() as f64 / cyber.len() as f64;
+    assert!((0.005..=0.08).contains(&systemic_frac), "systemic cyber must be low-single-digit %: {systemic_frac}");
+}
+
 // Audit C7: a bio/cyber dread shock's SEVERITY-scaled stringency_step must ratchet
 // reg_stringency — a mass-casualty pandemic (0.70) far more than a contained scare
 // (0.10), where before every dread event moved it the same flat amount. Baseline
