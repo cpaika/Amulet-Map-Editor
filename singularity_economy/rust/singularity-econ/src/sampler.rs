@@ -262,9 +262,13 @@ impl BookSampler {
         // Forward-q growth seed (F5): observed 2026 AI-revenue growth +100-250%/yr.
         // Only read when the lens turns on the forward q-governor.
         let rev_growth: f64 = Uniform::new(1.0, 2.5).sample(&mut self.aux);
+        // GW-per-capex-dollar trend (F3): legacy implies +3.5%/yr; Hopper->Blackwell
+        // ran strongly negative; a constant chip-cost/chip-power ratio gives ~0.
+        let gw_trend: f64 = Uniform::new(-0.10, 0.035).sample(&mut self.aux);
         let fizzle = u_fizzle < fizzle_mass();
         let mut p = if fizzle { crate::scenarios::fizzle(p) } else { p };
         p.ai_rev_growth_2026 = rev_growth;
+        p.gw_per_dollar_growth = Some(gw_trend);
         let (params, lambda) = match self.lens {
             Lens::Base => (p, 0.0),
             Lens::Enhanced => (crate::scenarios::enhanced_realism(p), 0.5),

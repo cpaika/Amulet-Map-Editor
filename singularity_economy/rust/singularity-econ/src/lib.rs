@@ -180,6 +180,14 @@ pub struct Params {
     pub power_pipeline_stages: usize,
     pub gw_per_compute_unit: f64,
     pub power_efficiency_gain: f64,
+    /// F3 (Sep-26 re-analysis): explicit annual trend of grid GW bought per capex
+    /// dollar. `None` (default) = legacy, implied by hw_cost_decline and
+    /// power_efficiency_gain: 0.88/0.85 - 1 = +3.5%/yr, i.e. each dollar buys MORE
+    /// power over time. Industry went the other way (~$25-30B/GW Hopper era ->
+    /// ~$50-60B/GW Blackwell/Rubin). `Some(g)` sets GW/$ to change at g per year
+    /// (so power per compute unit tracks the unit's cost), independent of how fast
+    /// compute cost falls.
+    pub gw_per_dollar_growth: Option<f64>,
     pub power_equip_cost_per_gw: f64,
     pub electricity_price_normal: f64,
     // AI cognitive supply / demand
@@ -495,6 +503,7 @@ impl Default for Params {
             power_pipeline_stages: 3,
             gw_per_compute_unit: 55.0,
             power_efficiency_gain: 0.12,
+            gw_per_dollar_growth: None,
             power_equip_cost_per_gw: 0.0035,
             electricity_price_normal: 0.055,
             ai_hew_2026_m: 12.0,
@@ -1352,7 +1361,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         ip_capacity += ip_delivery;
 
         let chips_cap = chip_capacity * gfx.chip_mult / p.silicon_share_of_capex;
-        if year > p.start_year {
+        if let Some(g) = p.gw_per_dollar_growth {
+            let t = year - p.start_year;
+            gw_per_unit = p.gw_per_compute_unit * (1.0 + g).powi(t) * cost_per_unit
+                / (p.ai_capex_2026 / 0.80);
+        } else if year > p.start_year {
             gw_per_unit *= 1.0 - p.power_efficiency_gain;
         }
         let orders = power_orders(p, power_margin, perceived_growth,

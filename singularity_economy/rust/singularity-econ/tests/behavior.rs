@@ -645,3 +645,22 @@ fn conclusions_robust_to_intelligence_returns() {
     let s27_con = concave.iter().find(|s| s.year == 2027).unwrap().ai_hew_m;
     assert!(s27_con <= s27_lin + 1e-9, "concavity must not raise early supply");
 }
+
+// F3 (Sep-26 re-analysis): the explicit GW-per-capex-dollar trend reproduces the
+// legacy implied trend (0.88/0.85 - 1 = +3.5%/yr) exactly, and the power-binding
+// headline depends on it: at the industry-direction trend (-10%/yr) power never
+// binds in the baseline decade.
+#[test]
+fn gw_per_dollar_trend_reparameterization() {
+    let legacy = run(Params::default());
+    let explicit = run(Params { gw_per_dollar_growth: Some(0.88 / 0.85 - 1.0), ..Params::default() });
+    for (a, b) in legacy.iter().zip(&explicit) {
+        assert!((a.ai_capex - b.ai_capex).abs() < 1e-9 * a.ai_capex.max(1.0));
+        assert_eq!(a.binding, b.binding);
+    }
+    let falling = run(Params { gw_per_dollar_growth: Some(-0.10), ..Params::default() });
+    let power_years = falling.iter().filter(|s| s.binding == Binding::Power).count();
+    assert_eq!(power_years, 0, "power binds {power_years} years at -10%/yr GW per dollar");
+    let legacy_power = legacy.iter().filter(|s| s.binding == Binding::Power).count();
+    assert!(legacy_power >= 6);
+}
