@@ -2,6 +2,7 @@
 //!
 //!   singularity-econ run                    # baseline summary (JSON)
 //!   singularity-econ mc <n> <seed>          # Monte Carlo distributions (JSON)
+//!   (book commands take `--legacy` for the pre-Sep-26 valuation conventions)
 //!   singularity-econ book-mc <n> <seed> [base|enhanced|v2|mix] [financials.json]
 //!                                           # every name valued on every MC path
 //!   singularity-econ book-sa <n> <seed> [lens] [financials.json]
@@ -13,13 +14,23 @@ use singularity_econ::scenarios::{
     scenario_states, scenario_states_enhanced, scenario_states_v2,
 };
 use singularity_econ::valuation::{
-    base_year_consistent, evaluate_all, value_on_path, PathContext, Stance,
+    base_year_consistent, evaluate_all_with, value_on_path, PathContext, Stance,
+    ValuationParams,
 };
 use singularity_econ::{simulate, Params};
 use std::collections::BTreeMap;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
+    // Books value on first-principles conventions by default (F1: firm capacity cap,
+    // steady-state flow terminal, power-margin routing); `--legacy` anywhere restores
+    // the pre-Sep-26 valuation (the library default, which the book locks pin).
+    let raw: Vec<String> = std::env::args().collect();
+    let vp = if raw.iter().any(|a| a == "--legacy") {
+        ValuationParams::default()
+    } else {
+        ValuationParams::first_principles()
+    };
+    let args: Vec<String> = raw.into_iter().filter(|a| a != "--legacy").collect();
     match args.get(1).map(String::as_str) {
         Some("run") | None => run_baseline(),
         Some("golden") => {
@@ -28,13 +39,13 @@ fn main() {
             golden(args.get(2).map(String::as_str).unwrap_or(default));
         }
         Some("book") => {
-            book(args.get(2).map(String::as_str), "baseline");
+            book(args.get(2).map(String::as_str), "baseline", &vp);
         }
         Some("book-enhanced") => {
-            book(args.get(2).map(String::as_str), "enhanced");
+            book(args.get(2).map(String::as_str), "enhanced", &vp);
         }
         Some("book-v2") => {
-            book(args.get(2).map(String::as_str), "v2");
+            book(args.get(2).map(String::as_str), "v2", &vp);
         }
         Some("book-mc") => {
             let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(2_000);
@@ -44,7 +55,7 @@ fn main() {
                     eprintln!("lens must be one of: base | enhanced | v2 | mix");
                     std::process::exit(2);
                 });
-            book_mc(n, seed, lens, args.get(5).map(String::as_str));
+            book_mc(n, seed, lens, args.get(5).map(String::as_str), &vp);
         }
         Some("book-sa") => {
             let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(4_000);
@@ -54,7 +65,7 @@ fn main() {
                     eprintln!("lens must be one of: base | enhanced | v2 | mix");
                     std::process::exit(2);
                 });
-            book_sa(n, seed, lens, args.get(5).map(String::as_str), 4);
+            book_sa(n, seed, lens, args.get(5).map(String::as_str), 4, &vp);
         }
         Some("sa") => {
             let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(20_000);
@@ -161,7 +172,7 @@ fn side_label(s: Stance) -> &'static str {
     }
 }
 
-fn book(financials_path: Option<&str>, mode: &str) {
+fn book(financials_path: Option<&str>, mode: &str, vp: &ValuationParams) {
     let comps = load_universe(financials_path);
     let states = match mode {
         "enhanced" => {
@@ -175,7 +186,7 @@ fn book(financials_path: Option<&str>, mode: &str) {
         _ => scenario_states(),
     };
     let dr_beta = singularity_econ::macrofin::MacroParams::default().dr_beta;
-    let rows = evaluate_all(&comps, &states, dr_beta);
+    let rows = evaluate_all_with(&comps, &states, dr_beta, vp);
     println!("{:<10} {:<6} {:>12} {:>8} {:>8} {:>8} {:>6}",
              "ticker", "side", "impliedCAGR", "E[up]", "worst", "best", "term%");
     for r in &rows {
@@ -230,7 +241,8 @@ fn conditioned_draw(
 /// with every sampled parameter (plus the fizzle flag, the severe-Taiwan flag and,
 /// under `mix`, the lens fraction) over the conditioned book-mc prior. Prints the
 /// top drivers per name — what each call is actually a bet on.
-fn book_sa(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, top: usize) {
+fn book_sa(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, top: usize,
+           vp: &ValuationParams) {
     let comps: Vec<_> = load_universe(financials_path)
         .into_iter()
         .filter(|c| c.ntm_earnings_b > 0.0)
@@ -259,7 +271,7 @@ fn book_sa(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, top: 
             cols[j].push(*v);
         }
         for (i, c) in comps.iter().enumerate() {
-            let (fair, _) = value_on_path(c, &states, ctx, d.params.macrofin.dr_beta);
+            let (fair, _) = value_on_path(c, &states, ctx, d.params.macrofin.dr_beta, vp);
             ups[i].push(fair / c.mcap_b - 1.0);
         }
     }
@@ -288,14 +300,14 @@ fn book_sa(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, top: 
 /// geometric view), the gap to the named book in the same lens, and — under `mix`
 /// — the Spearman of upside on the lens fraction lambda: |rho| > 0.4 marks the
 /// call as a bet on the structural hypotheses rather than on the paths.
-fn book_mc(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>) {
+fn book_mc(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, vp: &ValuationParams) {
     let comps: Vec<_> = load_universe(financials_path)
         .into_iter()
         .filter(|c| c.ntm_earnings_b > 0.0)
         .collect();
     let named_eup = |states: &[(&'static str, Vec<singularity_econ::YearState>)]| {
         let dr_beta = singularity_econ::macrofin::MacroParams::default().dr_beta;
-        let rows = evaluate_all(&comps, states, dr_beta);
+        let rows = evaluate_all_with(&comps, states, dr_beta, vp);
         comps.iter().map(|c| {
             rows.iter().find(|r| r.ticker == c.ticker).map_or(f64::NAN, |r| r.expected_upside)
         }).collect::<Vec<f64>>()
@@ -323,7 +335,7 @@ fn book_mc(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>) {
         n_taiwan += ctx.taiwan_start.is_some() as usize;
         lambdas.push(d.lambda);
         for (i, c) in comps.iter().enumerate() {
-            let (fair, tpv) = value_on_path(c, &states, ctx, d.params.macrofin.dr_beta);
+            let (fair, tpv) = value_on_path(c, &states, ctx, d.params.macrofin.dr_beta, vp);
             ups[i].push(fair / c.mcap_b - 1.0);
             if fair.abs() > 1e-12 {
                 terms[i] += tpv / fair;
@@ -365,7 +377,8 @@ fn book_mc(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>) {
     }).collect();
     rows.sort_by(|a, b| b.mean.partial_cmp(&a.mean).unwrap());
 
-    println!("book-mc: n={n} seed={seed} lens={lens:?}  fizzle paths {:.1}%  severe-Taiwan paths {:.1}%",
+    println!("book-mc: n={n} seed={seed} lens={lens:?} valuation={}  fizzle paths {:.1}%  severe-Taiwan paths {:.1}%",
+             if *vp == ValuationParams::default() { "legacy" } else { "first-principles" },
              100.0 * n_fizzle as f64 / n as f64, 100.0 * n_taiwan as f64 / n as f64);
     println!("{}", rej.summary(n));
     println!("{:<10} {:<6} {:>8} {:>8} {:>8} {:>8} {:>6} {:>7} {:>8} {:>8} {:>6} {:>6}",

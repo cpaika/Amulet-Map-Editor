@@ -4,14 +4,14 @@
 //! from output/financials.json (phase-2 verified) and can be re-refreshed at
 //! runtime via `load_financials`.
 
-use crate::valuation::{Company, EmergingPool as E, RatioPool as R, Stance};
+use crate::valuation::{Company, EmergingPool as E, RatioPool as R, Stance, DEFAULT_MAX_REV_CAGR};
 
 pub fn universe() -> Vec<Company> {
     use Stance::*;
     let c = |ticker, name, mcap_b, ntm, pools, beta, drift, tm, stance, capture, notes| Company {
         ticker, name, mcap_b, ntm_earnings_b: ntm, pools, pool_beta: beta,
         share_drift: drift, terminal_multiple: tm, stance, capture,
-        taiwan_fab_exposure: 0.0, notes,
+        taiwan_fab_exposure: 0.0, max_rev_cagr: DEFAULT_MAX_REV_CAGR, notes,
     };
     let mut universe = vec![
         // ---- LONGS: compute complex ----
@@ -176,6 +176,14 @@ pub fn universe() -> Vec<Company> {
     // cannot express. Fabless names take the volume hit through the pool, exposure 0.
     if let Some(tsm) = universe.iter_mut().find(|c| c.ticker == "TSM") {
         tsm.taiwan_fab_exposure = 0.78; // Sep-26: ~0.85 today, overseas fabs ramping; value at the 2028 shock
+    }
+    // Firm capacity (F1): single-product physical suppliers whose revenue-growth
+    // ceiling is set by their own plant, not the pool. Everyone else carries the
+    // default ceiling. Read only when ValuationParams::capacity_gain > 0.
+    for c in universe.iter_mut() {
+        if matches!(c.ticker, "POWL" | "BESI.AS" | "LITE") {
+            c.max_rev_cagr = 0.20;
+        }
     }
     universe
 }

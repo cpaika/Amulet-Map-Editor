@@ -6,7 +6,9 @@ use singularity_econ::companies::universe;
 use singularity_econ::scenarios::{
     first_principles_v2, fizzle, lens_blend, scenario_params, scenario_states,
 };
-use singularity_econ::valuation::{base_year_consistent, evaluate, value_on_path, PathContext};
+use singularity_econ::valuation::{
+    base_year_consistent, evaluate, value_on_path, PathContext, ValuationParams,
+};
 use singularity_econ::{simulate, Params};
 
 const DR_BETA: f64 = 0.60;
@@ -31,7 +33,7 @@ fn value_on_path_is_the_named_evaluation() {
     for c in universe().iter().filter(|c| c.ntm_earnings_b > 0.0) {
         let ev = evaluate(c, &states, DR_BETA);
         for (name, s) in &states {
-            let (fair, _) = value_on_path(c, s, PathContext::named(name), DR_BETA);
+            let (fair, _) = value_on_path(c, s, PathContext::named(name), DR_BETA, &ValuationParams::default());
             let named = ev.per_scenario.iter().find(|v| v.scenario == *name).unwrap();
             assert_eq!(fair.to_bits(), named.fair_value_b.to_bits(), "{} {name}", c.ticker);
         }
@@ -128,7 +130,7 @@ mod prior {
             let ctx = PathContext::from_params(&d.params);
             for (i, t) in shorts.iter().enumerate() {
                 let c = comps.iter().find(|c| c.ticker == *t).unwrap();
-                let (fair, _) = value_on_path(c, &states, ctx, d.params.macrofin.dr_beta);
+                let (fair, _) = value_on_path(c, &states, ctx, d.params.macrofin.dr_beta, &ValuationParams::default());
                 losses[i] += (fair < c.mcap_b) as usize;
             }
         }

@@ -128,7 +128,116 @@ pub struct Company {
     /// otherwise perversely mark TSMC (the fab being destroyed) UP. Fabless names
     /// take the volume hit through the pool instead and keep exposure ~0.
     pub taiwan_fab_exposure: f64,
+    /// Ceiling on the firm's revenue-growth multiple, as a CAGR (F1): a firm cannot
+    /// ride a pool that grows 19x without building 19x the plant or ceding share.
+    /// Read only when `ValuationParams::capacity_gain > 0`.
+    pub max_rev_cagr: f64,
     pub notes: &'static str,
+}
+
+/// Default firm revenue-growth ceiling: 30%/yr sustained for a decade (~14x) is
+/// the top of the historical large-cap envelope.
+pub const DEFAULT_MAX_REV_CAGR: f64 = 0.30;
+
+/// Valuation conventions (F1, Sep-26 re-analysis). Every gain defaults to 0, which
+/// is the legacy valuation byte-for-byte; `first_principles()` turns all three on.
+/// Ship them together: power routing alone RAISES POWL (450 -> 581 measured).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ValuationParams {
+    /// Blend weight on capping each name's pool-revenue multiple at
+    /// (1 + max_rev_cagr)^t, applied before pool_beta.
+    pub capacity_gain: f64,
+    /// Blend weight on striking the TERMINAL on steady-state spend: capex-driven
+    /// pools (Silicon, DcInfra, PowerEquipment) are capitalized at the spend that
+    /// would sustain the year-10 installed base growing at `long_run_growth`, not at
+    /// a still-accelerating year-10 build rate. Only ever lowers the terminal.
+    pub flow_terminal_gain: f64,
+    /// Blend weight on routing PowerEquipment revenue through the model's
+    /// endogenous power margin, mirroring the silicon-margin line.
+    pub power_route_gain: f64,
+    /// Perpetual growth of the installed base in the flow terminal.
+    pub long_run_growth: f64,
+    /// Use each name's multiple-implied perpetual growth (Gordon: g = r - 1/tm,
+    /// clamped to [0, 8%]) instead of `long_run_growth`, so the steady-state spend
+    /// grows at exactly the rate the terminal multiple already capitalizes.
+    pub growth_from_multiple: bool,
+    /// Economic life (years) of grid equipment in the flow terminal.
+    pub power_equipment_life: f64,
+    /// $T per GW of grid equipment — must match `Params::power_equip_cost_per_gw`.
+    pub power_equip_cost_per_gw: f64,
+    /// Compute economic depreciation — must match `Params::compute_deprec`.
+    pub compute_deprec: f64,
+    /// Annual decline in compute unit cost — must match `Params::hw_cost_decline`.
+    /// In a dollar steady state falling unit cost keeps the UNIT stock growing, so
+    /// the steady-state spend must be computed in dollars, not units.
+    pub compute_cost_decline: f64,
+}
+
+impl Default for ValuationParams {
+    fn default() -> Self {
+        ValuationParams {
+            capacity_gain: 0.0,
+            flow_terminal_gain: 0.0,
+            power_route_gain: 0.0,
+            long_run_growth: 0.04,
+            growth_from_multiple: false,
+            power_equipment_life: 30.0,
+            power_equip_cost_per_gw: 0.0035,
+            compute_deprec: 0.25,
+            compute_cost_decline: 0.15,
+        }
+    }
+}
+
+impl ValuationParams {
+    pub fn first_principles() -> Self {
+        ValuationParams {
+            capacity_gain: 1.0,
+            flow_terminal_gain: 1.0,
+            power_route_gain: 1.0,
+            growth_from_multiple: true,
+            ..Self::default()
+        }
+    }
+
+    /// Steady-state / actual spend ratio for a capex-driven pool at the path's last
+    /// year, capped at 1 (the flow terminal only removes build-rate froth).
+    fn steady_state_ratio(&self, pool: RatioPool, states: &[YearState], tm: f64) -> f64 {
+        let n = states.len();
+        if n < 2 {
+            return 1.0;
+        }
+        let (last, prev) = (&states[n - 1], &states[n - 2]);
+        // Vintage steady state: with spend growing at g, assets retiring at rate d
+        // and replacement cost falling at c, the installed base valued at current
+        // cost is V = spend / (1 - (1-d)(1-c)/(1+g)); invert for the spend that
+        // sustains the year-10 base.
+        let g = if self.growth_from_multiple {
+            (DISCOUNT_RATE - 1.0 / tm.max(1.0)).clamp(0.0, 0.08)
+        } else {
+            self.long_run_growth
+        };
+        let ss_factor = |d: f64, c: f64| 1.0 - (1.0 - d) * (1.0 - c) / (1.0 + g);
+        let ratio = match pool {
+            RatioPool::PowerEquipment => {
+                let base_value = self.power_equip_cost_per_gw * last.ai_power_gw;
+                base_value * ss_factor(1.0 / self.power_equipment_life, 0.0)
+                    / last.pools.power_equipment.max(1e-12)
+            }
+            RatioPool::Silicon | RatioPool::DcInfra => {
+                // Units added this year; capex bought them, so capex/added is the
+                // current unit cost and stock × that is the base at current cost.
+                let added = last.compute_stock - prev.compute_stock * (1.0 - self.compute_deprec);
+                if added <= 1e-12 {
+                    return 1.0;
+                }
+                last.compute_stock * ss_factor(self.compute_deprec, self.compute_cost_decline)
+                    / added
+            }
+            _ => 1.0,
+        };
+        ratio.clamp(0.0, 1.0)
+    }
 }
 
 /// Fraction of Taiwan-located capacity lost in the taiwan_shock (invasion)
@@ -153,38 +262,94 @@ pub fn earnings_path(c: &Company, states: &[YearState]) -> Vec<f64> {
 /// near-peak, still-rent-dominated final year from being capitalized at the full
 /// multiple). `.0` is the total path; `.1` is the rent-only path.
 pub fn earnings_and_rent(c: &Company, states: &[YearState]) -> (Vec<f64>, Vec<f64>) {
+    let r = earnings_with(c, states, &ValuationParams::default());
+    (r.path, r.rent)
+}
+
+/// Earnings path, its rent slice, and the base (non-rent) earnings the TERMINAL is
+/// struck on — equal to the last base earnings unless the flow terminal is on.
+pub struct EarningsPath {
+    pub path: Vec<f64>,
+    pub rent: Vec<f64>,
+    pub terminal_base: Option<f64>,
+}
+
+/// Company base-earnings multiple at year index `i` for a given set of pool
+/// ratios (`ratio_of(pool)` = pool_t / pool_2026).
+fn base_growth(
+    c: &Company,
+    s: &YearState,
+    i: usize,
+    base_silicon_margin: f64,
+    base_power_margin: f64,
+    vp: &ValuationParams,
+    ratio_of: &dyn Fn(RatioPool) -> f64,
+) -> f64 {
+    // pool_beta semantics (re-audit #29, documented decision): beta is COMPANY-
+    // level operating leverage applied to the blended revenue base — the weighted
+    // SUM of pool ratios raised to beta — not per-pool torque. The whole book was
+    // calibrated under this reading; changing it would silently reprice every
+    // multi-pool name (TECK/FCX ~19%). Intentional; do not "fix" to per-pool.
+    let mut growth = 0.0;
+    let mut w_silicon = 0.0;
+    let mut w_power = 0.0;
+    for &(pool, w) in &c.pools {
+        growth += w * ratio_of(pool);
+        if pool == RatioPool::Silicon {
+            w_silicon += w;
+        }
+        if pool == RatioPool::PowerEquipment {
+            w_power += w;
+        }
+    }
+    let mut growth = growth.max(0.0);
+    if vp.capacity_gain > 0.0 && c.max_rev_cagr.is_finite() {
+        let cap = (1.0 + c.max_rev_cagr).powi(i as i32);
+        let g = vp.capacity_gain.clamp(0.0, 1.0);
+        growth = (1.0 - g) * growth + g * growth.min(cap);
+    }
+    // Route the SILICON pool through its ENDOGENOUS margin (audit #5): the B1
+    // capacity rent compresses (silicon_margin ~0.50 -> ~0.24), so pricing silicon
+    // names on revenue^beta at a frozen 2026 margin overstates earnings. Applied
+    // POST-exponent, weighted by the company's silicon exposure (re-audit #27):
+    // inside the beta base the correction was muted to margin^beta·w — a beta<1
+    // name kept most of the vanished margin; a beta>1 name over-shed it. A margin
+    // is a scalar on earnings, not a growth term: earnings = revenue^beta × margin.
+    let margin_ratio = (s.silicon_margin / base_silicon_margin).max(1e-9);
+    let mut e = growth.powf(c.pool_beta) * margin_ratio.powf(w_silicon);
+    if vp.power_route_gain > 0.0 && w_power > 0.0 {
+        let pm = (s.power_margin / base_power_margin).max(1e-9).powf(w_power);
+        let g = vp.power_route_gain.clamp(0.0, 1.0);
+        e *= (1.0 - g) + g * pm;
+    }
+    e * (1.0 + c.share_drift).powi(i as i32)
+}
+
+pub fn earnings_with(c: &Company, states: &[YearState], vp: &ValuationParams) -> EarningsPath {
     let base = &states[0].pools;
     let base_silicon_margin = states[0].silicon_margin.max(1e-6);
+    let base_power_margin = states[0].power_margin.max(1e-6);
     let mut path = Vec::with_capacity(HORIZON);
     let mut rent = Vec::with_capacity(HORIZON);
+    let mut terminal_base = None;
+    let last_i = states.len().min(HORIZON + 1) - 1;
     for (i, s) in states.iter().enumerate().skip(1) {
         if path.len() == HORIZON {
             break;
         }
-        // pool_beta semantics (re-audit #29, documented decision): beta is COMPANY-
-        // level operating leverage applied to the blended revenue base — the weighted
-        // SUM of pool ratios raised to beta — not per-pool torque. The whole book was
-        // calibrated under this reading; changing it would silently reprice every
-        // multi-pool name (TECK/FCX ~19%). Intentional; do not "fix" to per-pool.
-        let mut growth = 0.0;
-        let mut w_silicon = 0.0;
-        for &(pool, w) in &c.pools {
-            let p0 = base.ratio(pool).max(1e-9);
-            growth += w * (s.pools.ratio(pool) / p0);
-            if pool == RatioPool::Silicon {
-                w_silicon += w;
-            }
+        let ratio_of = |pool: RatioPool| s.pools.ratio(pool) / base.ratio(pool).max(1e-9);
+        let base_e = c.ntm_earnings_b
+            * base_growth(c, s, i, base_silicon_margin, base_power_margin, vp, &ratio_of);
+        if i == last_i && vp.flow_terminal_gain > 0.0 {
+            terminal_base = Some({
+                let window = &states[..=i];
+                let ss_ratio_of = |pool: RatioPool| ratio_of(pool) * vp.steady_state_ratio(pool, window, c.terminal_multiple);
+                let ss_e = c.ntm_earnings_b
+                    * base_growth(c, s, i, base_silicon_margin, base_power_margin, vp, &ss_ratio_of);
+                let g = vp.flow_terminal_gain.clamp(0.0, 1.0);
+                (1.0 - g) * base_e + g * ss_e
+            });
         }
-        // Route the SILICON pool through its ENDOGENOUS margin (audit #5): the B1
-        // capacity rent compresses (silicon_margin ~0.50 -> ~0.24), so pricing silicon
-        // names on revenue^beta at a frozen 2026 margin overstates earnings. Applied
-        // POST-exponent, weighted by the company's silicon exposure (re-audit #27):
-        // inside the beta base the correction was muted to margin^beta·w — a beta<1
-        // name kept most of the vanished margin; a beta>1 name over-shed it. A margin
-        // is a scalar on earnings, not a growth term: earnings = revenue^beta × margin.
-        let margin_ratio = (s.silicon_margin / base_silicon_margin).max(1e-9);
-        let growth = growth.max(0.0).powf(c.pool_beta) * margin_ratio.powf(w_silicon);
-        let base_e = c.ntm_earnings_b * growth * (1.0 + c.share_drift).powi(i as i32);
         let phase = (i as f64 / 4.0).min(1.0);
         // Competitive erosion of the captured share past phase-in (audit C2): the
         // rent is not permanent — a fixed-capacity name's share of a growing pool
@@ -202,7 +367,7 @@ pub fn earnings_and_rent(c: &Company, states: &[YearState]) -> (Vec<f64>, Vec<f6
         path.push(base_e + r);
         rent.push(r);
     }
-    (path, rent)
+    EarningsPath { path, rent, terminal_base }
 }
 
 pub fn pv(path: &[f64], terminal_multiple: f64, r: f64) -> f64 {
@@ -396,8 +561,9 @@ pub fn value_on_path(
     states: &[YearState],
     ctx: PathContext,
     dr_beta: f64,
+    vp: &ValuationParams,
 ) -> (f64, f64) {
-    let (path, rent) = earnings_and_rent(c, states);
+    let EarningsPath { path, rent, terminal_base } = earnings_with(c, states, vp);
     let tm = if ctx.fizzle {
         c.terminal_multiple * 0.75
     } else {
@@ -438,7 +604,7 @@ pub fn value_on_path(
     let mut terminal_pv = 0.0;
     if let (Some(&last), Some(&last_rent)) = (path.last(), rent.last()) {
         let dr_t = terminal_discount(states, dr_beta);
-        let base_last = (last - last_rent).max(0.0);
+        let base_last = terminal_base.unwrap_or(last - last_rent).max(0.0);
         let rent_mult = (tm * dr_t / (dr_t + CAPTURE_DECAY)).min(1.0 / (dr_t + CAPTURE_DECAY));
         let terminal = (base_last * tm + last_rent.max(0.0) * rent_mult) * taiwan_factor;
         terminal_pv = terminal / (1.0 + dr_t).powi(path.len() as i32);
@@ -452,9 +618,19 @@ pub fn evaluate(
     scenario_states: &[(&'static str, Vec<YearState>)],
     dr_beta: f64,
 ) -> Evaluation {
+    evaluate_with(c, scenario_states, dr_beta, &ValuationParams::default())
+}
+
+pub fn evaluate_with(
+    c: &Company,
+    scenario_states: &[(&'static str, Vec<YearState>)],
+    dr_beta: f64,
+    vp: &ValuationParams,
+) -> Evaluation {
     let mut per: Vec<ScenarioValue> = Vec::new();
     for (name, states) in scenario_states {
-        let (fair, terminal_pv) = value_on_path(c, states, PathContext::named(name), dr_beta);
+        let (fair, terminal_pv) =
+            value_on_path(c, states, PathContext::named(name), dr_beta, vp);
         per.push(ScenarioValue {
             scenario: name,
             fair_value_b: fair,
@@ -492,10 +668,19 @@ pub fn evaluate_all(
     scenario_states: &[(&'static str, Vec<YearState>)],
     dr_beta: f64,
 ) -> Vec<Evaluation> {
+    evaluate_all_with(companies, scenario_states, dr_beta, &ValuationParams::default())
+}
+
+pub fn evaluate_all_with(
+    companies: &[Company],
+    scenario_states: &[(&'static str, Vec<YearState>)],
+    dr_beta: f64,
+    vp: &ValuationParams,
+) -> Vec<Evaluation> {
     let mut rows: Vec<Evaluation> = companies
         .iter()
         .filter(|c| c.ntm_earnings_b > 0.0)
-        .map(|c| evaluate(c, scenario_states, dr_beta))
+        .map(|c| evaluate_with(c, scenario_states, dr_beta, vp))
         .collect();
     rows.sort_by(|a, b| b.expected_upside.partial_cmp(&a.expected_upside).unwrap());
     rows

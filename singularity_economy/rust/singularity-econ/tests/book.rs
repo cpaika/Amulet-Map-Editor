@@ -31,6 +31,7 @@ fn test_company(pools: Vec<(RatioPool, f64)>, beta: f64, drift: f64) -> Company 
         stance: Stance::Watch,
         capture: vec![],
         taiwan_fab_exposure: 0.0,
+        max_rev_cagr: f64::INFINITY,
         notes: "",
     }
 }
@@ -414,4 +415,40 @@ fn v2_silicon_verdict_switches_regime_on_growth_seed() {
     let (bust, boom) = (nvda_at(0.8), nvda_at(1.5));
     assert!(bust < -0.3, "low-seed v2 NVDA {bust} should be the bust regime");
     assert!(boom > 0.0, "high-seed v2 NVDA {boom} should be the boom regime");
+}
+
+// F1 lock (Sep-26 re-analysis, Wave 2): the first-principles valuation conventions
+// (capacity cap + steady-state flow terminal + power routing, shipped together).
+// (a) they only remove build-rate froth — no name gains from the flow terminal +
+// cap; routing alone may lift grid names, which is why it never ships alone;
+// (b) the grid names' terminal share falls (legacy struck the terminal on a pool
+// still growing ~48%/yr in 2036); (c) names with no capex-pool exposure are
+// untouched; (d) the book stays finite.
+#[test]
+fn first_principles_valuation_removes_build_rate_froth() {
+    use singularity_econ::valuation::{evaluate_all_with, ValuationParams};
+    let st = scenario_states();
+    let legacy = evaluate_all(&universe(), &st, DR_BETA);
+    let no_route = ValuationParams { power_route_gain: 0.0, ..ValuationParams::first_principles() };
+    let fp_nr = evaluate_all_with(&universe(), &st, DR_BETA, &no_route);
+    let fp = evaluate_all_with(&universe(), &st, DR_BETA, &ValuationParams::first_principles());
+    let get = |rows: &[singularity_econ::valuation::Evaluation], t: &str| {
+        rows.iter().find(|r| r.ticker == t).unwrap().clone()
+    };
+    for r in &legacy {
+        let n = get(&fp_nr, r.ticker);
+        assert!(n.expected_upside <= r.expected_upside + 1e-9,
+                "{}: cap+flow raised E[up] {} -> {}", r.ticker, r.expected_upside, n.expected_upside);
+        assert!(get(&fp, r.ticker).expected_upside.is_finite());
+    }
+    for t in ["POWL", "GEV"] {
+        let (l, f) = (get(&legacy, t), get(&fp, t));
+        assert!(f.terminal_share < l.terminal_share - 0.1,
+                "{t}: terminal share {} vs legacy {}", f.terminal_share, l.terminal_share);
+        assert!(f.expected_upside < 0.5 * l.expected_upside, "{t}: {} vs {}", f.expected_upside, l.expected_upside);
+    }
+    for t in ["RHI", "PAYX", "MSFT", "002472.SZ", "VST"] {
+        let (l, f) = (get(&legacy, t), get(&fp, t));
+        assert!((f.expected_upside - l.expected_upside).abs() < 1e-9, "{t} moved without capex-pool exposure");
+    }
 }
