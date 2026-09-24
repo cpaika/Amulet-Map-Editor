@@ -452,3 +452,27 @@ fn first_principles_valuation_removes_build_rate_froth() {
         assert!((f.expected_upside - l.expected_upside).abs() < 1e-9, "{t} moved without capex-pool exposure");
     }
 }
+
+// F6 attribution lock (Sep-26 re-analysis, Wave 4): E[up] splits EXACTLY into the
+// valuation convention (the name with every pool on the GDP index), the hand-set
+// share drift, and the AI thesis. Finding lock: the staffing/payroll/offshore-IT
+// shorts are AI-thesis shorts; the MRVL and PLTR shorts are pure convention — the
+// modeled AI economy RAISES them — so they must not be read as AI calls.
+#[test]
+fn short_book_attribution() {
+    let rows = evaluate_all(&universe(), &scenario_states(), DR_BETA);
+    for r in &rows {
+        let sum = r.conv_upside + r.drift_delta + r.ai_delta;
+        assert!((sum - r.expected_upside).abs() < 1e-9, "{}: parts {sum} vs {}", r.ticker, r.expected_upside);
+    }
+    let ai = |t: &str| rows.iter().find(|r| r.ticker == t).unwrap().ai_delta;
+    for t in ["RHI", "MAN", "TCS.NS", "PAYX", "ADP"] {
+        assert!(ai(t) < -0.20, "{t}: AI delta {} — no longer an AI-thesis short", ai(t));
+    }
+    for t in ["MRVL", "PLTR"] {
+        assert!(ai(t) > 0.0, "{t}: AI delta {} — short is convention, AI should lift it", ai(t));
+    }
+    // A name with no AI mapping carries no AI delta at all.
+    let eqt = rows.iter().find(|r| r.ticker == "EQT").unwrap();
+    assert!(eqt.is_valuation_only() && eqt.ai_delta.abs() < 1e-9);
+}

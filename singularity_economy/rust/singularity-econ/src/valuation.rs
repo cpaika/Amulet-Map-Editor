@@ -421,6 +421,37 @@ pub struct Evaluation {
     /// upside as a bet on the terminal-year pool, not on the 2026-35 path.
     pub terminal_share: f64,
     pub per_scenario: Vec<ScenarioValue>,
+    /// Attribution (F6). `conv_upside`: E[up] of the SAME name if every pool it
+    /// maps to just tracked the GDP index, with no capture and no share drift —
+    /// the part of the call that is valuation convention (12% discount, the name's
+    /// multiple) rather than thesis. The market proxy prints about -40% here in
+    /// every scenario. `drift_delta`: E[up] added by the hand-set share drift.
+    /// `ai_delta`: the rest, i.e. what the modeled AI economy adds or subtracts.
+    /// expected_upside = conv_upside + drift_delta + ai_delta (exactly).
+    pub conv_upside: f64,
+    pub drift_delta: f64,
+    pub ai_delta: f64,
+}
+
+/// |ai_delta| below this and the call is valuation-only, not an AI thesis.
+pub const THESIS_THRESHOLD: f64 = 0.05;
+
+impl Evaluation {
+    pub fn is_valuation_only(&self) -> bool {
+        self.ai_delta.abs() < THESIS_THRESHOLD
+    }
+}
+
+/// The name with no AI thesis: every mapped pool replaced by the GDP index at the
+/// same weight, capture cleared (share drift kept; `no_drift` clears it too).
+fn counterfactual(c: &Company, no_drift: bool) -> Company {
+    let mut k = c.clone();
+    k.pools = c.pools.iter().map(|&(_, w)| (RatioPool::GdpIndex, w)).collect();
+    k.capture.clear();
+    if no_drift {
+        k.share_drift = 0.0;
+    }
+    k
 }
 
 /// Per-scenario discount rate: the flat 12% plus an equity-duration beta
@@ -627,6 +658,22 @@ pub fn evaluate_with(
     dr_beta: f64,
     vp: &ValuationParams,
 ) -> Evaluation {
+    let mut ev = evaluate_core(c, scenario_states, dr_beta, vp);
+    let conv = evaluate_core(&counterfactual(c, true), scenario_states, dr_beta, vp).expected_upside;
+    let with_drift =
+        evaluate_core(&counterfactual(c, false), scenario_states, dr_beta, vp).expected_upside;
+    ev.conv_upside = conv;
+    ev.drift_delta = with_drift - conv;
+    ev.ai_delta = ev.expected_upside - with_drift;
+    ev
+}
+
+fn evaluate_core(
+    c: &Company,
+    scenario_states: &[(&'static str, Vec<YearState>)],
+    dr_beta: f64,
+    vp: &ValuationParams,
+) -> Evaluation {
     let mut per: Vec<ScenarioValue> = Vec::new();
     for (name, states) in scenario_states {
         let (fair, terminal_pv) =
@@ -660,6 +707,9 @@ pub fn evaluate_with(
         best_scenario_upside: best,
         terminal_share,
         per_scenario: per,
+        conv_upside: 0.0,
+        drift_delta: 0.0,
+        ai_delta: 0.0,
     }
 }
 

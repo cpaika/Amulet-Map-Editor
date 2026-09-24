@@ -187,15 +187,18 @@ fn book(financials_path: Option<&str>, mode: &str, vp: &ValuationParams) {
     };
     let dr_beta = singularity_econ::macrofin::MacroParams::default().dr_beta;
     let rows = evaluate_all_with(&comps, &states, dr_beta, vp);
-    println!("{:<10} {:<6} {:>12} {:>8} {:>8} {:>8} {:>6}",
-             "ticker", "side", "impliedCAGR", "E[up]", "worst", "best", "term%");
+    println!("{:<10} {:<6} {:>12} {:>8} {:>8} {:>8} {:>6} {:>7} {:>7} {:>7}",
+             "ticker", "side", "impliedCAGR", "E[up]", "worst", "best", "term%",
+             "conv", "drift", "AI");
     for r in &rows {
-        println!("{:<10} {:<6} {:>11.1}% {:>7.1}% {:>7.1}% {:>7.1}% {:>5.0}%",
+        let flag = if r.is_valuation_only() { "  valuation-only" } else { "" };
+        println!("{:<10} {:<6} {:>11.1}% {:>7.1}% {:>7.1}% {:>7.1}% {:>5.0}% {:>6.0}% {:>6.0}% {:>6.0}%{}",
                  r.ticker, side_label(r.stance), r.implied_cagr * 100.0,
                  r.expected_upside * 100.0,
                  r.worst_scenario_upside * 100.0,
                  r.best_scenario_upside * 100.0,
-                 r.terminal_share * 100.0);
+                 r.terminal_share * 100.0,
+                 r.conv_upside * 100.0, r.drift_delta * 100.0, r.ai_delta * 100.0, flag);
     }
 }
 
