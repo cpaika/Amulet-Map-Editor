@@ -211,20 +211,19 @@ fn wage_linked_shorts_negative() {
 
 #[test]
 fn robotics_longs_split_component_vs_integrator() {
-    // The robot-scaling crunch favors the COMPONENT bottleneck (6268.T Nabtesco —
-    // precision reducers) over the integrator (SYM) and upstream materials (MP).
-    // After the wf_f3a19c42 audit corrected the materials Liebig ceiling (which
-    // had been unbounded, inflating the fleet ~5x) and conserved the reinvestment
-    // budget, the fleet is materials-gated and the component upside COMPRESSED:
-    // 6268.T is now the best-positioned of the three (positive) but no longer
-    // clears the 20% conviction hurdle on the corrected trajectory. The split —
-    // component beats integrator/materials — is the durable finding.
+    // The robot-scaling crunch favors the COMPONENT bottleneck over the integrator
+    // (SYM) and upstream materials (MP). Sep-26 remap: the lock previously used
+    // Nabtesco (6268.T), but its RobotComponents capture was the category error the
+    // Aug deep dive proved (RV cycloidal reducers are not humanoid joints) and has
+    // been removed. The book's actual humanoid-component chokepoint is Shuanghuan
+    // (002472.SZ: RV + harmonic + roller screws, humanoid design wins). The durable
+    // finding — component beats integrator/materials — is tested on the right name.
     let rows = book();
-    let nab = upside(&rows, "6268.T");
-    assert!(nab > 0.0, "component supplier should stay positive: {nab}");
+    let comp = upside(&rows, "002472.SZ");
+    assert!(comp > 0.0, "component supplier should stay positive: {comp}");
     for t in ["SYM", "MP"] {
         let u = upside(&rows, t);
-        assert!(u < nab, "{t} ({u}) must trail the component supplier ({nab})");
+        assert!(u < comp, "{t} ({u}) must trail the component supplier ({comp})");
     }
 }
 
@@ -289,10 +288,14 @@ fn first_principles_v2_reprices_coherently() {
     // return numerator, which brakes the compute buildout harder and earlier), the
     // robot-component chokepoint — less capex-reflexive than compute-derived grid demand
     // — leads, with grid switchgear (POWL) the strongest grid name and GEV a clear long.
-    for t in ["002472.SZ", "POWL"] {
-        assert!(upside(&v2, t) > 0.5, "{t} must stay a strong long in v2: {}", upside(&v2, t));
+    // Sep-26 recalibration: POWL (0.55 PowerEquipment / 0.45 GdpIndex) and GEV
+    // (0.75 / 0.25) are remapped to their real business mix, so under v2 discipline
+    // the grid names are positive but no longer strong; the component chokepoint is
+    // the one v2 long that stays strong.
+    assert!(upside(&v2, "002472.SZ") > 0.5, "component chokepoint must stay strong in v2: {}", upside(&v2, "002472.SZ"));
+    for t in ["POWL", "GEV"] {
+        assert!(upside(&v2, t) > 0.0, "{t} must stay a long in v2: {}", upside(&v2, t));
     }
-    assert!(upside(&v2, "GEV") > 0.3, "GEV must stay a clear long in v2: {}", upside(&v2, "GEV"));
     // Wage-linked shorts remain short.
     for t in ["RHI", "ADP", "PAYX"] {
         assert!(upside(&v2, t) < -0.3, "{t} must stay short in v2: {}", upside(&v2, t));
