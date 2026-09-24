@@ -54,6 +54,14 @@ rust_test(
 )
 
 rust_test(
+    name = "book_mc",
+    srcs = ["tests/book_mc.rs"],
+    crate_root = "tests/book_mc.rs",
+    edition = "2021",
+    deps = [":core"],
+)
+
+rust_test(
     name = "backtest",
     srcs = ["tests/backtest.rs"],
     crate_root = "tests/backtest.rs",

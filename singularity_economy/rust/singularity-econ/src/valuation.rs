@@ -288,6 +288,117 @@ fn terminal_discount(states: &[YearState], dr_beta: f64) -> f64 {
     DISCOUNT_RATE + dr_beta * (last - 0.045)
 }
 
+/// Path-level valuation context: which scenario-specific adjustments apply to a
+/// single simulated path. The named book derives it from the scenario name; the
+/// Monte Carlo book (`book-mc`) derives it from the drawn `Params`, so both value
+/// every path through one code path (`value_on_path`).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct PathContext {
+    /// No-singularity path: the terminal multiple is cut 25% (growth never arrives).
+    pub fizzle: bool,
+    /// First year of a severe Taiwan episode; flows from this year on (and the
+    /// terminal) carry the company's fab-destruction haircut.
+    pub taiwan_start: Option<i32>,
+}
+
+impl PathContext {
+    /// Context for one of the six named scenarios.
+    pub fn named(name: &str) -> Self {
+        PathContext {
+            fizzle: name == "fizzle",
+            taiwan_start: if name == "taiwan_shock" {
+                Some(crate::scenarios::TAIWAN_SHOCK_START)
+            } else {
+                None
+            },
+        }
+    }
+
+    /// Context for a sampled path. Fizzle = the singularity never arrives in the
+    /// horizon (the named fizzle's `singularity_year: 2099` convention). A path is
+    /// "severe Taiwan" when it contains a blockade or invasion — the named
+    /// `taiwan_shock` is exactly a quarantine escalating to a blockade — and the
+    /// haircut starts at that path's first Taiwan quarantine/blockade/invasion,
+    /// mirroring the named scenario starting it at the 2028 quarantine.
+    pub fn from_params(p: &crate::Params) -> Self {
+        use crate::ShockKind::*;
+        let severe = p
+            .geo_shocks
+            .iter()
+            .any(|g| matches!(g.kind, TaiwanBlockade | TaiwanInvasion));
+        let taiwan_start = if severe {
+            p.geo_shocks
+                .iter()
+                .filter(|g| matches!(g.kind, TaiwanQuarantine | TaiwanBlockade | TaiwanInvasion))
+                .map(|g| g.start_year)
+                .min()
+        } else {
+            None
+        };
+        PathContext {
+            fizzle: p.singularity_year > p.end_year,
+            taiwan_start,
+        }
+    }
+}
+
+/// Value one company on one simulated path: `(fair_value_b, terminal_pv_b)`.
+pub fn value_on_path(
+    c: &Company,
+    states: &[YearState],
+    ctx: PathContext,
+    dr_beta: f64,
+) -> (f64, f64) {
+    let (path, rent) = earnings_and_rent(c, states);
+    let tm = if ctx.fizzle {
+        c.terminal_multiple * 0.75
+    } else {
+        c.terminal_multiple
+    };
+    let dr = scenario_discount(states, dr_beta);
+    // Company-specific Taiwan-fab destruction in the invasion scenario — the
+    // damage the global Silicon pool can't express (it marks scarcity UP).
+    // Applied PER-YEAR from the invasion's start (re-audit #30): the discounted
+    // 2027 flow is earned before the 2028 invasion and keeps full value; only
+    // flows from the shock year on (and the terminal) carry the destruction.
+    let (taiwan_factor, shock_year) = match ctx.taiwan_start {
+        Some(y) if c.taiwan_fab_exposure > 0.0 => {
+            ((1.0 - c.taiwan_fab_exposure * TAIWAN_FAB_LOSS).max(0.0), y)
+        }
+        _ => (1.0, i32::MAX),
+    };
+    let base_year = states[0].year;
+    // Flow PV over the explicit horizon.
+    let mut fair: f64 = path
+        .iter()
+        .enumerate()
+        .map(|(i, e)| {
+            let year = base_year + i as i32 + 1;
+            let f = if year >= shock_year { taiwan_factor } else { 1.0 };
+            e * f / (1.0 + dr).powi(i as i32 + 1)
+        })
+        .sum();
+    // Terminal value with a RENT-DOMINANCE haircut (re-audit C2). Durable base
+    // earnings get the full perpetuity multiple, but the capture RENT is not
+    // perpetual — a fixed-capacity name's scarcity share erodes as supply responds
+    // (CAPTURE_DECAY). The rent slice is a DECAYING perpetuity: multiple scaled by
+    // dr/(dr+decay), CAPPED at 1/(dr+decay) — the value its own decay assumption
+    // supports (re-audit #26: scaling tm alone still capitalized tm>1/dr names'
+    // decaying rent above the self-consistent maximum). Terminal discounted at the
+    // TERMINAL-year rate (re-audit #28) so the B11 coupling reaches the slice that
+    // dominates PV. A name with no capture keeps the plain tm perpetuity.
+    let mut terminal_pv = 0.0;
+    if let (Some(&last), Some(&last_rent)) = (path.last(), rent.last()) {
+        let dr_t = terminal_discount(states, dr_beta);
+        let base_last = (last - last_rent).max(0.0);
+        let rent_mult = (tm * dr_t / (dr_t + CAPTURE_DECAY)).min(1.0 / (dr_t + CAPTURE_DECAY));
+        let terminal = (base_last * tm + last_rent.max(0.0) * rent_mult) * taiwan_factor;
+        terminal_pv = terminal / (1.0 + dr_t).powi(path.len() as i32);
+        fair += terminal_pv;
+    }
+    (fair, terminal_pv)
+}
+
 pub fn evaluate(
     c: &Company,
     scenario_states: &[(&'static str, Vec<YearState>)],
@@ -295,53 +406,7 @@ pub fn evaluate(
 ) -> Evaluation {
     let mut per: Vec<ScenarioValue> = Vec::new();
     for (name, states) in scenario_states {
-        let (path, rent) = earnings_and_rent(c, states);
-        let tm = if *name == "fizzle" {
-            c.terminal_multiple * 0.75
-        } else {
-            c.terminal_multiple
-        };
-        let dr = scenario_discount(states, dr_beta);
-        // Company-specific Taiwan-fab destruction in the invasion scenario — the
-        // damage the global Silicon pool can't express (it marks scarcity UP).
-        // Applied PER-YEAR from the invasion's start (re-audit #30): the discounted
-        // 2027 flow is earned before the 2028 invasion and keeps full value; only
-        // flows from the shock year on (and the terminal) carry the destruction.
-        let taiwan_factor = if *name == "taiwan_shock" && c.taiwan_fab_exposure > 0.0 {
-            (1.0 - c.taiwan_fab_exposure * TAIWAN_FAB_LOSS).max(0.0)
-        } else {
-            1.0
-        };
-        let base_year = states[0].year;
-        let shock_year = crate::scenarios::TAIWAN_SHOCK_START;
-        // Flow PV over the explicit horizon.
-        let mut fair: f64 = path
-            .iter()
-            .enumerate()
-            .map(|(i, e)| {
-                let year = base_year + i as i32 + 1;
-                let f = if year >= shock_year { taiwan_factor } else { 1.0 };
-                e * f / (1.0 + dr).powi(i as i32 + 1)
-            })
-            .sum();
-        // Terminal value with a RENT-DOMINANCE haircut (re-audit C2). Durable base
-        // earnings get the full perpetuity multiple, but the capture RENT is not
-        // perpetual — a fixed-capacity name's scarcity share erodes as supply responds
-        // (CAPTURE_DECAY). The rent slice is a DECAYING perpetuity: multiple scaled by
-        // dr/(dr+decay), CAPPED at 1/(dr+decay) — the value its own decay assumption
-        // supports (re-audit #26: scaling tm alone still capitalized tm>1/dr names'
-        // decaying rent above the self-consistent maximum). Terminal discounted at the
-        // TERMINAL-year rate (re-audit #28) so the B11 coupling reaches the slice that
-        // dominates PV. A name with no capture keeps the plain tm perpetuity.
-        let mut terminal_pv = 0.0;
-        if let (Some(&last), Some(&last_rent)) = (path.last(), rent.last()) {
-            let dr_t = terminal_discount(states, dr_beta);
-            let base_last = (last - last_rent).max(0.0);
-            let rent_mult = (tm * dr_t / (dr_t + CAPTURE_DECAY)).min(1.0 / (dr_t + CAPTURE_DECAY));
-            let terminal = (base_last * tm + last_rent.max(0.0) * rent_mult) * taiwan_factor;
-            terminal_pv = terminal / (1.0 + dr_t).powi(path.len() as i32);
-            fair += terminal_pv;
-        }
+        let (fair, terminal_pv) = value_on_path(c, states, PathContext::named(name), dr_beta);
         per.push(ScenarioValue {
             scenario: name,
             fair_value_b: fair,

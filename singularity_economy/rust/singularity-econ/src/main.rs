@@ -2,13 +2,15 @@
 //!
 //!   singularity-econ run                    # baseline summary (JSON)
 //!   singularity-econ mc <n> <seed>          # Monte Carlo distributions (JSON)
+//!   singularity-econ book-mc <n> <seed> [base|enhanced|v2|mix] [financials.json]
+//!                                           # every name valued on every MC path
 
 use singularity_econ::companies::{load_financials, universe};
-use singularity_econ::sampler::{sampled_values, Sampler};
+use singularity_econ::sampler::{sampled_values, BookSampler, Lens, Sampler};
 use singularity_econ::scenarios::{
     scenario_states, scenario_states_enhanced, scenario_states_v2,
 };
-use singularity_econ::valuation::{evaluate_all, Stance};
+use singularity_econ::valuation::{evaluate_all, value_on_path, PathContext, Stance};
 use singularity_econ::{simulate, Params};
 use std::collections::BTreeMap;
 
@@ -30,6 +32,16 @@ fn main() {
         Some("book-v2") => {
             book(args.get(2).map(String::as_str), "v2");
         }
+        Some("book-mc") => {
+            let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(2_000);
+            let seed: u64 = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(7);
+            let lens = args.get(4).map_or(Some(Lens::Mix), |s| Lens::parse(s))
+                .unwrap_or_else(|| {
+                    eprintln!("lens must be one of: base | enhanced | v2 | mix");
+                    std::process::exit(2);
+                });
+            book_mc(n, seed, lens, args.get(5).map(String::as_str));
+        }
         Some("sa") => {
             let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(20_000);
             let seed: u64 = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(11);
@@ -41,7 +53,7 @@ fn main() {
             monte_carlo(n, seed);
         }
         Some(cmd) => {
-            eprintln!("unknown command: {cmd} (use: run | book | book-enhanced | book-v2 [financials.json] | golden [path] | mc <n> <seed> | sa <n> <seed>)");
+            eprintln!("unknown command: {cmd} (use: run | book | book-enhanced | book-v2 [financials.json] | book-mc <n> <seed> [lens] [financials.json] | golden [path] | mc <n> <seed> | sa <n> <seed>)");
             std::process::exit(2);
         }
     }
@@ -113,7 +125,7 @@ fn golden(path: &str) {
     eprintln!("snapshot written to {path}");
 }
 
-fn book(financials_path: Option<&str>, mode: &str) {
+fn load_universe(financials_path: Option<&str>) -> Vec<singularity_econ::valuation::Company> {
     let mut comps = universe();
     let default = concat!(env!("CARGO_MANIFEST_DIR"), "/../../output/financials.json");
     let path = financials_path.unwrap_or(default);
@@ -124,6 +136,19 @@ fn book(financials_path: Option<&str>, mode: &str) {
         }
         Err(_) => eprintln!("note: {path} not found; using built-in (synced) financials"),
     }
+    comps
+}
+
+fn side_label(s: Stance) -> &'static str {
+    match s {
+        Stance::Long => "long",
+        Stance::Short => "short",
+        Stance::Watch => "watch",
+    }
+}
+
+fn book(financials_path: Option<&str>, mode: &str) {
+    let comps = load_universe(financials_path);
     let states = match mode {
         "enhanced" => {
             eprintln!("note: enhanced-realism set (spine+wealth+transmission+wage-compression+JG)");
@@ -140,17 +165,110 @@ fn book(financials_path: Option<&str>, mode: &str) {
     println!("{:<10} {:<6} {:>12} {:>8} {:>8} {:>8} {:>6}",
              "ticker", "side", "impliedCAGR", "E[up]", "worst", "best", "term%");
     for r in &rows {
-        let side = match r.stance {
-            Stance::Long => "long",
-            Stance::Short => "short",
-            Stance::Watch => "watch",
-        };
         println!("{:<10} {:<6} {:>11.1}% {:>7.1}% {:>7.1}% {:>7.1}% {:>5.0}%",
-                 r.ticker, side, r.implied_cagr * 100.0,
+                 r.ticker, side_label(r.stance), r.implied_cagr * 100.0,
                  r.expected_upside * 100.0,
                  r.worst_scenario_upside * 100.0,
                  r.best_scenario_upside * 100.0,
                  r.terminal_share * 100.0);
+    }
+}
+
+/// The Monte Carlo book (re-analysis F4): value every name on every sampled path
+/// instead of six hand-picked scenarios. The prior is the mc/sa prior plus the
+/// named book's fizzle mass; the structural lens is fixed or (`mix`) sampled. Per
+/// name: mean/percentiles of upside, P(loss), E[log(1+upside)] (a sizing-relevant
+/// geometric view), the gap to the named book in the same lens, and — under `mix`
+/// — the Spearman of upside on the lens fraction lambda: |rho| > 0.4 marks the
+/// call as a bet on the structural hypotheses rather than on the paths.
+fn book_mc(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>) {
+    let comps: Vec<_> = load_universe(financials_path)
+        .into_iter()
+        .filter(|c| c.ntm_earnings_b > 0.0)
+        .collect();
+    let named_eup = |states: &[(&'static str, Vec<singularity_econ::YearState>)]| {
+        let dr_beta = singularity_econ::macrofin::MacroParams::default().dr_beta;
+        let rows = evaluate_all(&comps, states, dr_beta);
+        comps.iter().map(|c| {
+            rows.iter().find(|r| r.ticker == c.ticker).map_or(f64::NAN, |r| r.expected_upside)
+        }).collect::<Vec<f64>>()
+    };
+    let named: Vec<f64> = match lens {
+        Lens::Base => named_eup(&scenario_states()),
+        Lens::Enhanced => named_eup(&scenario_states_enhanced()),
+        Lens::V2 => named_eup(&scenario_states_v2()),
+        Lens::Mix => {
+            let (b, v) = (named_eup(&scenario_states()), named_eup(&scenario_states_v2()));
+            b.iter().zip(&v).map(|(x, y)| 0.5 * (x + y)).collect()
+        }
+    };
+
+    let mut draws = BookSampler::new(seed, lens);
+    let mut ups: Vec<Vec<f64>> = vec![Vec::with_capacity(n); comps.len()];
+    let mut terms: Vec<f64> = vec![0.0; comps.len()];
+    let mut lambdas: Vec<f64> = Vec::with_capacity(n);
+    let (mut n_fizzle, mut n_taiwan) = (0usize, 0usize);
+    for _ in 0..n {
+        let d = draws.draw();
+        let states = simulate(&d.params);
+        let ctx = PathContext::from_params(&d.params);
+        n_fizzle += ctx.fizzle as usize;
+        n_taiwan += ctx.taiwan_start.is_some() as usize;
+        lambdas.push(d.lambda);
+        for (i, c) in comps.iter().enumerate() {
+            let (fair, tpv) = value_on_path(c, &states, ctx, d.params.macrofin.dr_beta);
+            ups[i].push(fair / c.mcap_b - 1.0);
+            if fair.abs() > 1e-12 {
+                terms[i] += tpv / fair;
+            }
+        }
+    }
+
+    struct Row {
+        ticker: &'static str,
+        side: &'static str,
+        mean: f64,
+        p10: f64,
+        p50: f64,
+        p90: f64,
+        p_loss: f64,
+        e_log: f64,
+        named: f64,
+        term: f64,
+        rho_lambda: f64,
+    }
+    let mut rows: Vec<Row> = comps.iter().enumerate().map(|(i, c)| {
+        let v = &ups[i];
+        let mut sorted = v.clone();
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let nf = n as f64;
+        Row {
+            ticker: c.ticker,
+            side: side_label(c.stance),
+            mean: v.iter().sum::<f64>() / nf,
+            p10: pct(&sorted, 0.10),
+            p50: pct(&sorted, 0.50),
+            p90: pct(&sorted, 0.90),
+            p_loss: v.iter().filter(|u| **u < 0.0).count() as f64 / nf,
+            e_log: v.iter().map(|u| (1.0 + u).max(1e-3).ln()).sum::<f64>() / nf,
+            named: named[i],
+            term: terms[i] / nf,
+            rho_lambda: if lens == Lens::Mix { spearman(&lambdas, v) } else { f64::NAN },
+        }
+    }).collect();
+    rows.sort_by(|a, b| b.mean.partial_cmp(&a.mean).unwrap());
+
+    println!("book-mc: n={n} seed={seed} lens={lens:?}  fizzle paths {:.1}%  severe-Taiwan paths {:.1}%",
+             100.0 * n_fizzle as f64 / n as f64, 100.0 * n_taiwan as f64 / n as f64);
+    println!("{:<10} {:<6} {:>8} {:>8} {:>8} {:>8} {:>6} {:>7} {:>8} {:>8} {:>6} {:>6}",
+             "ticker", "side", "E[up]", "p10", "p50", "p90", "P(loss)", "E[log]",
+             "named", "gap", "term%", "rho_l");
+    for r in &rows {
+        let flag = if r.rho_lambda.abs() > 0.4 { "  structural bet" } else { "" };
+        println!("{:<10} {:<6} {:>7.1}% {:>7.1}% {:>7.1}% {:>7.1}% {:>6.0}% {:>7.2} {:>7.1}% {:>7.1}% {:>5.0}% {:>6.2}{}",
+                 r.ticker, r.side, r.mean * 100.0, r.p10 * 100.0, r.p50 * 100.0,
+                 r.p90 * 100.0, r.p_loss * 100.0, r.e_log, r.named * 100.0,
+                 (r.mean - r.named) * 100.0, r.term * 100.0, r.rho_lambda, flag);
     }
 }
 

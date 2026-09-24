@@ -195,3 +195,78 @@ pub fn sampled_values(p: &Params) -> Vec<(&'static str, f64)> {
         ("jevons_elasticity", p.jevons_elasticity),
     ]
 }
+
+/// Structural lens applied on top of each sampled path in `book-mc`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Lens {
+    Base,
+    Enhanced,
+    V2,
+    /// lambda ~ U(0,1) blend from baseline structure to v2 (`scenarios::lens_blend`).
+    Mix,
+}
+
+impl Lens {
+    pub fn parse(s: &str) -> Option<Lens> {
+        match s {
+            "base" | "baseline" => Some(Lens::Base),
+            "enhanced" => Some(Lens::Enhanced),
+            "v2" => Some(Lens::V2),
+            "mix" => Some(Lens::Mix),
+            _ => None,
+        }
+    }
+}
+
+/// Probability mass of the no-singularity world in the book prior — the named
+/// book's fizzle weight. The mc/sa prior draws the singularity in 2027-30 with
+/// certainty, so it cannot price the scenario the named book weights at 9.3%.
+pub fn fizzle_mass() -> f64 {
+    crate::valuation::SCENARIO_PROBS
+        .iter()
+        .find(|(n, _)| *n == "fizzle")
+        .map_or(0.0, |(_, p)| *p)
+}
+
+/// One `book-mc` draw: the sampled parameters (lens applied), the lens fraction
+/// used (0 for Base, 1 for V2, the draw for Mix; Enhanced reports 0.5 as a label
+/// only) and whether the path is a fizzle.
+pub struct BookDraw {
+    pub params: Params,
+    pub lambda: f64,
+    pub fizzle: bool,
+}
+
+/// The `book-mc` prior: the mc/sa parameter prior plus fizzle mass and the
+/// structural lens. The extra draws come from a SEPARATE stream so the core
+/// parameter sequence for a given seed is the same one `mc`/`sa` see.
+pub struct BookSampler {
+    core: Sampler,
+    aux: ChaCha8Rng,
+    lens: Lens,
+}
+
+impl BookSampler {
+    pub fn new(seed: u64, lens: Lens) -> Self {
+        BookSampler {
+            core: Sampler::new(seed),
+            aux: ChaCha8Rng::seed_from_u64(seed ^ 0x9E37_79B9_7F4A_7C15),
+            lens,
+        }
+    }
+
+    pub fn draw(&mut self) -> BookDraw {
+        let p = self.core.params();
+        let u_fizzle: f64 = Uniform::new(0.0, 1.0).sample(&mut self.aux);
+        let u_lambda: f64 = Uniform::new(0.0, 1.0).sample(&mut self.aux);
+        let fizzle = u_fizzle < fizzle_mass();
+        let p = if fizzle { crate::scenarios::fizzle(p) } else { p };
+        let (params, lambda) = match self.lens {
+            Lens::Base => (p, 0.0),
+            Lens::Enhanced => (crate::scenarios::enhanced_realism(p), 0.5),
+            Lens::V2 => (crate::scenarios::first_principles_v2(p), 1.0),
+            Lens::Mix => (crate::scenarios::lens_blend(p, u_lambda), u_lambda),
+        };
+        BookDraw { params, lambda, fizzle }
+    }
+}

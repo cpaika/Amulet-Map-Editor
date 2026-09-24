@@ -7,6 +7,18 @@ use crate::{simulate, Params, YearState};
 /// flows keep full value (re-audit #30). Keep in sync with the scenario definition.
 pub const TAIWAN_SHOCK_START: i32 = 2028;
 
+/// The fizzle overrides: the singularity never arrives in the horizon. One
+/// definition shared by the named `fizzle` scenario and the `book-mc` prior's
+/// fizzle mass, so both mean the same world.
+pub fn fizzle(mut p: Params) -> Params {
+    p.singularity_year = 2099;
+    p.robotics_year = 2099;
+    p.algo_eff_growth_pre = 1.8;
+    p.adoption_halflife = 4.0;
+    p.max_displacement_rate = 0.05;
+    p
+}
+
 pub fn scenario_params() -> Vec<(&'static str, Params)> {
     vec![
         ("baseline", Params::default()),
@@ -36,14 +48,7 @@ pub fn scenario_params() -> Vec<(&'static str, Params)> {
             capex_gdp_cap: 0.035,
             ..Params::default()
         }),
-        ("fizzle", Params {
-            singularity_year: 2099,
-            robotics_year: 2099,
-            algo_eff_growth_pre: 1.8,
-            adoption_halflife: 4.0,
-            max_displacement_rate: 0.05,
-            ..Params::default()
-        }),
+        ("fizzle", fizzle(Params::default())),
         // Red-team round 3: the geopolitics layer must be reachable from
         // the trade book. Median severe path from the escalation ladder:
         // a 2028 quarantine that escalates to a 2029 blockade with the
@@ -137,4 +142,25 @@ pub fn scenario_states_v2() -> Vec<(&'static str, Vec<YearState>)> {
         .into_iter()
         .map(|(name, p)| (name, simulate(&first_principles_v2(p))))
         .collect()
+}
+
+/// Structural-lens blend: every gain `first_principles_v2` sets, moved a fraction
+/// `lambda` of the way from `p`'s value toward the v2 value (0 = baseline
+/// structure, 1 = full v2). `book-mc --lens mix` samples lambda ~ U(0,1), so the
+/// choice between the review lenses is priced as uncertainty rather than picked.
+pub fn lens_blend(p: Params, lambda: f64) -> Params {
+    let v2 = first_principles_v2(p.clone());
+    let lerp = |a: f64, b: f64| a + lambda * (b - a);
+    let mut q = p;
+    q.equity_sentiment_gain = lerp(q.equity_sentiment_gain, v2.equity_sentiment_gain);
+    q.wealth_effect_gain = lerp(q.wealth_effect_gain, v2.wealth_effect_gain);
+    q.transmission_gain = lerp(q.transmission_gain, v2.transmission_gain);
+    q.wage_compression_cog_gain = lerp(q.wage_compression_cog_gain, v2.wage_compression_cog_gain);
+    q.wage_compression_phys_gain = lerp(q.wage_compression_phys_gain, v2.wage_compression_phys_gain);
+    q.society.jg_share = lerp(q.society.jg_share, v2.society.jg_share);
+    q.wright_gain = lerp(q.wright_gain, v2.wright_gain);
+    q.q_governor_gain = lerp(q.q_governor_gain, v2.q_governor_gain);
+    q.power_glut_price_gain = lerp(q.power_glut_price_gain, v2.power_glut_price_gain);
+    q.ai_commoditization_gain = lerp(q.ai_commoditization_gain, v2.ai_commoditization_gain);
+    q
 }
