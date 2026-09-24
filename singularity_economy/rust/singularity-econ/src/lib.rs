@@ -457,6 +457,14 @@ pub struct Params {
     /// steps 1.3% -> 11% from 2027 to 2028 — more in one year than the ~9% most
     /// whole-transition estimates carry. The 2026 base year is pinned (observed).
     pub tau_reorg: f64,
+    /// F5 (Sep-26 re-analysis): inference market clearing (gate, 0 = legacy).
+    /// Legacy caps AI work at demand (ai_hew = min(supply, demand)) at a fixed
+    /// price, so AI revenue flattens while algorithmic efficiency compounds ~1,900x.
+    /// At > 0, supply beyond demand clears by price: revenue scales by
+    /// (supply/demand)^(1 - 1/inference_elasticity), capped at 25% of GDP.
+    /// Displacement still uses min(supply, demand). Elasticity 1 = revenue-neutral.
+    pub inference_clearing_gain: f64,
+    pub inference_elasticity: f64,
     /// Fab investment discipline (gate, 0 = legacy). Legacy grows fab capacity at
     /// `chip_base_growth` whatever the utilization, so in a bust fabs keep adding
     /// 20-45%/yr into a glut that compounds to 20x (utilization 5%) and pins the
@@ -667,6 +675,8 @@ impl Default for Params {
             demand_growth_base: 0.32,
             dgb_decay_rate: 0.0,
             tau_reorg: 0.0,
+            inference_clearing_gain: 0.0,
+            inference_elasticity: 1.0,
             fab_discipline: 0.0,
             fab_obsolescence: 0.10,
             perceived_growth_2026: None,
@@ -1210,6 +1220,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             .min(prev_disp + p.max_displacement_rate / friction);
         disp = disp.max(prev_disp);
         prev_disp = disp;
+        let disp_tech = disp;
         let disp = if p.tau_reorg > 0.0 {
             if year == p.start_year {
                 disp_realized = disp;
@@ -1959,7 +1970,10 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let phys_wage_target = (1.0 - p.wage_compression_phys_gain * pd).max(WAGE_FLOOR);
         wage_index_cog += 0.5 * (cog_wage_target - wage_index_cog);
         wage_index_phys += 0.5 * (phys_wage_target - wage_index_phys);
-        let displaced_value = disp * p.cognitive_workers_m * avg_cog_wage;
+        // AI revenue follows TECHNICAL adoption: firms pay for the AI doing the work
+        // (augmentation) before they restructure headcount, so the reorganization lag
+        // delays layoffs, not AI spend. Equals the displaced-work value when tau = 0.
+        let ai_work_value = disp_tech * p.cognitive_workers_m * avg_cog_wage;
         // AI-provider surplus share erodes as the market commoditizes (gated): a mature,
         // multi-provider AI market competes the captured share of displaced-wage value
         // down. gain=0 => constant 0.45 => byte-identical. Floored at 0.0 on the whole
@@ -1967,8 +1981,17 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // — negative; the earlier adopt.clamp bounded an already-[0,1) operand and gave
         // no protection when gain × adopt > 1).
         let ai_surplus_share = (0.45 * (1.0 - p.ai_commoditization_gain * adopt)).max(0.0);
-        let ai_services = displaced_value * ai_surplus_share
+        let ai_services = ai_work_value * ai_surplus_share
             + (cognitive_task_index - 1.0) * p.cognitive_wage_bill * 0.06;
+        let ai_services = if p.inference_clearing_gain > 0.0 && ai_hew_raw > demand_hew {
+            let e = p.inference_elasticity.max(0.1);
+            let ratio = (ai_hew_raw / demand_hew.max(1e-9)).powf(1.0 - 1.0 / e);
+            let cleared = (ai_services * ratio).min(0.25 * gdp).max(0.0);
+            let g = p.inference_clearing_gain.clamp(0.0, 1.0);
+            (1.0 - g) * ai_services + g * cleared
+        } else {
+            ai_services
+        };
 
         let years_in = year - p.start_year;
         let casualty = |pool0: f64, beta: f64, drift: f64| -> f64 {

@@ -750,3 +750,21 @@ fn cashflow_funding_caps_the_late_build() {
     let fz = run(fz);
     assert!(fz.last().unwrap().sector_debt < 0.5 * fz_legacy.last().unwrap().sector_debt);
 }
+
+// F5 inference clearing: elasticity 1 is revenue-neutral (byte-identical to the
+// legacy fixed-price pool); above 1, cheaper AI work raises AI revenue, below 1 it
+// lowers it; revenue never exceeds 25% of GDP; displacement is untouched.
+#[test]
+fn inference_clearing_prices_the_supply_glut() {
+    let at = |e: f64| run(Params { inference_clearing_gain: 1.0, inference_elasticity: e, ..Params::default() });
+    let legacy = base();
+    let (neutral, low, high) = (at(1.0), at(0.7), at(1.35));
+    for i in 0..legacy.len() {
+        assert_eq!(neutral[i].pools.ai_services, legacy[i].pools.ai_services);
+        assert!(low[i].pools.ai_services <= legacy[i].pools.ai_services + 1e-12);
+        assert!(high[i].pools.ai_services >= legacy[i].pools.ai_services - 1e-12);
+        assert!(high[i].pools.ai_services <= 0.25 * high[i].gdp + 1e-9);
+        assert_eq!(high[i].cog_displacement, legacy[i].cog_displacement);
+    }
+    assert!(high.last().unwrap().pools.ai_services > 2.0 * legacy.last().unwrap().pools.ai_services);
+}

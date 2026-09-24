@@ -263,6 +263,7 @@ fn book_sa(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, top: 
         vals.push(("severe_taiwan", ctx.taiwan_start.is_some() as u8 as f64));
         vals.push(("ai_rev_growth_2026", d.params.ai_rev_growth_2026));
         vals.push(("gw_per_dollar_growth", d.params.gw_per_dollar_growth.unwrap_or(0.035)));
+        vals.push(("inference_elasticity", d.params.inference_elasticity));
         if lens == Lens::Mix {
             vals.push(("lens_lambda", d.lambda));
         }

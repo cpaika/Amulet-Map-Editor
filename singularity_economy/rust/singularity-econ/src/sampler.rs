@@ -265,10 +265,15 @@ impl BookSampler {
         // GW-per-capex-dollar trend (F3): legacy implies +3.5%/yr; Hopper->Blackwell
         // ran strongly negative; a constant chip-cost/chip-power ratio gives ~0.
         let gw_trend: f64 = Uniform::new(-0.10, 0.035).sample(&mut self.aux);
+        // Inference demand elasticity (F5): clearing is structural; epsilon is the
+        // uncertainty (0.7 = revenue shrinks as price falls, 1.4 = Jevons-like).
+        let epsilon: f64 = Uniform::new(0.7, 1.4).sample(&mut self.aux);
         let fizzle = u_fizzle < fizzle_mass();
         let mut p = if fizzle { crate::scenarios::fizzle(p) } else { p };
         p.ai_rev_growth_2026 = rev_growth;
         p.gw_per_dollar_growth = Some(gw_trend);
+        p.inference_clearing_gain = 1.0;
+        p.inference_elasticity = epsilon;
         let (params, lambda) = match self.lens {
             Lens::Base => (p, 0.0),
             Lens::Enhanced => (crate::scenarios::enhanced_realism(p), 0.5),
