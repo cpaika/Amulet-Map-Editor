@@ -385,6 +385,23 @@ pub struct Params {
     // capital / margins / credit
     pub capex_gdp_cap: f64,
     pub internal_funding_share: f64,
+    /// F7b (Sep-26 re-analysis): cash-flow funding gate (0 = legacy). Legacy books
+    /// a fixed `internal_funding_share` of any capex as internally funded (fizzle:
+    /// $14.2T "internal" against $3.55T of cumulative AI profit) and only caps capex
+    /// at `capex_gdp_cap` of GDP, which never binds before 2035. At 1: capex is
+    /// funded from operating cash flow first (builders' OCF + last year's AI
+    /// operating profit), then from external markets whose capacity scales with
+    /// equity sentiment and credit; capex beyond both cannot be financed, and the
+    /// debt-financed remainder (after an equity share) accrues to `sector_debt`.
+    pub cashflow_funding_gain: f64,
+    /// AI builders' operating cash flow available for capex in 2026 ($T).
+    pub builder_ocf_2026: f64,
+    pub builder_ocf_growth: f64,
+    /// External financing capacity (debt + equity) as a share of world GDP at
+    /// neutral sentiment (telecom 2000 peak ~1.5% of world GDP).
+    pub external_funding_capacity: f64,
+    /// Share of external funding raised as equity at neutral sentiment.
+    pub external_equity_share: f64,
     pub credit_gain: f64,
     pub debt_revenue_tolerance: f64,
     pub debt_amortization: f64,
@@ -623,6 +640,11 @@ impl Default for Params {
             max_physical_displacement_rate: 0.15,
             capex_gdp_cap: 0.055,
             internal_funding_share: 0.65,
+            cashflow_funding_gain: 0.0,
+            builder_ocf_2026: 0.60,
+            builder_ocf_growth: 0.10,
+            external_funding_capacity: 0.01,
+            external_equity_share: 0.30,
             credit_gain: 1.2,
             debt_revenue_tolerance: 1.5,
             debt_amortization: 0.90,
@@ -1482,6 +1504,17 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // since the stock-draw subtractions above already price the multiplied draw).
         let power_cap = (power_headroom / (gw_per_unit * power_jevons_mult)) * cost_per_unit;
         let capital_cap = gdp * p.capex_gdp_cap * credit_mult;
+        let cf_gain = p.cashflow_funding_gain.clamp(0.0, 1.0);
+        let builder_ocf = p.builder_ocf_2026
+            * (1.0 + p.builder_ocf_growth).powi(year - p.start_year)
+            + out.last().map_or(0.0, |s| s.profits.ai_services);
+        let capital_cap = if cf_gain > 0.0 {
+            let external = p.external_funding_capacity * gdp * credit_mult
+                * (1.0 + es_dev).max(0.2);
+            (1.0 - cf_gain) * capital_cap + cf_gain * capital_cap.min(builder_ocf + external)
+        } else {
+            capital_cap
+        };
 
         // P0: PHYSICAL power ceiling from the energy layer. The AI sector can draw
         // at most `ai_grid_share_max` of the world's firm power (last year's, from
@@ -1539,8 +1572,15 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             / (desired_capex * p.silicon_share_of_capex).max(1e-9))
             .min(50.0);
 
-        sector_debt = sector_debt * p.debt_amortization
-            + (ai_capex * (1.0 - p.internal_funding_share)).max(0.0);
+        let legacy_new_debt = (ai_capex * (1.0 - p.internal_funding_share)).max(0.0);
+        let new_ai_debt = if cf_gain > 0.0 {
+            let equity_share = (p.external_equity_share * (1.0 + es_dev)).clamp(0.0, 0.8);
+            let cf_debt = (ai_capex - builder_ocf).max(0.0) * (1.0 - equity_share);
+            (1.0 - cf_gain) * legacy_new_debt + cf_gain * cf_debt
+        } else {
+            legacy_new_debt
+        };
+        sector_debt = sector_debt * p.debt_amortization + new_ai_debt;
 
         let pre_stock = compute_stock;
         // Compute-governance throttle (gated): a licensing/compute-cap regime that
@@ -2156,7 +2196,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             // inflation add-on — not a pinned 5% that manufactured (g−r)<0 and
             // a permanent snowball regardless of the actual boom.
             let debt_share = if soc_on { soc.debt_financing_share(&p.society) } else { 0.6 };
-            let ai_ig = (ai_capex * (1.0 - p.internal_funding_share) / gdp).max(0.0);
+            let ai_ig = (new_ai_debt / gdp).max(0.0);
             macro_out = Some(macrost.step(
                 &p.macrofin,
                 soc.transfer_share(),

@@ -730,3 +730,23 @@ fn fab_discipline_bounds_the_glut() {
     let b = run(Params { fab_discipline: 1.0, ..Params::default() });
     assert_eq!(b[0].ai_capex, base()[0].ai_capex, "2026 is observed");
 }
+
+// F7b cash-flow funding: capex is financed from builders' operating cash flow first,
+// then external markets. The late-decade baseline build outruns both and is capped;
+// the observed 2026 is untouched; and the self-funded fizzle carries far less debt
+// than the legacy fixed-share accounting booked.
+#[test]
+fn cashflow_funding_caps_the_late_build() {
+    let legacy = base();
+    let cf = run(Params { cashflow_funding_gain: 1.0, ..Params::default() });
+    assert_eq!(cf[0].ai_capex, legacy[0].ai_capex, "2026 is observed");
+    assert!(cf.last().unwrap().ai_capex < 0.95 * legacy.last().unwrap().ai_capex);
+    for (a, b) in cf.iter().zip(&legacy) {
+        assert!(a.ai_capex <= b.ai_capex + 1e-9, "{}: funding raised capex", a.year);
+    }
+    let fz_legacy = run(singularity_econ::scenarios::fizzle(Params::default()));
+    let mut fz = singularity_econ::scenarios::fizzle(Params::default());
+    fz.cashflow_funding_gain = 1.0;
+    let fz = run(fz);
+    assert!(fz.last().unwrap().sector_debt < 0.5 * fz_legacy.last().unwrap().sector_debt);
+}
