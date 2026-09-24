@@ -259,8 +259,12 @@ impl BookSampler {
         let p = self.core.params();
         let u_fizzle: f64 = Uniform::new(0.0, 1.0).sample(&mut self.aux);
         let u_lambda: f64 = Uniform::new(0.0, 1.0).sample(&mut self.aux);
+        // Forward-q growth seed (F5): observed 2026 AI-revenue growth +100-250%/yr.
+        // Only read when the lens turns on the forward q-governor.
+        let rev_growth: f64 = Uniform::new(1.0, 2.5).sample(&mut self.aux);
         let fizzle = u_fizzle < fizzle_mass();
-        let p = if fizzle { crate::scenarios::fizzle(p) } else { p };
+        let mut p = if fizzle { crate::scenarios::fizzle(p) } else { p };
+        p.ai_rev_growth_2026 = rev_growth;
         let (params, lambda) = match self.lens {
             Lens::Base => (p, 0.0),
             Lens::Enhanced => (crate::scenarios::enhanced_realism(p), 0.5),

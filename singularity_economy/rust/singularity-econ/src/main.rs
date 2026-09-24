@@ -246,6 +246,7 @@ fn book_sa(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, top: 
         let mut vals = sampled_values(&d.params);
         vals.push(("fizzle", d.fizzle as u8 as f64));
         vals.push(("severe_taiwan", ctx.taiwan_start.is_some() as u8 as f64));
+        vals.push(("ai_rev_growth_2026", d.params.ai_rev_growth_2026));
         if lens == Lens::Mix {
             vals.push(("lens_lambda", d.lambda));
         }

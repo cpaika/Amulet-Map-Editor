@@ -428,6 +428,22 @@ pub struct Params {
     /// drives sovereign rates up (debt crowding) automatically TIGHTENS the investment
     /// hurdle and brakes capex, and faster obsolescence raises the bar automatically.
     pub q_risk_premium: f64,
+    /// F5 (Sep-26 re-analysis): forward q. `false` (default) = legacy trailing q,
+    /// which in 2027 reads q ~0.035 and cuts capex against observed guidance. `true`
+    /// values installed compute on EXPECTED operating profit: trailing ai_services
+    /// profit grown at an expected growth g_e that fades toward `q_growth_floor`,
+    /// discounted at long_rate + q_risk_premium over the compute's economic life
+    /// round(1/compute_deprec) — a Tobin's-q ratio, not a perpetuity yield.
+    pub q_forward: bool,
+    /// Seed of the expected AI-revenue growth g_e (2026 observed ~1.0-2.5, i.e.
+    /// +100-250%/yr). Capped at 1.5 in use.
+    pub ai_rev_growth_2026: f64,
+    /// Per-year geometric fade of g_e toward `q_growth_floor`.
+    pub q_growth_fade: f64,
+    pub q_growth_floor: f64,
+    /// Upper clamp on q_mult (legacy 3.0). The forward q uses a tighter cap so
+    /// optimism can accelerate investment only modestly.
+    pub q_mult_cap: f64,
 
     pub loops: Loops,
 }
@@ -587,6 +603,11 @@ impl Default for Params {
             perceived_growth_2026: None,
             q_governor_gain: 0.0,   // off by default (satellite); ~0.5 is a live scenario
             q_risk_premium: 0.10,   // equity premium; hurdle = long_rate + this + compute_deprec
+            q_forward: false,
+            ai_rev_growth_2026: 1.5,
+            q_growth_fade: 0.7,
+            q_growth_floor: 0.15,
+            q_mult_cap: 3.0,
             loops: Loops::default(),
         }
     }
@@ -896,6 +917,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut phys_workers_m = p.physical_workers_m;
     let mut gdp = p.world_gdp;
     let mut sector_debt = 0.0_f64;
+    // Forward-q expected AI-revenue growth (F5); fades toward the floor each year.
+    let mut q_growth_e = p.ai_rev_growth_2026.min(1.5);
     let mut perceived_growth = p.perceived_growth_2026.unwrap_or(p.demand_growth_base);
     let mut last_capex = p.ai_capex_2026 * 0.8;
     let mut last_desired = p.ai_capex_2026;
@@ -1220,13 +1243,28 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 // cost of capital is the model's own sovereign long rate (B11) plus an
                 // equity risk premium — so debt-crowding rate spikes tighten the
                 // investment hurdle endogenously (macro-financial transmission).
-                let hurdle = prev.long_rate + p.q_risk_premium + p.compute_deprec;
-                let q = (ai_profit / compute_value) / hurdle;
-                (1.0 + p.q_governor_gain * (q - 1.0)).clamp(0.2, 3.0)
+                let q = if p.q_forward {
+                    let r = prev.long_rate + p.q_risk_premium;
+                    let life = (1.0 / p.compute_deprec.max(0.02)).round().max(1.0) as i32;
+                    let (mut g, mut cf, mut pv) = (q_growth_e, ai_profit, 0.0);
+                    for k in 1..=life {
+                        cf *= 1.0 + g;
+                        pv += cf / (1.0 + r).powi(k);
+                        g = p.q_growth_floor + (g - p.q_growth_floor) * p.q_growth_fade;
+                    }
+                    pv / compute_value
+                } else {
+                    let hurdle = prev.long_rate + p.q_risk_premium + p.compute_deprec;
+                    (ai_profit / compute_value) / hurdle
+                };
+                (1.0 + p.q_governor_gain * (q - 1.0)).clamp(0.2, p.q_mult_cap)
             })
         } else {
             1.0
         };
+        if out.last().is_some() {
+            q_growth_e = p.q_growth_floor + (q_growth_e - p.q_growth_floor) * p.q_growth_fade;
+        }
         // B3 closure: bottleneck prices throttle desired capex growth.
         // Desire base avoids the absorbing zero-capex state (round-2 fix 2).
         let desire_base = last_capex.max(0.3 * last_desired);

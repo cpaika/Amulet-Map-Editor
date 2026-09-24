@@ -379,3 +379,39 @@ fn dgb_decay_lowers_no_singularity_capex_monotonically() {
         last = c;
     }
 }
+
+// F5 lock (Sep-26 re-analysis, Wave 2): the v2 q-governor reads FORWARD q. The legacy
+// trailing q cut 2027 capex to 0.55 from 0.66 against rising 2027 guidance.
+#[test]
+fn v2_forward_q_does_not_bust_2027() {
+    let s = simulate(&singularity_econ::scenarios::first_principles_v2(Params::default()));
+    assert!(s[1].ai_capex > s[0].ai_capex, "v2 2027 capex {} vs 2026 {}", s[1].ai_capex, s[0].ai_capex);
+}
+
+// The v2 silicon verdict IS the growth seed (F5): the forward-q system has a regime
+// switch near seed ~1.35. Below it the baseline busts (capex peaks ~0.9 then decays,
+// silicon margin at its floor); above it the boom runs. The value surface is NOT
+// monotone (a bigger early boom brings the glut forward: fast_takeoff NVDA falls
+// 197 -> 139 from seed 1.0 to 1.2), refuting the plan's monotone lock. Lock the
+// switch, so the book reports v2 silicon as a band (book-mc samples the seed).
+#[test]
+fn v2_silicon_verdict_switches_regime_on_growth_seed() {
+    let nvda_at = |seed: f64| {
+        let states: Vec<_> = scenario_params()
+            .into_iter()
+            .map(|(n, p)| {
+                let mut p = singularity_econ::scenarios::first_principles_v2(p);
+                p.ai_rev_growth_2026 = seed;
+                (n, simulate(&p))
+            })
+            .collect();
+        evaluate_all(&universe(), &states, DR_BETA)
+            .into_iter()
+            .find(|r| r.ticker == "NVDA")
+            .unwrap()
+            .expected_upside
+    };
+    let (bust, boom) = (nvda_at(0.8), nvda_at(1.5));
+    assert!(bust < -0.3, "low-seed v2 NVDA {bust} should be the bust regime");
+    assert!(boom > 0.0, "high-seed v2 NVDA {boom} should be the boom regime");
+}
