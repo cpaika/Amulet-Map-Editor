@@ -233,6 +233,10 @@ pub fn fizzle_mass() -> f64 {
 /// only) and whether the path is a fizzle.
 pub struct BookDraw {
     pub params: Params,
+    /// Year a foreign-investor access ban lands on China A-shares, if any
+    /// (hazard `valuation::ACCESS_BAN_HAZARD`, tripled from a severe Taiwan
+    /// episode's start).
+    pub access_ban_year: Option<i32>,
     /// The core mc/sa draw before fizzle and the lens were applied.
     pub core: Params,
     pub lambda: f64,
@@ -283,6 +287,20 @@ impl BookSampler {
             Lens::V2 => (crate::scenarios::first_principles_v2(p), 1.0),
             Lens::Mix => (crate::scenarios::lens_blend(p, u_lambda), u_lambda),
         };
-        BookDraw { params, core, lambda, fizzle }
+        let taiwan = crate::valuation::PathContext::from_params(&params).taiwan_start;
+        let mut access_ban_year = None;
+        for year in (params.start_year + 1)..=params.end_year {
+            let u: f64 = Uniform::new(0.0, 1.0).sample(&mut self.aux);
+            let h = crate::valuation::ACCESS_BAN_HAZARD
+                * if taiwan.map_or(false, |t| year >= t) {
+                    crate::valuation::ACCESS_BAN_TAIWAN_MULT
+                } else {
+                    1.0
+                };
+            if access_ban_year.is_none() && u < h {
+                access_ban_year = Some(year);
+            }
+        }
+        BookDraw { params, core, lambda, fizzle, access_ban_year }
     }
 }

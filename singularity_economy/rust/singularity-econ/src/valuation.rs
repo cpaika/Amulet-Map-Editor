@@ -135,8 +135,24 @@ pub struct Company {
     /// Net debt, $B (negative = net cash). Read only when
     /// `ValuationParams::leverage_gain > 0`.
     pub net_debt_b: f64,
+    /// Share of earnings exposed to export-control / trade restrictions on the
+    /// China corridor (Western names: sales into China; Chinese names: sales to
+    /// Western customers). Read only when `ValuationParams::policy_gain > 0`.
+    pub china_revenue_share: f64,
+    /// 1.0 for listings a foreign (US) holder could be forced out of by an
+    /// investment ban (China A-shares), 0 otherwise.
+    pub foreign_access_risk: f64,
     pub notes: &'static str,
 }
+
+/// Annual hazard of an export-control escalation rung — the geopolitics sampler's
+/// S5 rate (25%/yr), used as the expectation in the named books.
+pub const EXPORT_RUNG_HAZARD: f64 = 0.25;
+/// Annual hazard of a US ban forcing foreign holders out of China A-shares
+/// (NS-CMIC-list / outbound-investment-rule style), tripled from the first year of
+/// a severe Taiwan episode.
+pub const ACCESS_BAN_HAZARD: f64 = 0.03;
+pub const ACCESS_BAN_TAIWAN_MULT: f64 = 3.0;
 
 /// Default firm revenue-growth ceiling: 30%/yr sustained for a decade (~14x) is
 /// the top of the historical large-cap envelope.
@@ -181,6 +197,22 @@ pub struct ValuationParams {
     /// Average debt maturity (years): the share repriced by year t is 1-(1-1/M)^t.
     pub debt_maturity: f64,
     pub tax_rate: f64,
+    /// Blend weight on policy risk (4 channels). Export controls: each escalation
+    /// rung after 2026 removes `export_rung_bite` of the remaining China-corridor
+    /// earnings (realized rungs on MC paths; the S5 hazard in expectation on the
+    /// named books). Investment access: a foreign holder of an exposed listing is
+    /// forced to sell at `access_haircut` below fair value if a ban lands in the
+    /// horizon. Power windfall levy: once the electricity price runs 20% above
+    /// 2026, a UK-EGL / EU-cap style levy takes `power_levy` of the generator margin
+    /// above the 0.30 normal (sticky). AI windfall tax: once cognitive displacement
+    /// passes `ai_tax_trigger`, `ai_windfall_tax` of AI-services capture rent is
+    /// taxed away (sticky).
+    pub policy_gain: f64,
+    pub export_rung_bite: f64,
+    pub access_haircut: f64,
+    pub power_levy: f64,
+    pub ai_tax_trigger: f64,
+    pub ai_windfall_tax: f64,
     /// Upper bound on the compute unit-cost decline used by the flow terminal (the
     /// calendar `Params::hw_cost_decline`); the actual rate is read off the path.
     /// In a dollar steady state falling unit cost keeps the UNIT stock growing, so
@@ -204,6 +236,12 @@ impl Default for ValuationParams {
             debt_spread: 0.015,
             debt_maturity: 6.0,
             tax_rate: 0.21,
+            policy_gain: 0.0,
+            export_rung_bite: 0.3,
+            access_haircut: 0.4,
+            power_levy: 0.45,
+            ai_tax_trigger: 0.15,
+            ai_windfall_tax: 0.25,
         }
     }
 }
@@ -216,6 +254,7 @@ impl ValuationParams {
             power_route_gain: 1.0,
             growth_from_multiple: true,
             leverage_gain: 1.0,
+            policy_gain: 1.0,
             ..Self::default()
         }
     }
@@ -368,6 +407,7 @@ pub fn earnings_with(c: &Company, states: &[YearState], vp: &ValuationParams) ->
     let mut path = Vec::with_capacity(HORIZON);
     let mut rent = Vec::with_capacity(HORIZON);
     let mut terminal_base = None;
+    let (mut levy_on, mut ai_tax_on) = (false, false);
     let last_i = states.len().min(HORIZON + 1) - 1;
     for (i, s) in states.iter().enumerate().skip(1) {
         if path.len() == HORIZON {
@@ -411,9 +451,32 @@ pub fn earnings_with(c: &Company, states: &[YearState], vp: &ValuationParams) ->
         // sim) — not a frozen per-company margin constant. So VST/NRG/CEG electricity
         // capture now tracks the endogenous electricity_margin (0.30 -> ~0.60) and
         // component capture tracks component_margin, instead of a hand-set number.
+        if vp.policy_gain > 0.0 {
+            if s.electricity_price > 1.2 * states[0].electricity_price {
+                levy_on = true;
+            }
+            if s.cog_displacement > vp.ai_tax_trigger {
+                ai_tax_on = true;
+            }
+        }
         let mut r = 0.0;
         for &(pool, share) in &c.capture {
-            r += phase * persistence * share * s.profits.emerging(pool) * 1000.0;
+            let mut slice = phase * persistence * share * s.profits.emerging(pool) * 1000.0;
+            if vp.policy_gain > 0.0 {
+                let g = vp.policy_gain.clamp(0.0, 1.0);
+                match pool {
+                    EmergingPool::Electricity if levy_on && s.pools.electricity > 1e-12 => {
+                        let m = s.profits.electricity / s.pools.electricity;
+                        let excess = ((m - 0.30) / m.max(1e-9)).clamp(0.0, 1.0);
+                        slice *= 1.0 - g * vp.power_levy * excess;
+                    }
+                    EmergingPool::AiServices if ai_tax_on => {
+                        slice *= 1.0 - g * vp.ai_windfall_tax;
+                    }
+                    _ => {}
+                }
+            }
+            r += slice;
         }
         path.push(base_e + r);
         rent.push(r);
@@ -549,12 +612,25 @@ pub struct PathContext {
     /// First year of a severe Taiwan episode; flows from this year on (and the
     /// terminal) carry the company's fab-destruction haircut.
     pub taiwan_start: Option<i32>,
+    /// Policy draws for a sampled path; `None` = named book, which prices policy
+    /// in expectation (the hazards above).
+    pub policy: Option<PolicyDraw>,
+}
+
+/// Realized policy events on one Monte Carlo path.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct PolicyDraw {
+    /// Export-control rungs STARTING in each year, indexed from the base year.
+    pub rungs: [u8; 16],
+    /// Year a foreign-investor access ban lands on China A-shares, if any.
+    pub access_ban_year: Option<i32>,
 }
 
 impl PathContext {
     /// Context for one of the six named scenarios.
     pub fn named(name: &str) -> Self {
         PathContext {
+            policy: None,
             fizzle: name == "fizzle",
             taiwan_start: if name == "taiwan_shock" {
                 Some(crate::scenarios::TAIWAN_SHOCK_START)
@@ -585,9 +661,17 @@ impl PathContext {
         } else {
             None
         };
+        let mut rungs = [0u8; 16];
+        for g in p.geo_shocks.iter().filter(|g| g.kind == ExportControlRung) {
+            let i = g.start_year - p.start_year;
+            if (0..16).contains(&i) {
+                rungs[i as usize] = rungs[i as usize].saturating_add(1);
+            }
+        }
         PathContext {
             fizzle: p.singularity_year > p.end_year,
             taiwan_start,
+            policy: Some(PolicyDraw { rungs, access_ban_year: None }),
         }
     }
 }
@@ -667,6 +751,23 @@ pub fn value_on_path(
         _ => (1.0, i32::MAX),
     };
     let base_year = states[0].year;
+    // Policy (export controls): surviving share of China-corridor earnings by the
+    // i-th flow year; rungs in the observed 2026 are already in NTM consensus.
+    let pg = vp.policy_gain.clamp(0.0, 1.0);
+    let export_factor = |i: usize| -> f64 {
+        if pg <= 0.0 || c.china_revenue_share <= 0.0 {
+            return 1.0;
+        }
+        let years = i as i32 + 1;
+        let survive = match &ctx.policy {
+            None => (1.0 - EXPORT_RUNG_HAZARD * vp.export_rung_bite).powi(years),
+            Some(d) => {
+                let k: i32 = (1..=years).map(|t| d.rungs.get(t as usize).copied().unwrap_or(0) as i32).sum();
+                (1.0 - vp.export_rung_bite).powi(k)
+            }
+        };
+        1.0 - pg * c.china_revenue_share * (1.0 - survive)
+    };
     // Flow PV over the explicit horizon.
     let mut fair: f64 = path
         .iter()
@@ -674,6 +775,7 @@ pub fn value_on_path(
         .map(|(i, e)| {
             let year = base_year + i as i32 + 1;
             let f = if year >= shock_year { taiwan_factor } else { 1.0 };
+            let e = if pg > 0.0 { e * export_factor(i) } else { *e };
             e * f / (1.0 + dr).powi(i as i32 + 1)
         })
         .sum();
@@ -691,13 +793,38 @@ pub fn value_on_path(
         let dr_t = terminal_discount(states, dr_beta);
         let base_last = terminal_base.unwrap_or(last - last_rent).max(0.0);
         let rent_mult = (tm * dr_t / (dr_t + CAPTURE_DECAY)).min(1.0 / (dr_t + CAPTURE_DECAY));
-        let terminal = (base_last * tm + last_rent.max(0.0) * rent_mult) * taiwan_factor;
+        let mut terminal = (base_last * tm + last_rent.max(0.0) * rent_mult) * taiwan_factor;
+        if pg > 0.0 {
+            terminal *= export_factor(path.len() - 1);
+        }
         terminal_pv = terminal / (1.0 + dr_t).powi(path.len() as i32);
         fair += terminal_pv;
     }
     if vp.leverage_gain > 0.0 && fair < 0.0 {
         // Limited liability: a levered equity is worth zero, not less.
         return (0.0, 0.0);
+    }
+    // Policy (investment access): a foreign holder forced out sells at a discount.
+    if pg > 0.0 && c.foreign_access_risk > 0.0 {
+        let p_ban = match &ctx.policy {
+            None => {
+                let mut survive = 1.0;
+                for i in 0..path.len() {
+                    let year = base_year + i as i32 + 1;
+                    let h = if ctx.taiwan_start.map_or(false, |t| year >= t) {
+                        ACCESS_BAN_HAZARD * ACCESS_BAN_TAIWAN_MULT
+                    } else {
+                        ACCESS_BAN_HAZARD
+                    };
+                    survive *= 1.0 - h;
+                }
+                1.0 - survive
+            }
+            Some(d) => d.access_ban_year.map_or(0.0, |_| 1.0),
+        };
+        let keep = 1.0 - pg * c.foreign_access_risk * vp.access_haircut * p_ban;
+        fair *= keep;
+        terminal_pv *= keep;
     }
     (fair, terminal_pv)
 }

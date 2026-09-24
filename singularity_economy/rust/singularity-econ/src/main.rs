@@ -257,7 +257,10 @@ fn book_sa(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, top: 
     let mut ups: Vec<Vec<f64>> = vec![Vec::with_capacity(n); comps.len()];
     for k in 0..n {
         let (d, states) = conditioned_draw(&mut draws, &mut rej, n);
-        let ctx = PathContext::from_params(&d.params);
+        let mut ctx = PathContext::from_params(&d.params);
+        if let Some(pd) = ctx.policy.as_mut() {
+            pd.access_ban_year = d.access_ban_year;
+        }
         // Drivers are the CORE draw (pre-fizzle, pre-lens): fizzle's overrides are
         // reported by the fizzle column, not as fake parameter effects.
         let mut vals = sampled_values(&d.core);
@@ -266,6 +269,8 @@ fn book_sa(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, top: 
         vals.push(("ai_rev_growth_2026", d.params.ai_rev_growth_2026));
         vals.push(("gw_per_dollar_growth", d.params.gw_per_dollar_growth.unwrap_or(0.035)));
         vals.push(("inference_elasticity", d.params.inference_elasticity));
+        vals.push(("access_ban", d.access_ban_year.is_some() as u8 as f64));
+        vals.push(("export_rungs", ctx.policy.map_or(0.0, |p| p.rungs[1..].iter().map(|&k| k as f64).sum())));
         if lens == Lens::Mix {
             vals.push(("lens_lambda", d.lambda));
         }
@@ -337,7 +342,10 @@ fn book_mc(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, vp: &
     let (mut pw_start, mut pw_end, mut pw_count) = (Vec::new(), Vec::new(), Vec::new());
     for _ in 0..n {
         let (d, states) = conditioned_draw(&mut draws, &mut rej, n);
-        let ctx = PathContext::from_params(&d.params);
+        let mut ctx = PathContext::from_params(&d.params);
+        if let Some(pd) = ctx.policy.as_mut() {
+            pd.access_ban_year = d.access_ban_year;
+        }
         let power_years: Vec<i32> = states.iter()
             .filter(|s| s.binding == singularity_econ::Binding::Power)
             .map(|s| s.year)

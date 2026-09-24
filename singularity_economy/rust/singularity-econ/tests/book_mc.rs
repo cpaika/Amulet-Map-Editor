@@ -18,12 +18,13 @@ const DR_BETA: f64 = 0.60;
 // differently.
 #[test]
 fn path_context_from_params_matches_named_scenarios() {
+    // Policy differs by design: named books price it in expectation, sampled paths
+    // carry realized draws. The scenario-defining fields must agree.
     for (name, p) in scenario_params() {
-        assert_eq!(
-            PathContext::from_params(&p),
-            PathContext::named(name),
-            "context mismatch for named scenario {name}"
-        );
+        let (a, b) = (PathContext::from_params(&p), PathContext::named(name));
+        assert_eq!((a.fizzle, a.taiwan_start), (b.fizzle, b.taiwan_start),
+                   "context mismatch for named scenario {name}");
+        assert!(a.policy.is_some() && b.policy.is_none());
     }
 }
 

@@ -33,6 +33,8 @@ fn test_company(pools: Vec<(RatioPool, f64)>, beta: f64, drift: f64) -> Company 
         taiwan_fab_exposure: 0.0,
         max_rev_cagr: f64::INFINITY,
         net_debt_b: 0.0,
+        china_revenue_share: 0.0,
+        foreign_access_risk: 0.0,
         notes: "",
     }
 }
@@ -438,8 +440,8 @@ fn first_principles_valuation_removes_build_rate_froth() {
     use singularity_econ::valuation::{evaluate_all_with, ValuationParams};
     let st = scenario_states();
     let legacy = evaluate_all(&universe(), &st, DR_BETA);
-    // F1 pieces only (leverage is its own lock).
-    let f1 = ValuationParams { leverage_gain: 0.0, ..ValuationParams::first_principles() };
+    // F1 pieces only (leverage and policy have their own locks).
+    let f1 = ValuationParams { leverage_gain: 0.0, policy_gain: 0.0, ..ValuationParams::first_principles() };
     let no_route = ValuationParams { power_route_gain: 0.0, ..f1 };
     let fp_nr = evaluate_all_with(&universe(), &st, DR_BETA, &no_route);
     let fp = evaluate_all_with(&universe(), &st, DR_BETA, &f1);
@@ -522,4 +524,38 @@ fn leverage_gives_equity_rate_torque() {
     }
     let path = singularity_econ::valuation::earnings_with(&levered, &flat, &vp).path;
     assert!(path.iter().all(|e| (e - levered.ntm_earnings_b).abs() < 1e-9), "{path:?}");
+}
+
+// Policy risk (Sep-24): four gated channels — export controls, foreign-investor
+// access bans, power windfall levy, AI windfall tax. Locks: no channel ever raises a
+// name; names with no policy exposure are untouched; a realized access ban on a sampled
+// path costs exactly the forced-sale haircut; China A-shares carry access risk.
+#[test]
+fn policy_risk_layer() {
+    use singularity_econ::valuation::{evaluate_all_with, value_on_path, PathContext, PolicyDraw, ValuationParams};
+    let st = scenario_states();
+    let fp = ValuationParams::first_principles();
+    let off = ValuationParams { policy_gain: 0.0, ..fp };
+    let (a, b) = (evaluate_all_with(&universe(), &st, DR_BETA, &off),
+                  evaluate_all_with(&universe(), &st, DR_BETA, &fp));
+    for r in &a {
+        let n = b.iter().find(|x| x.ticker == r.ticker).unwrap();
+        assert!(n.expected_upside <= r.expected_upside + 1e-9, "{}: policy raised value", r.ticker);
+    }
+    for t in ["RHI", "ADP", "GEV", "WTKWY"] {
+        let (x, y) = (a.iter().find(|r| r.ticker == t).unwrap(), b.iter().find(|r| r.ticker == t).unwrap());
+        assert!((x.expected_upside - y.expected_upside).abs() < 1e-9, "{t} has no policy exposure");
+    }
+    let comps = universe();
+    let shx = comps.iter().find(|c| c.ticker == "002472.SZ").unwrap();
+    assert_eq!(shx.foreign_access_risk, 1.0);
+    let states = simulate(&Params::default());
+    let quiet = PathContext { policy: Some(PolicyDraw::default()), ..PathContext::default() };
+    let banned = PathContext {
+        policy: Some(PolicyDraw { access_ban_year: Some(2030), ..PolicyDraw::default() }),
+        ..PathContext::default()
+    };
+    let v0 = value_on_path(shx, &states, quiet, DR_BETA, &fp).0;
+    let v1 = value_on_path(shx, &states, banned, DR_BETA, &fp).0;
+    assert!((v1 / v0 - (1.0 - fp.access_haircut)).abs() < 1e-12, "{v1} vs {v0}");
 }

@@ -11,7 +11,8 @@ pub fn universe() -> Vec<Company> {
     let c = |ticker, name, mcap_b, ntm, pools, beta, drift, tm, stance, capture, notes| Company {
         ticker, name, mcap_b, ntm_earnings_b: ntm, pools, pool_beta: beta,
         share_drift: drift, terminal_multiple: tm, stance, capture,
-        taiwan_fab_exposure: 0.0, max_rev_cagr: DEFAULT_MAX_REV_CAGR, net_debt_b: 0.0, notes,
+        taiwan_fab_exposure: 0.0, max_rev_cagr: DEFAULT_MAX_REV_CAGR, net_debt_b: 0.0,
+        china_revenue_share: 0.0, foreign_access_risk: 0.0, notes,
     };
     let mut universe = vec![
         // ---- LONGS: compute complex ----
@@ -235,6 +236,26 @@ pub fn universe() -> Vec<Company> {
             "PLTR" => -9.2,
             _ => 0.0,
         };
+    }
+    // Policy exposure (Sep-24): approximate share of earnings in the China trade
+    // corridor (2025-26 disclosures; Western names = sales into China, Chinese names
+    // = sales to Western customers). NVDA is low because NTM consensus already
+    // assumes zero China data-center revenue. Foreign-access risk flags China
+    // A-shares a US holder could be forced out of. Read only under policy_gain > 0.
+    for c in universe.iter_mut() {
+        c.china_revenue_share = match c.ticker {
+            "000660.KS" | "BESI.AS" | "ASML" | "300748.SZ" => 0.25,
+            "6954.T" | "6268.T" | "002472.SZ" => 0.20,
+            "LITE" | "MRVL" => 0.15,
+            "MU" => 0.12,
+            "AVGO" | "6324.T" | "SHA.DE" => 0.10,
+            "TSM" => 0.08,
+            "NVDA" | "6501.T" => 0.05,
+            "CLS" => 0.03,
+            "MSFT" => 0.02,
+            _ => 0.0,
+        };
+        c.foreign_access_risk = if c.ticker.ends_with(".SZ") || c.ticker.ends_with(".SS") { 1.0 } else { 0.0 };
     }
     universe
 }
