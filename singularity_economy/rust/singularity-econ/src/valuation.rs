@@ -132,6 +132,9 @@ pub struct Company {
     /// ride a pool that grows 19x without building 19x the plant or ceding share.
     /// Read only when `ValuationParams::capacity_gain > 0`.
     pub max_rev_cagr: f64,
+    /// Net debt, $B (negative = net cash). Read only when
+    /// `ValuationParams::leverage_gain > 0`.
+    pub net_debt_b: f64,
     pub notes: &'static str,
 }
 
@@ -167,6 +170,17 @@ pub struct ValuationParams {
     pub power_equip_cost_per_gw: f64,
     /// Compute economic depreciation — must match `Params::compute_deprec`.
     pub compute_deprec: f64,
+    /// Blend weight on capital structure (capture shortlist #1): the business, not
+    /// net income, grows with the pools; after-tax interest on net debt is
+    /// subtracted, with the debt repricing toward the modeled long rate as it
+    /// refinances. Net cash earns the rate symmetrically. Gives levered names their
+    /// equity torque to both the business and rates (NRG: net debt > market cap).
+    pub leverage_gain: f64,
+    /// Credit spread over the long rate paid on net debt.
+    pub debt_spread: f64,
+    /// Average debt maturity (years): the share repriced by year t is 1-(1-1/M)^t.
+    pub debt_maturity: f64,
+    pub tax_rate: f64,
     /// Annual decline in compute unit cost — must match `Params::hw_cost_decline`.
     /// In a dollar steady state falling unit cost keeps the UNIT stock growing, so
     /// the steady-state spend must be computed in dollars, not units.
@@ -185,6 +199,10 @@ impl Default for ValuationParams {
             power_equip_cost_per_gw: 0.0035,
             compute_deprec: 0.25,
             compute_cost_decline: 0.15,
+            leverage_gain: 0.0,
+            debt_spread: 0.015,
+            debt_maturity: 6.0,
+            tax_rate: 0.21,
         }
     }
 }
@@ -196,6 +214,7 @@ impl ValuationParams {
             flow_terminal_gain: 1.0,
             power_route_gain: 1.0,
             growth_from_multiple: true,
+            leverage_gain: 1.0,
             ..Self::default()
         }
     }
@@ -338,14 +357,28 @@ pub fn earnings_with(c: &Company, states: &[YearState], vp: &ValuationParams) ->
             break;
         }
         let ratio_of = |pool: RatioPool| s.pools.ratio(pool) / base.ratio(pool).max(1e-9);
-        let base_e = c.ntm_earnings_b
-            * base_growth(c, s, i, base_silicon_margin, base_power_margin, vp, &ratio_of);
+        let lever = |mult: f64| -> f64 {
+            let plain = c.ntm_earnings_b * mult;
+            if vp.leverage_gain <= 0.0 || c.net_debt_b == 0.0 {
+                return plain;
+            }
+            let r0 = states[0].long_rate;
+            let spread = if c.net_debt_b > 0.0 { vp.debt_spread } else { 0.0 };
+            let after_tax = 1.0 - vp.tax_rate;
+            let interest0 = c.net_debt_b * (r0 + spread);
+            let unlevered0 = c.ntm_earnings_b + interest0 * after_tax;
+            let repriced = 1.0 - (1.0 - 1.0 / vp.debt_maturity.max(1.0)).powi(i as i32);
+            let cost_t = r0 + spread + repriced * (s.long_rate - r0);
+            let levered = unlevered0 * mult - c.net_debt_b * cost_t * after_tax;
+            let g = vp.leverage_gain.clamp(0.0, 1.0);
+            (1.0 - g) * plain + g * levered
+        };
+        let base_e = lever(base_growth(c, s, i, base_silicon_margin, base_power_margin, vp, &ratio_of));
         if i == last_i && vp.flow_terminal_gain > 0.0 {
             terminal_base = Some({
                 let window = &states[..=i];
                 let ss_ratio_of = |pool: RatioPool| ratio_of(pool) * vp.steady_state_ratio(pool, window, c.terminal_multiple);
-                let ss_e = c.ntm_earnings_b
-                    * base_growth(c, s, i, base_silicon_margin, base_power_margin, vp, &ss_ratio_of);
+                let ss_e = lever(base_growth(c, s, i, base_silicon_margin, base_power_margin, vp, &ss_ratio_of));
                 let g = vp.flow_terminal_gain.clamp(0.0, 1.0);
                 (1.0 - g) * base_e + g * ss_e
             });
@@ -640,6 +673,10 @@ pub fn value_on_path(
         let terminal = (base_last * tm + last_rent.max(0.0) * rent_mult) * taiwan_factor;
         terminal_pv = terminal / (1.0 + dr_t).powi(path.len() as i32);
         fair += terminal_pv;
+    }
+    if vp.leverage_gain > 0.0 && fair < 0.0 {
+        // Limited liability: a levered equity is worth zero, not less.
+        return (0.0, 0.0);
     }
     (fair, terminal_pv)
 }

@@ -11,7 +11,7 @@ pub fn universe() -> Vec<Company> {
     let c = |ticker, name, mcap_b, ntm, pools, beta, drift, tm, stance, capture, notes| Company {
         ticker, name, mcap_b, ntm_earnings_b: ntm, pools, pool_beta: beta,
         share_drift: drift, terminal_multiple: tm, stance, capture,
-        taiwan_fab_exposure: 0.0, max_rev_cagr: DEFAULT_MAX_REV_CAGR, notes,
+        taiwan_fab_exposure: 0.0, max_rev_cagr: DEFAULT_MAX_REV_CAGR, net_debt_b: 0.0, notes,
     };
     let mut universe = vec![
         // ---- LONGS: compute complex ----
@@ -185,6 +185,57 @@ pub fn universe() -> Vec<Company> {
             c.max_rev_cagr = 0.20;
         }
     }
+    // Net debt ($B, negative = net cash), synced from output/financials.json
+    // (refresh 2026-09-23). Read only when ValuationParams::leverage_gain > 0.
+    for c in universe.iter_mut() {
+        c.net_debt_b = match c.ticker {
+            "TSM" => -76.99,
+            "NVDA" => -23.61,
+            "AVGO" => 35.44,
+            "MU" => -19.65,
+            "000660.KS" => -48.75,
+            "BESI.AS" => -0.172,
+            "ASML" => -6.38,
+            "GEV" => -9.0,
+            "VST" => 20.07,
+            "NRG" => 23.31,
+            "CEG" => 24.0,
+            "POWL" => -0.631,
+            "6501.T" => -5.21,
+            "LITE" => -1.07,
+            "CLS" => 0.444,
+            "MP" => -0.47,
+            "6268.T" => -0.26,
+            "SHA.DE" => 6.87,
+            "002472.SZ" => 0.18,
+            "300748.SZ" => -0.34,
+            "TECK" => 2.65,
+            "SYM" => -1.72,
+            "MSFT" => 51.97,
+            "GOOGL" => -121.68,
+            "FCX" => 6.28,
+            "EQT" => 5.54,
+            "WTKWY" => 4.62,
+            "ADP" => 1.29,
+            "PAYX" => 3.69,
+            "RHI" => -0.084,
+            "MAN" => 1.24,
+            "TCS.NS" => -3.51,
+            "WDAY" => 0.369,
+            "TEAM" => -0.007,
+            "HUBS" => -1.1,
+            "FDS" => 1.27,
+            "MMC" => 20.68,
+            "CHRW" => 1.82,
+            "LSTR" => -0.209,
+            "MRVL" => 1.35,
+            "6954.T" => -4.83,
+            "6324.T" => -0.03,
+            "EQIX" => 22.38,
+            "PLTR" => -9.2,
+            _ => 0.0,
+        };
+    }
     universe
 }
 
@@ -204,6 +255,9 @@ pub fn load_financials(companies: &mut [Company], json: &str) {
                 if e > 0.0 {
                     c.ntm_earnings_b = e;
                 }
+            }
+            if let Some(nd) = d.get("net_debt_b").and_then(|v| v.as_f64()) {
+                c.net_debt_b = nd;
             }
             if let Some(t) = d.get("suggested_terminal_multiple")
                 .and_then(|v| v.as_f64())

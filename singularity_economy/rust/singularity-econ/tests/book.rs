@@ -32,6 +32,7 @@ fn test_company(pools: Vec<(RatioPool, f64)>, beta: f64, drift: f64) -> Company 
         capture: vec![],
         taiwan_fab_exposure: 0.0,
         max_rev_cagr: f64::INFINITY,
+        net_debt_b: 0.0,
         notes: "",
     }
 }
@@ -432,9 +433,11 @@ fn first_principles_valuation_removes_build_rate_froth() {
     use singularity_econ::valuation::{evaluate_all_with, ValuationParams};
     let st = scenario_states();
     let legacy = evaluate_all(&universe(), &st, DR_BETA);
-    let no_route = ValuationParams { power_route_gain: 0.0, ..ValuationParams::first_principles() };
+    // F1 pieces only (leverage is its own lock).
+    let f1 = ValuationParams { leverage_gain: 0.0, ..ValuationParams::first_principles() };
+    let no_route = ValuationParams { power_route_gain: 0.0, ..f1 };
     let fp_nr = evaluate_all_with(&universe(), &st, DR_BETA, &no_route);
-    let fp = evaluate_all_with(&universe(), &st, DR_BETA, &ValuationParams::first_principles());
+    let fp = evaluate_all_with(&universe(), &st, DR_BETA, &f1);
     let get = |rows: &[singularity_econ::valuation::Evaluation], t: &str| {
         rows.iter().find(|r| r.ticker == t).unwrap().clone()
     };
@@ -478,4 +481,40 @@ fn short_book_attribution() {
     // A name with no AI mapping carries no AI delta at all.
     let eqt = rows.iter().find(|r| r.ticker == "EQT").unwrap();
     assert!(eqt.is_valuation_only() && eqt.ai_delta.abs() < 1e-9);
+}
+
+// Capital structure (capture shortlist #1): with the leverage gate on, a rate shock
+// hits a levered equity harder than the same business unlevered (refinancing at
+// higher rates eats the equity slice), and a net-cash name is cushioned. With flat
+// rates and a flat business the levered path reproduces NTM earnings exactly.
+#[test]
+fn leverage_gives_equity_rate_torque() {
+    use singularity_econ::valuation::{value_on_path, PathContext, ValuationParams};
+    let base: Vec<_> = simulate(&Params::default());
+    let mut shocked = base.clone();
+    for s in shocked.iter_mut().skip(1) {
+        s.long_rate += 0.03;
+    }
+    let vp = ValuationParams { leverage_gain: 1.0, ..ValuationParams::default() };
+    let mut levered = test_company(vec![(RatioPool::GdpIndex, 1.0)], 1.0, 0.0);
+    levered.net_debt_b = 100.0; // net debt = market cap
+    let mut cash = levered.clone();
+    cash.net_debt_b = -50.0;
+    let unlevered = test_company(vec![(RatioPool::GdpIndex, 1.0)], 1.0, 0.0);
+    let hit = |c: &Company| {
+        let v0 = value_on_path(c, &base, PathContext::default(), DR_BETA, &vp).0;
+        let v1 = value_on_path(c, &shocked, PathContext::default(), DR_BETA, &vp).0;
+        v1 / v0 - 1.0
+    };
+    let (hl, hu, hc) = (hit(&levered), hit(&unlevered), hit(&cash));
+    assert!(hl < hu - 0.05, "levered {hl} vs unlevered {hu}");
+    assert!(hc > hu, "net cash {hc} vs unlevered {hu}");
+    // Identity: flat business + flat rates -> NTM earnings every year.
+    let mut flat = base.clone();
+    for s in flat.iter_mut() {
+        s.pools.gdp_index = base[0].pools.gdp_index;
+        s.long_rate = base[0].long_rate;
+    }
+    let path = singularity_econ::valuation::earnings_with(&levered, &flat, &vp).path;
+    assert!(path.iter().all(|e| (e - levered.ntm_earnings_b).abs() < 1e-9), "{path:?}");
 }
