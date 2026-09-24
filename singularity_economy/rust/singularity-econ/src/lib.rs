@@ -387,6 +387,15 @@ pub struct Params {
     pub rent_margin_slope: f64,
     pub margin_ceiling: f64,
     pub target_utilization: f64,
+    /// F2 (Sep-26 re-analysis): blend weight on SATURATING rents. 0 (default) =
+    /// legacy hard clamps: the power-margin ceiling binds 11/11 baseline years and
+    /// the electricity cap 11/11, so rents stop reading how tight the market is.
+    /// 1 = normal + (ceiling - normal)·tanh(slope·excess/(ceiling - normal)): same
+    /// slope at the target, approaching (never pinned at) the ceiling; the
+    /// scarcity `.min(2.0)` kinks become 2·tanh(x/2).
+    pub smooth_rents: f64,
+    /// Cap on the electricity (generator) margin — the literal 0.6 promoted.
+    pub electricity_margin_cap: f64,
     /// Two-sided merchant power pricing (gated). By default the scarcity price is
     /// one-sided — it rises above normal when power utilization exceeds target but never
     /// falls below normal in a glut. Real merchant/spot power crashes in oversupply
@@ -598,6 +607,8 @@ impl Default for Params {
             rent_margin_slope: 0.35,
             margin_ceiling: 0.62,
             target_utilization: 0.85,
+            smooth_rents: 0.0,
+            electricity_margin_cap: 0.6,
             power_glut_price_gain: 0.0, // off by default; ~0.6 prices the merchant-power glut downside
             ai_services_margin: 0.35,
             ai_commoditization_gain: 0.0, // off by default; ~0.5 competes AI-provider rent away as adoption saturates
@@ -1532,20 +1543,34 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             / ai_power.max(1e-9))
             .min(1.35);
 
+        let sr = p.smooth_rents.clamp(0.0, 1.0);
+        let sat2 = |x: f64| 2.0 * (x / 2.0).tanh(); // smooth stand-in for x.min(2.0)
         let margin_from = |u: f64, gain_class: f64| -> f64 {
             let excess = (u - p.target_utilization).max(0.0)
                 / (1.0 - p.target_utilization);
-            (p.normal_margin + p.rent_margin_slope * excess.min(2.0) * gain_class)
-                .min(p.margin_ceiling)
+            let hard = (p.normal_margin + p.rent_margin_slope * excess.min(2.0) * gain_class)
+                .min(p.margin_ceiling);
+            if sr > 0.0 {
+                let room = (p.margin_ceiling - p.normal_margin).max(1e-9);
+                let smooth = p.normal_margin
+                    + room * (p.rent_margin_slope * excess * gain_class / room).tanh();
+                (1.0 - sr) * hard + sr * smooth
+            } else {
+                hard
+            }
         };
 
         let pa = p.price_adjustment;
         silicon_margin += pa * (margin_from(chip_utilization, 0.9) - silicon_margin);
         ip_toll_margin += pa * (margin_from(ip_utilization, 0.9) - ip_toll_margin);
         power_margin += pa * (margin_from(power_utilization, 1.0) - power_margin);
-        let scarcity_up = (((power_utilization - p.target_utilization).max(0.0))
-            / (1.0 - p.target_utilization))
-            .min(2.0);
+        let scarcity_raw = ((power_utilization - p.target_utilization).max(0.0))
+            / (1.0 - p.target_utilization);
+        let scarcity_up = if sr > 0.0 {
+            (1.0 - sr) * scarcity_raw.min(2.0) + sr * sat2(scarcity_raw)
+        } else {
+            scarcity_raw.min(2.0)
+        };
         // Two-sided (gated): sub-target utilization drops the price below normal — a
         // power glut crashes merchant/spot prices. gain=0 => glut_down=0 => one-sided,
         // byte-identical. Floored at 25% of normal (must-run marginal cost; power isn't
@@ -1870,9 +1895,16 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // once the effective price fell below 0.4x normal (reachable only via the C3
         // energy coupling, never in shipped scenarios) and SUBTRACT from the power
         // names' earnings — a generator books zero margin in a glut, not negative.
-        let electricity_margin = (0.30
-            + 0.5 * (electricity_price / p.electricity_price_normal - 1.0))
-            .clamp(0.0, 0.6);
+        let em_linear = 0.30 + 0.5 * (electricity_price / p.electricity_price_normal - 1.0);
+        let em_hard = em_linear.clamp(0.0, p.electricity_margin_cap);
+        let electricity_margin = if p.smooth_rents > 0.0 && em_linear > 0.30 {
+            let sr = p.smooth_rents.clamp(0.0, 1.0);
+            let room = (p.electricity_margin_cap - 0.30).max(1e-9);
+            let em_smooth = 0.30 + room * ((em_linear - 0.30) / room).tanh();
+            (1.0 - sr) * em_hard + sr * em_smooth
+        } else {
+            em_hard
+        };
         let profits = Profits {
             ai_services: pools.ai_services * p.ai_services_margin,
             silicon: pools.silicon * silicon_margin,

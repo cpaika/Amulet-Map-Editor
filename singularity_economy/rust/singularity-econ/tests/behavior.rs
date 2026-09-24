@@ -664,3 +664,17 @@ fn gw_per_dollar_trend_reparameterization() {
     let legacy_power = legacy.iter().filter(|s| s.binding == Binding::Power).count();
     assert!(legacy_power >= 6);
 }
+
+// F2 rents: saturating rents approach but never sit on the ceiling, so the margin
+// keeps reading how tight the market is; they stay below the legacy clamped path.
+#[test]
+fn smooth_rents_saturate_below_the_ceiling() {
+    let p = Params { smooth_rents: 1.0, ..Params::default() };
+    let smooth = run(p.clone());
+    let hard = base();
+    for (s, h) in smooth.iter().zip(&hard) {
+        assert!(s.power_margin < p.margin_ceiling - 1e-6, "{}: pinned at ceiling", s.year);
+        assert!(s.power_margin >= p.normal_margin - 1e-9);
+        assert!(s.power_margin <= h.power_margin + 1e-9, "{}: smooth above hard", s.year);
+    }
+}
