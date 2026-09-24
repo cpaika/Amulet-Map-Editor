@@ -16,6 +16,13 @@ pub fn fizzle(mut p: Params) -> Params {
     p.algo_eff_growth_pre = 1.8;
     p.adoption_halflife = 4.0;
     p.max_displacement_rate = 0.05;
+    // F2: without a singularity nothing sustains the 32%/yr capex-desire engine.
+    // Demand growth base 0.10 with weak herding; 2026 perception pinned to the
+    // observed year. Legacy fizzle kept binding POWER through 2036 while its AI
+    // revenue was flat, so longs showed gains in the no-AI world.
+    p.demand_growth_base = 0.10;
+    p.momentum_gain = 0.2;
+    p.perceived_growth_2026 = Some(0.32);
     p
 }
 
@@ -134,6 +141,7 @@ pub fn first_principles_v2(p: Params) -> Params {
     p.q_governor_gain = 0.5;         // return-on-capital investment brake
     p.power_glut_price_gain = 0.6;   // two-sided merchant power price
     p.ai_commoditization_gain = 0.5; // AI-provider rent competes away as adoption saturates
+    p.dgb_decay_rate = 0.15;         // capex-desire growth base converges to GDP (tau ~6.7y)
     p
 }
 
@@ -162,5 +170,6 @@ pub fn lens_blend(p: Params, lambda: f64) -> Params {
     q.q_governor_gain = lerp(q.q_governor_gain, v2.q_governor_gain);
     q.power_glut_price_gain = lerp(q.power_glut_price_gain, v2.power_glut_price_gain);
     q.ai_commoditization_gain = lerp(q.ai_commoditization_gain, v2.ai_commoditization_gain);
+    q.dgb_decay_rate = lerp(q.dgb_decay_rate, v2.dgb_decay_rate);
     q
 }

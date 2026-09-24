@@ -404,6 +404,15 @@ pub struct Params {
     pub perception_smoothing: f64,
     pub momentum_gain: f64,
     pub demand_growth_base: f64,
+    /// F2 (Sep-26 re-analysis): decay rate (1/tau, per year) of the demand-signal
+    /// growth base toward trend GDP growth: dgb_t = g + (dgb - g)·exp(-rate·t). No
+    /// sector's capex can out-grow the economy forever; the legacy open loop
+    /// compounds 32%/yr in every scenario, fizzle included. 0 (default) = legacy.
+    pub dgb_decay_rate: f64,
+    /// Starting (2026) perceived demand growth. `None` = `demand_growth_base`
+    /// (legacy). Scenarios that lower `demand_growth_base` pin this so the observed
+    /// 2026 stays the observed 2026 (a global dgb <= 0.20 flips 2026 to Demand).
+    pub perceived_growth_2026: Option<f64>,
 
     // G — Tobin's-q investment governor (gated satellite; gain 0 => baseline
     // byte-identical). Overlays a return-on-capital channel on the momentum-driven
@@ -574,6 +583,8 @@ impl Default for Params {
             perception_smoothing: 0.5,
             momentum_gain: 0.5,
             demand_growth_base: 0.32,
+            dgb_decay_rate: 0.0,
+            perceived_growth_2026: None,
             q_governor_gain: 0.0,   // off by default (satellite); ~0.5 is a live scenario
             q_risk_premium: 0.10,   // equity premium; hurdle = long_rate + this + compute_deprec
             loops: Loops::default(),
@@ -885,7 +896,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut phys_workers_m = p.physical_workers_m;
     let mut gdp = p.world_gdp;
     let mut sector_debt = 0.0_f64;
-    let mut perceived_growth = p.demand_growth_base;
+    let mut perceived_growth = p.perceived_growth_2026.unwrap_or(p.demand_growth_base);
     let mut last_capex = p.ai_capex_2026 * 0.8;
     let mut last_desired = p.ai_capex_2026;
     let mut prev_disp = 0.0_f64;
@@ -1120,7 +1131,13 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let ceiling_mult = (1.0 + asi * p.asi_ceiling_boost) * (1.0 + robot_infra_boost);
 
         // ---- R3: capex desire from perceived demand ----
-        let mut demand_signal_growth = p.demand_growth_base;
+        let mut demand_signal_growth = if p.dgb_decay_rate > 0.0 {
+            let t = (year - p.start_year) as f64;
+            p.base_gdp_growth
+                + (p.demand_growth_base - p.base_gdp_growth) * (-p.dgb_decay_rate * t).exp()
+        } else {
+            p.demand_growth_base
+        };
         if t_sing >= 0 {
             demand_signal_growth += 1.6 * (adopt - prev_adopt).max(0.0) + 0.5 * adopt;
         }
@@ -1131,8 +1148,12 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         }
         let adopt_delta = (adopt - prev_adopt).max(0.0);
         prev_adopt = adopt;
-        perceived_growth += p.perception_smoothing
-            * (demand_signal_growth - perceived_growth);
+        // A pinned 2026 perception holds through the base year (it IS the observed
+        // year); the signal starts moving perception from 2027.
+        if !(p.perceived_growth_2026.is_some() && year == p.start_year) {
+            perceived_growth += p.perception_smoothing
+                * (demand_signal_growth - perceived_growth);
+        }
         let herd = l.r3_capex_momentum * p.momentum_gain * perceived_growth.max(0.0);
         // ---- Financial-fragility spine: AI-capex bubble/bust reflexivity (gated) ----
         // Update the equity-sentiment stock from LAST year's realized glut and margin

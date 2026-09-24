@@ -293,9 +293,11 @@ fn first_principles_v2_reprices_coherently() {
     // the grid names are positive but no longer strong; the component chokepoint is
     // the one v2 long that stays strong.
     assert!(upside(&v2, "002472.SZ") > 0.5, "component chokepoint must stay strong in v2: {}", upside(&v2, "002472.SZ"));
-    for t in ["POWL", "GEV"] {
-        assert!(upside(&v2, t) > 0.0, "{t} must stay a long in v2: {}", upside(&v2, t));
-    }
+    // Wave 2 (F2): v2 also decays the capex-desire growth base toward GDP, which takes
+    // GEV to roughly fair value (-1%); POWL stays the positive grid name. GEV is locked
+    // as "not a short", not as a long.
+    assert!(upside(&v2, "POWL") > 0.1, "POWL must stay a long in v2: {}", upside(&v2, "POWL"));
+    assert!(upside(&v2, "GEV") > -0.10, "GEV must stay near fair in v2: {}", upside(&v2, "GEV"));
     // Wage-linked shorts remain short.
     for t in ["RHI", "ADP", "PAYX"] {
         assert!(upside(&v2, t) < -0.3, "{t} must stay short in v2: {}", upside(&v2, t));
@@ -336,4 +338,44 @@ fn taiwan_shock_is_priced() {
         shock.upside,
         base.upside
     );
+}
+
+// F2 lock (Sep-26 re-analysis, Wave 2): with no singularity nothing sustains the
+// 32%/yr capex-desire engine. The named fizzle must bind on chips in the observed 2026,
+// then on DEMAND; it must not hold power scarcity (legacy: power-bound 2028-36 on
+// flat AI revenue) or compound capex like the singularity world, and the longs' worst
+// case must be a loss.
+#[test]
+fn fizzle_is_demand_bound_not_power_bound() {
+    use singularity_econ::Binding;
+    let fz = scenario_states().into_iter().find(|(n, _)| *n == "fizzle").unwrap().1;
+    assert_eq!(fz[0].binding, Binding::Chips, "2026 must stay chips-bound");
+    let power_years = fz.iter().filter(|s| s.binding == Binding::Power).count();
+    assert!(power_years <= 3, "fizzle power-bound {power_years} years");
+    let base = simulate(&Params::default());
+    let (fz36, b36) = (fz.last().unwrap().ai_capex, base.last().unwrap().ai_capex);
+    assert!(fz36 < 0.5 * b36, "fizzle 2036 capex {fz36:.2} vs baseline {b36:.2}");
+    let rows = evaluate_all(&universe(), &scenario_states(), DR_BETA);
+    for t in ["POWL", "GEV", "TECK", "NVDA"] {
+        let r = rows.iter().find(|r| r.ticker == t).unwrap();
+        assert!(r.worst_scenario_upside < 0.0, "{t} worst case {} must be a loss", r.worst_scenario_upside);
+    }
+}
+
+// The dgb decay converges demand growth toward trend GDP: a strong decay in the
+// no-singularity world lowers late capex monotonically, and rate 0 is the legacy path.
+#[test]
+fn dgb_decay_lowers_no_singularity_capex_monotonically() {
+    let mut last = f64::MAX;
+    for rate in [0.0, 0.1, 0.2, 0.4] {
+        let p = Params {
+            singularity_year: 2099,
+            robotics_year: 2099,
+            dgb_decay_rate: rate,
+            ..Params::default()
+        };
+        let c = simulate(&p).last().unwrap().ai_capex;
+        assert!(c <= last + 1e-9, "rate {rate}: capex {c} rose vs {last}");
+        last = c;
+    }
 }
