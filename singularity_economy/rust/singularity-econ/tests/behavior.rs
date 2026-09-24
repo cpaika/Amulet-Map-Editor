@@ -413,6 +413,15 @@ fn anchors_2026_match_calibration() {
     assert!(s0.ai_capex > 0.45 && s0.ai_capex < 0.70, "capex {}", s0.ai_capex);
     assert!(s0.ai_power_gw > 45.0 && s0.ai_power_gw < 110.0);
     assert!((s0.pools.it_services - 1.55).abs() < 0.16);
+    // Observed Sep-2026: chips (HBM + CoWoS) bind, not power. The 2026 binding was
+    // a 4% knife-edge (re-analysis F7c); lock a margin so a recalibration cannot
+    // silently flip the base year to Power.
+    assert_eq!(s0.binding, Binding::Chips);
+    assert!(s0.power_utilization / s0.chip_utilization <= 0.97,
+            "2026 power/chip utilization {:.3} — base year on the knife-edge",
+            s0.power_utilization / s0.chip_utilization);
+    assert!(s0.gdp > 110.0 && s0.gdp < 125.0, "world GDP {}", s0.gdp);
+    assert!(s0.cog_displacement < 0.005, "2026 displacement {} vs observed ~0.1%", s0.cog_displacement);
 }
 
 #[test]

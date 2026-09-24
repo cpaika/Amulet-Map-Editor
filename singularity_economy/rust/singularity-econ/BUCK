@@ -62,6 +62,14 @@ rust_test(
 )
 
 rust_test(
+    name = "loop_dominance",
+    srcs = ["tests/loop_dominance.rs"],
+    crate_root = "tests/loop_dominance.rs",
+    edition = "2021",
+    deps = [":core"],
+)
+
+rust_test(
     name = "backtest",
     srcs = ["tests/backtest.rs"],
     crate_root = "tests/backtest.rs",

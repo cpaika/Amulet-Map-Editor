@@ -4,13 +4,17 @@
 //!   singularity-econ mc <n> <seed>          # Monte Carlo distributions (JSON)
 //!   singularity-econ book-mc <n> <seed> [base|enhanced|v2|mix] [financials.json]
 //!                                           # every name valued on every MC path
+//!   singularity-econ book-sa <n> <seed> [lens] [financials.json]
+//!                                           # per-name drivers (Spearman) over that prior
 
 use singularity_econ::companies::{load_financials, universe};
 use singularity_econ::sampler::{sampled_values, BookSampler, Lens, Sampler};
 use singularity_econ::scenarios::{
     scenario_states, scenario_states_enhanced, scenario_states_v2,
 };
-use singularity_econ::valuation::{evaluate_all, value_on_path, PathContext, Stance};
+use singularity_econ::valuation::{
+    base_year_consistent, evaluate_all, value_on_path, PathContext, Stance,
+};
 use singularity_econ::{simulate, Params};
 use std::collections::BTreeMap;
 
@@ -42,6 +46,16 @@ fn main() {
                 });
             book_mc(n, seed, lens, args.get(5).map(String::as_str));
         }
+        Some("book-sa") => {
+            let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(4_000);
+            let seed: u64 = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(11);
+            let lens = args.get(4).map_or(Some(Lens::Mix), |s| Lens::parse(s))
+                .unwrap_or_else(|| {
+                    eprintln!("lens must be one of: base | enhanced | v2 | mix");
+                    std::process::exit(2);
+                });
+            book_sa(n, seed, lens, args.get(5).map(String::as_str), 4);
+        }
         Some("sa") => {
             let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(20_000);
             let seed: u64 = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(11);
@@ -53,7 +67,7 @@ fn main() {
             monte_carlo(n, seed);
         }
         Some(cmd) => {
-            eprintln!("unknown command: {cmd} (use: run | book | book-enhanced | book-v2 [financials.json] | book-mc <n> <seed> [lens] [financials.json] | golden [path] | mc <n> <seed> | sa <n> <seed>)");
+            eprintln!("unknown command: {cmd} (use: run | book | book-enhanced | book-v2 [financials.json] | book-mc <n> <seed> [lens] [financials.json] | book-sa <n> <seed> [lens] [financials.json] | golden [path] | mc <n> <seed> | sa <n> <seed>)");
             std::process::exit(2);
         }
     }
@@ -174,6 +188,97 @@ fn book(financials_path: Option<&str>, mode: &str) {
     }
 }
 
+#[derive(Default)]
+struct Rejections {
+    total: usize,
+    by_reason: BTreeMap<String, usize>,
+}
+
+impl Rejections {
+    fn summary(&self, accepted: usize) -> String {
+        let reasons: Vec<String> =
+            self.by_reason.iter().map(|(k, v)| format!("{k}: {v}")).collect();
+        format!("2026 base-year rejection: {:.1}% of draws ({})",
+                100.0 * self.total as f64 / (accepted + self.total) as f64,
+                reasons.join(", "))
+    }
+}
+
+/// ABC conditioning on the observed 2026: redraw until the path's base year agrees
+/// with what is already known (chips bind, mapped pools near their anchors).
+fn conditioned_draw(
+    draws: &mut BookSampler,
+    rej: &mut Rejections,
+    n: usize,
+) -> (singularity_econ::sampler::BookDraw, Vec<singularity_econ::YearState>) {
+    loop {
+        let d = draws.draw();
+        let states = simulate(&d.params);
+        match base_year_consistent(&states) {
+            Ok(()) => return (d, states),
+            Err(why) => {
+                rej.total += 1;
+                let key = why.split_whitespace().take(2).collect::<Vec<_>>().join(" ");
+                *rej.by_reason.entry(key).or_default() += 1;
+                assert!(rej.total < 50 * n + 1000, "base-year rejection runaway");
+            }
+        }
+    }
+}
+
+/// Book sensitivity: for every name, the Spearman rank correlation of its upside
+/// with every sampled parameter (plus the fizzle flag, the severe-Taiwan flag and,
+/// under `mix`, the lens fraction) over the conditioned book-mc prior. Prints the
+/// top drivers per name — what each call is actually a bet on.
+fn book_sa(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, top: usize) {
+    let comps: Vec<_> = load_universe(financials_path)
+        .into_iter()
+        .filter(|c| c.ntm_earnings_b > 0.0)
+        .collect();
+    let mut draws = BookSampler::new(seed, lens);
+    let mut rej = Rejections::default();
+    let mut names: Vec<&'static str> = Vec::new();
+    let mut cols: Vec<Vec<f64>> = Vec::new();
+    let mut ups: Vec<Vec<f64>> = vec![Vec::with_capacity(n); comps.len()];
+    for k in 0..n {
+        let (d, states) = conditioned_draw(&mut draws, &mut rej, n);
+        let ctx = PathContext::from_params(&d.params);
+        let mut vals = sampled_values(&d.params);
+        vals.push(("fizzle", d.fizzle as u8 as f64));
+        vals.push(("severe_taiwan", ctx.taiwan_start.is_some() as u8 as f64));
+        if lens == Lens::Mix {
+            vals.push(("lens_lambda", d.lambda));
+        }
+        if k == 0 {
+            names = vals.iter().map(|(nm, _)| *nm).collect();
+            cols = vec![Vec::with_capacity(n); names.len()];
+        }
+        for (j, (_, v)) in vals.iter().enumerate() {
+            cols[j].push(*v);
+        }
+        for (i, c) in comps.iter().enumerate() {
+            let (fair, _) = value_on_path(c, &states, ctx, d.params.macrofin.dr_beta);
+            ups[i].push(fair / c.mcap_b - 1.0);
+        }
+    }
+    println!("book-sa: n={n} seed={seed} lens={lens:?}  top {top} drivers per name (Spearman rho)");
+    println!("{}", rej.summary(n));
+    for (i, c) in comps.iter().enumerate() {
+        let mut rhos: Vec<(&str, f64)> = names.iter().enumerate()
+            .filter(|(j, _)| {
+                let col = &cols[*j];
+                col.iter().any(|v| (v - col[0]).abs() > 1e-12)
+            })
+            .map(|(j, nm)| (*nm, spearman(&cols[j], &ups[i])))
+            .collect();
+        rhos.sort_by(|a, b| b.1.abs().partial_cmp(&a.1.abs()).unwrap());
+        let cells: Vec<String> = rhos.iter().take(top)
+            .map(|(nm, r)| format!("{nm} {r:+.2}"))
+            .collect();
+        println!("{:<10} {:<6} {}", c.ticker, side_label(c.stance), cells.join(" | "));
+    }
+}
+
 /// The Monte Carlo book (re-analysis F4): value every name on every sampled path
 /// instead of six hand-picked scenarios. The prior is the mc/sa prior plus the
 /// named book's fizzle mass; the structural lens is fixed or (`mix`) sampled. Per
@@ -208,9 +313,9 @@ fn book_mc(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>) {
     let mut terms: Vec<f64> = vec![0.0; comps.len()];
     let mut lambdas: Vec<f64> = Vec::with_capacity(n);
     let (mut n_fizzle, mut n_taiwan) = (0usize, 0usize);
+    let mut rej = Rejections::default();
     for _ in 0..n {
-        let d = draws.draw();
-        let states = simulate(&d.params);
+        let (d, states) = conditioned_draw(&mut draws, &mut rej, n);
         let ctx = PathContext::from_params(&d.params);
         n_fizzle += ctx.fizzle as usize;
         n_taiwan += ctx.taiwan_start.is_some() as usize;
@@ -260,6 +365,7 @@ fn book_mc(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>) {
 
     println!("book-mc: n={n} seed={seed} lens={lens:?}  fizzle paths {:.1}%  severe-Taiwan paths {:.1}%",
              100.0 * n_fizzle as f64 / n as f64, 100.0 * n_taiwan as f64 / n as f64);
+    println!("{}", rej.summary(n));
     println!("{:<10} {:<6} {:>8} {:>8} {:>8} {:>8} {:>6} {:>7} {:>8} {:>8} {:>6} {:>6}",
              "ticker", "side", "E[up]", "p10", "p50", "p90", "P(loss)", "E[log]",
              "named", "gap", "term%", "rho_l");

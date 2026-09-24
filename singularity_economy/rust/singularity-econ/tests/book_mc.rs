@@ -6,7 +6,7 @@ use singularity_econ::companies::universe;
 use singularity_econ::scenarios::{
     first_principles_v2, fizzle, lens_blend, scenario_params, scenario_states,
 };
-use singularity_econ::valuation::{evaluate, value_on_path, PathContext};
+use singularity_econ::valuation::{base_year_consistent, evaluate, value_on_path, PathContext};
 use singularity_econ::{simulate, Params};
 
 const DR_BETA: f64 = 0.60;
@@ -58,6 +58,22 @@ fn lens_blend_endpoints_are_base_and_v2() {
         format!("{:?}", simulate(&lens_blend(base.clone(), 1.0))),
         format!("{:?}", simulate(&first_principles_v2(base)))
     );
+}
+
+// Every named scenario shares the calibrated 2026 base year, so every one must
+// pass the base-year check the MC book conditions on.
+#[test]
+fn named_scenarios_have_a_consistent_base_year() {
+    for (name, s) in scenario_states() {
+        base_year_consistent(&s).unwrap_or_else(|e| panic!("{name}: {e}"));
+    }
+}
+
+#[test]
+fn base_year_check_rejects_a_counterfactual_2026() {
+    // Power-starved 2026: power, not chips, binds — contradicts the observed year.
+    let p = Params { ai_power_2026: 20.0, power_additions_2026: 8.0, ..Params::default() };
+    assert!(base_year_consistent(&simulate(&p)).is_err());
 }
 
 #[cfg(feature = "mc")]

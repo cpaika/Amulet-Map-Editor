@@ -342,6 +342,54 @@ impl PathContext {
     }
 }
 
+/// 2026 base-year anchors for the pools the valuation maps onto, plus AI capex:
+/// `(name, value, relative tolerance)`. Values are the calibrated 2026 state
+/// (Params::default); tolerances are the band a path's base year may sit in and
+/// still be valued against these ratio mappings (re-analysis F7c: an inconsistent
+/// base year once produced +690%). Wider bands where the observed level itself is
+/// uncertain (AI-services revenue, the electricity pool). Known gaps vs Sep-2026
+/// observations, NOT enforced here because the default misses them (queued for the
+/// Wave 2 power/capex recalibration): AI capex observed ~$0.85-0.95T (model 0.66)
+/// and electricity price observed ~$0.05-0.10/kWh (model 0.136).
+pub const ANCHORS_2026: [(&str, f64, f64); 8] = [
+    ("silicon", 0.364, 0.20),
+    ("dc_infra", 0.2978, 0.20),
+    ("power_equipment", 0.105, 0.20),
+    ("ai_capex", 0.662, 0.20),
+    ("it_services", 1.548, 0.10),
+    ("gdp_index", 115.0, 0.05),
+    ("ai_services", 0.0422, 0.50),
+    ("electricity", 0.1026, 0.35),
+];
+
+/// Is this path's 2026 base year consistent with what is already known about
+/// 2026? Chips (memory + packaging) are the observed binding constraint, and every
+/// mapped pool must sit within its `ANCHORS_2026` band. `book-mc` rejects draws
+/// that fail (ABC-style conditioning on the observed year) and reports the rate.
+pub fn base_year_consistent(states: &[YearState]) -> Result<(), String> {
+    let s0 = states.first().ok_or("empty path")?;
+    if s0.binding != crate::Binding::Chips {
+        return Err(format!("2026 binding {:?}, observed Chips", s0.binding));
+    }
+    for (name, anchor, tol) in ANCHORS_2026 {
+        let v = match name {
+            "silicon" => s0.pools.silicon,
+            "dc_infra" => s0.pools.dc_infra,
+            "power_equipment" => s0.pools.power_equipment,
+            "ai_capex" => s0.ai_capex,
+            "it_services" => s0.pools.it_services,
+            "gdp_index" => s0.pools.gdp_index,
+            "ai_services" => s0.pools.ai_services,
+            "electricity" => s0.pools.electricity,
+            _ => unreachable!(),
+        };
+        if (v / anchor - 1.0).abs() > tol {
+            return Err(format!("2026 {name} {v:.4} outside {anchor} ±{:.0}%", tol * 100.0));
+        }
+    }
+    Ok(())
+}
+
 /// Value one company on one simulated path: `(fair_value_b, terminal_pv_b)`.
 pub fn value_on_path(
     c: &Company,
