@@ -45,6 +45,32 @@ pub struct MacroParams {
     /// Equity-duration beta: discount rate rises this much per 1.0 of
     /// long-rate above the 4.5% anchor.
     pub dr_beta: f64,
+    /// Fiscal-dominance / inflation regime (gate, 0 = legacy duration-supply-only
+    /// long rate). The 2026 selloff to 5.1% came from term premium + fiscal +
+    /// sticky inflation; the legacy rate only knew duration supply and reached that
+    /// level in 2036. At > 0 two premia join the long rate from 2027:
+    /// an inflation-expectations premium that tracks the TOTAL deficit (primary +
+    /// debt service) above `deficit_threshold` and real growth above 3% (boom
+    /// demand pressure), and a convex fiscal risk premium on debt/GDP above its
+    /// 2026 level. Endogenous inflation also enters nominal growth, so the
+    /// inflation tax erodes debt/GDP — the channel that keeps the answer to "why
+    /// not 15%?" finite. Capped at `max_long_rate`.
+    pub fiscal_dominance_gain: f64,
+    /// pp of expected inflation per pp of total deficit above the threshold.
+    pub inflation_fiscal_gain: f64,
+    /// pp of expected inflation per pp of real growth above 3%.
+    pub inflation_boom_gain: f64,
+    pub deficit_threshold: f64,
+    pub inflation_smoothing: f64,
+    /// bp of fiscal risk premium per pp of debt/GDP above 2026 (Laubach ~3-4).
+    pub fiscal_rp_bp_per_pp: f64,
+    /// Extra bp per pp^2 (convexity: markets charge more as debt compounds).
+    pub fiscal_rp_convexity: f64,
+    pub max_long_rate: f64,
+    /// Bohn fiscal reaction under the regime: the primary balance improves this
+    /// much per unit of debt/GDP above 2026 (Bohn 2008 ~0.03-0.10). The stabilizer
+    /// that keeps fiscal dominance from being a mechanical doom loop.
+    pub bohn_response: f64,
 }
 
 impl Default for MacroParams {
@@ -69,6 +95,15 @@ impl Default for MacroParams {
             baseline_deficit: 0.03,
             gov_debt_2026: 1.0,
             dr_beta: 0.60,
+            fiscal_dominance_gain: 0.0,
+            inflation_fiscal_gain: 0.35,
+            inflation_boom_gain: 0.30,
+            deficit_threshold: 0.045,
+            inflation_smoothing: 0.5,
+            fiscal_rp_bp_per_pp: 3.0,
+            fiscal_rp_convexity: 0.05,
+            max_long_rate: 0.15,
+            bohn_response: 0.05,
         }
     }
 }
@@ -98,6 +133,12 @@ pub struct MacroState {
     /// current 10y), so debt service is coupon x stock — not the whole stock
     /// instantly repriced at today's long rate.
     coupon: f64,
+    /// Fiscal-dominance state: expected-inflation premium (fraction) and the
+    /// fiscal risk premium (bp); steps taken (the 2026 step is the observed year).
+    infl_premium: f64,
+    fiscal_rp_bp: f64,
+    steps: u32,
+    debt_service_prev: f64,
 }
 
 impl MacroState {
@@ -111,6 +152,10 @@ impl MacroState {
             // ~3.3%: the 2026 average coupon on the legacy stock (issued across the
             // low-rate decade), below the 4.5%+ marginal 10y.
             coupon: 0.033,
+            infl_premium: 0.0,
+            fiscal_rp_bp: 0.0,
+            steps: 0,
+            debt_service_prev: 0.033 * mp.gov_debt_2026,
         }
     }
 
@@ -143,12 +188,34 @@ impl MacroState {
             + mp.term_premium_gain * (self.priv_duration - mp.priv_duration_2026) * 100.0;
         self.tp_bp += mp.rate_smoothing * (tp_target - self.tp_bp);
         self.long_rate = mp.r_star_nominal + self.tp_bp / 10_000.0;
+        let fd = mp.fiscal_dominance_gain.max(0.0);
+        let mut nominal_growth = nominal_growth;
+        if fd > 0.0 && self.steps > 0 {
+            let primary = mp.baseline_deficit + transfer_share * debt_share;
+            let total_deficit = primary + self.debt_service_prev;
+            let real_growth = nominal_growth - 0.02;
+            let infl_target = fd
+                * (mp.inflation_fiscal_gain * (total_deficit - mp.deficit_threshold).max(0.0)
+                    + mp.inflation_boom_gain * (real_growth - 0.03).max(0.0));
+            self.infl_premium += mp.inflation_smoothing * (infl_target - self.infl_premium);
+            let excess_pp = ((self.gov_debt_gdp - mp.gov_debt_2026) * 100.0).max(0.0);
+            let rp_target = fd
+                * (mp.fiscal_rp_bp_per_pp * excess_pp + mp.fiscal_rp_convexity * excess_pp * excess_pp);
+            self.fiscal_rp_bp += mp.rate_smoothing * (rp_target - self.fiscal_rp_bp);
+            self.long_rate = (self.long_rate + self.infl_premium + self.fiscal_rp_bp / 10_000.0)
+                .min(mp.max_long_rate);
+            nominal_growth += self.infl_premium;
+        }
+        self.steps += 1;
 
         // sovereign snowball: debt/GDP += PRIMARY deficit - (g - r)*debt. Interest
         // enters ONLY through the (r-g) term (re-audit #16: baseline_deficit had been
         // set to the ~6% TOTAL-deficit magnitude while r also entered via -(g-r)d,
         // double-counting interest).
-        let primary = mp.baseline_deficit + transfer_share * debt_share;
+        let mut primary = mp.baseline_deficit + transfer_share * debt_share;
+        if fd > 0.0 && self.steps > 1 {
+            primary -= fd.min(1.0) * mp.bohn_response * (self.gov_debt_gdp - mp.gov_debt_2026).max(0.0);
+        }
         self.gov_debt_gdp = (self.gov_debt_gdp + primary
             - (nominal_growth - self.long_rate) * self.gov_debt_gdp)
             .max(0.3);
@@ -158,6 +225,7 @@ impl MacroState {
         // unconditionally from 2026 with transfers still ~0).
         self.coupon += 0.15 * (self.long_rate - self.coupon);
         let debt_service = self.coupon * self.gov_debt_gdp;
+        self.debt_service_prev = debt_service;
 
         // the term-premium move splits: (1-passthrough) on the risk-free
         // curve tightening B4 capital, passthrough onto private spreads

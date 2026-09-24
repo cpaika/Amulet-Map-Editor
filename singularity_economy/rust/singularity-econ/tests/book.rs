@@ -294,7 +294,10 @@ fn first_principles_v2_reprices_coherently() {
     // (0.75 / 0.25) are remapped to their real business mix, so under v2 discipline
     // the grid names are positive but no longer strong; the component chokepoint is
     // the one v2 long that stays strong.
-    assert!(upside(&v2, "002472.SZ") > 0.5, "component chokepoint must stay strong in v2: {}", upside(&v2, "002472.SZ"));
+    // Wave 4: v2 now carries the fiscal-dominance rates regime (via enhanced realism),
+    // which raises every discount rate; the chokepoint drops 0.85 -> 0.42 but stays a
+    // clear long (book-mc shows it is the most lens-robust name).
+    assert!(upside(&v2, "002472.SZ") > 0.25, "component chokepoint must stay a clear long in v2: {}", upside(&v2, "002472.SZ"));
     // Wave 2 (F2): v2 also decays the capex-desire growth base toward GDP, which takes
     // GEV to roughly fair value (-1%); POWL stays the positive grid name. GEV is locked
     // as "not a short", not as a long.

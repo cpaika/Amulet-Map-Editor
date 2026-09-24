@@ -111,6 +111,10 @@ pub fn enhanced_realism(mut p: Params) -> Params {
     // Organizational lag between technical and realized displacement (F6); tau 4
     // matches the observed 2026 run-rate (~0.2-0.4%/yr -> 0.4% in 2027).
     p.tau_reorg = 4.0;
+    // Fiscal-dominance / inflation rates regime: gain 1 puts the 2027 10y at ~4.9%,
+    // on the observed 2026 path (5.1% in Sep); the long end then prices the model's
+    // own debt-financed transfer program.
+    p.macrofin.fiscal_dominance_gain = 1.0;
     p
 }
 
@@ -175,6 +179,8 @@ pub fn lens_blend(p: Params, lambda: f64) -> Params {
     q.wage_compression_phys_gain = lerp(q.wage_compression_phys_gain, v2.wage_compression_phys_gain);
     q.society.jg_share = lerp(q.society.jg_share, v2.society.jg_share);
     q.tau_reorg = lerp(q.tau_reorg, v2.tau_reorg);
+    q.macrofin.fiscal_dominance_gain =
+        lerp(q.macrofin.fiscal_dominance_gain, v2.macrofin.fiscal_dominance_gain);
     q.wright_gain = lerp(q.wright_gain, v2.wright_gain);
     q.q_governor_gain = lerp(q.q_governor_gain, v2.q_governor_gain);
     q.power_glut_price_gain = lerp(q.power_glut_price_gain, v2.power_glut_price_gain);

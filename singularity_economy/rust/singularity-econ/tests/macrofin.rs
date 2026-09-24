@@ -83,3 +83,31 @@ fn b11_ablation_freezes_the_rate() {
         "B11 on must lift rates above the frozen anchor"
     );
 }
+
+// Fiscal-dominance regime (report card: the 2026 selloff to 5.1% was term premium +
+// fiscal + inflation; the legacy rate only knew duration supply). Locks: 2026 is the
+// observed year (untouched); the regime lifts the 2027 10y onto the observed path;
+// it stays finite and capped; and the Bohn reaction lowers debt vs no reaction.
+#[test]
+fn fiscal_dominance_regime() {
+    let legacy = base();
+    let fd = |g: f64, bohn: f64| {
+        let mut p = Params::default();
+        p.macrofin.fiscal_dominance_gain = g;
+        p.macrofin.bohn_response = bohn;
+        simulate(&p)
+    };
+    let on = fd(1.0, 0.05);
+    assert_eq!(on[0].long_rate, legacy[0].long_rate, "2026 is observed");
+    assert!(on[1].long_rate > 0.048 && on[1].long_rate < 0.055, "2027 10y {}", on[1].long_rate);
+    assert!(on.iter().all(|s| s.long_rate.is_finite() && s.long_rate <= 0.15 + 1e-12));
+    assert!(on.last().unwrap().long_rate > legacy.last().unwrap().long_rate + 0.02);
+    // Fizzle carries no transfer program: its regime rate stays far below baseline's.
+    let mut fz = singularity_econ::scenarios::fizzle(Params::default());
+    fz.macrofin.fiscal_dominance_gain = 1.0;
+    let fz = simulate(&fz);
+    assert!(fz.last().unwrap().long_rate < on.last().unwrap().long_rate - 0.02);
+    // Bohn: a stronger fiscal reaction yields a lower long end.
+    let strong = fd(1.0, 0.15);
+    assert!(strong.last().unwrap().long_rate < on.last().unwrap().long_rate);
+}
