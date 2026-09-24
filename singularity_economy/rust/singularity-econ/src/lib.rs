@@ -21,6 +21,8 @@ pub mod food;
 pub mod macrofin;
 pub mod materials;
 pub mod regions;
+#[cfg(feature = "mc")]
+pub mod sampler;
 pub mod scenarios;
 pub mod society;
 pub mod space;
