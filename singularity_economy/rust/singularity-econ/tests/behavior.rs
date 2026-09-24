@@ -678,3 +678,17 @@ fn smooth_rents_saturate_below_the_ceiling() {
         assert!(s.power_margin <= h.power_margin + 1e-9, "{}: smooth above hard", s.year);
     }
 }
+
+// F7a: with the vintage draw stock, racked GPUs keep their build-year power draw, so
+// efficiency gains no longer retroactively free grid headroom: power binds no later
+// and the power-limited decade builds less capex than the legacy accounting.
+#[test]
+fn vintage_power_draw_binds_power_no_later() {
+    let legacy = base();
+    let vintage = run(Params { vintage_power_draw: 1.0, ..Params::default() });
+    let first_power = |s: &[YearState]| s.iter().find(|x| x.binding == Binding::Power).map(|x| x.year);
+    assert!(first_power(&vintage).unwrap() <= first_power(&legacy).unwrap());
+    let cum = |s: &[YearState]| s.iter().map(|x| x.ai_capex).sum::<f64>();
+    assert!(cum(&vintage) < cum(&legacy), "vintage {} vs legacy {}", cum(&vintage), cum(&legacy));
+    assert_eq!(vintage[0].binding, Binding::Chips, "2026 must stay chips-bound");
+}

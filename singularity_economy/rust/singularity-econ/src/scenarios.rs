@@ -145,6 +145,7 @@ pub fn first_principles_v2(p: Params) -> Params {
     p.q_forward = true;              // q on expected, not trailing, AI profit (F5)
     p.q_mult_cap = 1.25;             // optimism accelerates investment only modestly
     p.smooth_rents = 1.0;            // saturating rents, no hard ceiling kinks (F2)
+    p.vintage_power_draw = 1.0;      // racked GPUs keep their build-year draw (F7a)
     p
 }
 
@@ -175,6 +176,7 @@ pub fn lens_blend(p: Params, lambda: f64) -> Params {
     q.ai_commoditization_gain = lerp(q.ai_commoditization_gain, v2.ai_commoditization_gain);
     q.dgb_decay_rate = lerp(q.dgb_decay_rate, v2.dgb_decay_rate);
     q.smooth_rents = lerp(q.smooth_rents, v2.smooth_rents);
+    q.vintage_power_draw = lerp(q.vintage_power_draw, v2.vintage_power_draw);
     // Form choices, not intensities: inert while q_governor_gain is 0 (lambda = 0).
     q.q_forward = v2.q_forward;
     q.q_mult_cap = v2.q_mult_cap;

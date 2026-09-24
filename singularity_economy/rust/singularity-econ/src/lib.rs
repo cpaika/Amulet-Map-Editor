@@ -188,6 +188,12 @@ pub struct Params {
     /// (so power per compute unit tracks the unit's cost), independent of how fast
     /// compute cost falls.
     pub gw_per_dollar_growth: Option<f64>,
+    /// F7a (Sep-26 re-analysis): blend weight on a VINTAGE power-draw stock. Legacy
+    /// (0) prices the whole installed compute stock at this year's GW-per-unit, so
+    /// every efficiency gain retroactively frees power from GPUs already racked
+    /// (~34%/yr freed vs 25% physical retirement). 1 = each vintage keeps the draw
+    /// it was built with and retires at compute_deprec.
+    pub vintage_power_draw: f64,
     pub power_equip_cost_per_gw: f64,
     pub electricity_price_normal: f64,
     // AI cognitive supply / demand
@@ -513,6 +519,7 @@ impl Default for Params {
             gw_per_compute_unit: 55.0,
             power_efficiency_gain: 0.12,
             gw_per_dollar_growth: None,
+            vintage_power_draw: 0.0,
             power_equip_cost_per_gw: 0.0035,
             electricity_price_normal: 0.055,
             ai_hew_2026_m: 12.0,
@@ -977,6 +984,13 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut onshoring_until = i32::MIN;
     let mut invaded = false;
     let mut gw_per_unit = p.gw_per_compute_unit;
+    // Vintage draw (F7a): GW drawn by the installed compute stock, each vintage at
+    // its build-year GW-per-unit (stock starts at 1.0 unit).
+    let mut draw_stock = p.gw_per_compute_unit;
+    let vg = p.vintage_power_draw.clamp(0.0, 1.0);
+    let blend_draw = |legacy: f64, vintage: f64| -> f64 {
+        if vg > 0.0 { (1.0 - vg) * legacy + vg * vintage } else { legacy }
+    };
     let mut power_jevons_mult = 1.0_f64; // persistent post-efficiency-jump power scaler
 
     let mut power_pipe = Pipeline::new(p.power_pipeline_stages, p.power_additions_2026);
@@ -1413,9 +1427,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // power depreciating GPUs actually release is freed), matching
         // power_demand_gw's depreciated treatment, without starving robots — the
         // orders channel now covers their draw.
+        let retained_draw = blend_draw(compute_stock * (1.0 - p.compute_deprec) * gw_per_unit,
+                                       draw_stock * (1.0 - p.compute_deprec));
         let power_headroom = (ai_power + robot_power_built_gw + space.orbital_gw_equiv
             + power_additions
-            - compute_stock * (1.0 - p.compute_deprec) * gw_per_unit * power_jevons_mult
+            - retained_draw * power_jevons_mult
             - robot_power_gw)
             .max(0.0);
         // Convert GW headroom to buildable capex at the draw NEW units actually take —
@@ -1446,7 +1462,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         let physical_ai_ceiling_gw =
             firm_power_prev * p.ai_grid_share_max + robot_built_cum_gw;
         let physical_headroom_gw = (physical_ai_ceiling_gw
-            - compute_stock * (1.0 - p.compute_deprec) * gw_per_unit * power_jevons_mult
+            - retained_draw * power_jevons_mult
             - robot_power_gw)
             .max(0.0);
         let power_cap_physical =
@@ -1495,6 +1511,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             (1.0 - p.compute_governance_gain * asi.clamp(0.0, 1.0)).max(0.0);
         let units_added = ai_capex / cost_per_unit * governance_throttle;
         compute_stock = compute_stock * (1.0 - p.compute_deprec) + units_added;
+        let pre_draw = draw_stock;
+        draw_stock = draw_stock * (1.0 - p.compute_deprec) + units_added * gw_per_unit;
         // Wright's-law learning base accumulates GROSS production (never depreciates —
         // knowledge learned from building a chip persists after the chip retires).
         cumulative_units += units_added;
@@ -1516,7 +1534,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             total_additions
         };
         ai_power += deliverable_additions;
-        let used_power = (compute_stock * compute_ration_prev * gw_per_unit * power_jevons_mult)
+        let used_power = (blend_draw(compute_stock * compute_ration_prev * gw_per_unit,
+                                     draw_stock * compute_ration_prev)
+            * power_jevons_mult)
             .min(ai_power);
 
         // ---- utilizations, prices, margins ----
@@ -1533,7 +1553,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // fielded robot fleet's draw. Previously robots were omitted here, so the
         // scarcity signal (utilization → margin → power_orders) understated demand
         // and under-built the grid. Robots now drive orders as a co-equal claimant.
-        let power_demand_gw = (pre_stock * (1.0 - p.compute_deprec) * gw_per_unit
+        let power_demand_gw = (blend_draw(pre_stock * (1.0 - p.compute_deprec) * gw_per_unit,
+                                          pre_draw * (1.0 - p.compute_deprec))
             + (desired_capex / cost_per_unit) * gw_per_unit)
             * power_jevons_mult
             + robot_power_gw;
@@ -1773,7 +1794,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
                 // is explicit that no space->grid power flow exists — orbital power
                 // monetizes solely through co-located compute, so it reduces compute's
                 // terrestrial draw rather than adding to the grid robots can drink from.
-                let compute_draw_gw = (compute_stock * gw_per_unit * power_jevons_mult
+                let compute_draw_gw = (blend_draw(compute_stock * gw_per_unit, draw_stock)
+                    * power_jevons_mult
                     - space.orbital_gw_equiv)
                     .max(0.0);
                 let grid = ai_power.max(1e-9);
@@ -2111,7 +2133,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
 
         // ---- energy / food / regions satellite layers ----
         // Energy: the generation mix that supplies the grid the economy runs on.
-        let grid_demand_gw = compute_stock * gw_per_unit * power_jevons_mult + robot_power_gw;
+        let grid_demand_gw = blend_draw(compute_stock * gw_per_unit, draw_stock)
+            * power_jevons_mult + robot_power_gw;
         let energy_out = energy_state.step(&p.energy, grid_demand_gw, 1.0, asi);
         // Food: the fertilizer(Haber-Bosch) driver is the ENERGY-cost environment,
         // not datacenter compute pricing. Audit C4: this was fed
