@@ -478,6 +478,10 @@ pub struct Params {
     /// (legacy). Scenarios that lower `demand_growth_base` pin this so the observed
     /// 2026 stays the observed 2026 (a global dgb <= 0.20 flips 2026 to Demand).
     pub perceived_growth_2026: Option<f64>,
+    /// Momentum (herding) gain used in the 2026 base year. `None` = `momentum_gain`.
+    /// A scenario that changes herding from 2027 pins this so the observed year
+    /// stays observed (fizzle's weak herding otherwise flips sampled 2026 bindings).
+    pub momentum_gain_2026: Option<f64>,
 
     // G — Tobin's-q investment governor (gated satellite; gain 0 => baseline
     // byte-identical). Overlays a return-on-capital channel on the momentum-driven
@@ -680,6 +684,7 @@ impl Default for Params {
             fab_discipline: 0.0,
             fab_obsolescence: 0.10,
             perceived_growth_2026: None,
+            momentum_gain_2026: None,
             q_governor_gain: 0.0,   // off by default (satellite); ~0.5 is a live scenario
             q_risk_premium: 0.10,   // equity premium; hurdle = long_rate + this + compute_deprec
             q_forward: false,
@@ -811,6 +816,14 @@ pub struct YearState {
     pub compute_stock: f64,
     pub algo_eff: f64,
     pub ai_power_gw: f64,
+    /// Grid capacity built through the power-equipment pool (2026 base + every
+    /// year's AI power additions; excludes robot-self-built generation). The
+    /// installed base the flow terminal sustains — `ai_power_gw` is the DRAW.
+    pub ai_power_installed_gw: f64,
+    /// Expected-inflation premium in the long rate (fiscal-dominance regime; 0
+    /// when the regime is off). The valuation strips it so real flows are not
+    /// discounted at a nominal-inflation rate.
+    pub infl_premium: f64,
     pub power_utilization: f64,
     pub chip_utilization: f64,
     pub silicon_margin: f64,
@@ -933,6 +946,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut cumulative_units = 1.0_f64;
     let mut algo_eff = 1.0_f64;
     let mut ai_power = p.ai_power_2026;
+    let mut grid_equipment_gw = p.ai_power_2026;
     let mut transmission_capacity = p.ai_power_2026; // deliverable-power ceiling stock (transformers/HVDC)
     // Last year's WORLD firm power (energy layer), for the physical AI-power ceiling
     // (P0). Seeded near the energy layer's 2026 firm power; non-binding in the
@@ -1275,7 +1289,11 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             perceived_growth += p.perception_smoothing
                 * (demand_signal_growth - perceived_growth);
         }
-        let herd = l.r3_capex_momentum * p.momentum_gain * perceived_growth.max(0.0);
+        let momentum = match p.momentum_gain_2026 {
+            Some(m) if year == p.start_year => m,
+            _ => p.momentum_gain,
+        };
+        let herd = l.r3_capex_momentum * momentum * perceived_growth.max(0.0);
         // ---- Financial-fragility spine: AI-capex bubble/bust reflexivity (gated) ----
         // Update the equity-sentiment stock from LAST year's realized glut and margin
         // (lagged, so no in-loop ordering hazard). Asymmetric Minsky dynamics: once
@@ -1627,6 +1645,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             total_additions
         };
         ai_power += deliverable_additions;
+        grid_equipment_gw += power_additions;
         let used_power = (blend_draw(compute_stock * compute_ration_prev * gw_per_unit,
                                      draw_stock * compute_ration_prev)
             * power_jevons_mult)
@@ -2294,6 +2313,8 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             compute_stock,
             algo_eff,
             ai_power_gw: used_power,
+            ai_power_installed_gw: grid_equipment_gw,
+            infl_premium: macro_out.as_ref().map_or(0.0, |m| m.infl_premium),
             power_utilization,
             chip_utilization,
             silicon_margin,

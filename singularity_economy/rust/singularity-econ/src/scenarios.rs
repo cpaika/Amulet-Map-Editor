@@ -21,6 +21,7 @@ pub fn fizzle(mut p: Params) -> Params {
     // observed year. Legacy fizzle kept binding POWER through 2036 while its AI
     // revenue was flat, so longs showed gains in the no-AI world.
     p.demand_growth_base = 0.10;
+    p.momentum_gain_2026 = Some(p.momentum_gain);
     p.momentum_gain = 0.2;
     p.perceived_growth_2026 = Some(0.32);
     p

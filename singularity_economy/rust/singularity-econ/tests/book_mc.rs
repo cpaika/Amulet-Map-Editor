@@ -140,3 +140,45 @@ mod prior {
         }
     }
 }
+
+// Review fix (Sep 24): the fizzle overrides act from 2027 — the observed 2026 base year
+// of a fizzle path is identical to the same draw without fizzle, so conditioning on
+// 2026 cannot thin out the fizzle mass.
+#[test]
+fn fizzle_leaves_the_observed_2026_untouched() {
+    let b = simulate(&Params::default());
+    let f = simulate(&fizzle(Params::default()));
+    assert_eq!(b[0].ai_capex, f[0].ai_capex);
+    assert_eq!(b[0].binding, f[0].binding);
+}
+
+// Review fix (Sep 24): the valuation discounts REAL flows, so a pure rise in expected
+// inflation (long rate and inflation premium up together) leaves every unlevered value
+// unchanged. (With leverage on, inflation correctly shifts value from net-cash holders
+// to net debtors until the balance reprices.)
+#[test]
+fn valuation_is_invariant_to_pure_expected_inflation() {
+    let vp = ValuationParams { leverage_gain: 0.0, ..ValuationParams::first_principles() };
+    let base = simulate(&Params::default());
+    let mut inflated = base.clone();
+    for s in inflated.iter_mut().skip(1) {
+        s.long_rate += 0.03;
+        s.infl_premium += 0.03;
+    }
+    for c in universe().iter().filter(|c| c.ntm_earnings_b > 0.0) {
+        let a = value_on_path(c, &base, PathContext::default(), DR_BETA, &vp).0;
+        let b = value_on_path(c, &inflated, PathContext::default(), DR_BETA, &vp).0;
+        assert!((a - b).abs() < 1e-9 * a.abs().max(1.0), "{}: {a} vs {b}", c.ticker);
+    }
+}
+
+// Review fix (Sep 24): the grid flow terminal sustains the INSTALLED equipment base,
+// not the compute draw; in a demand bust the installed grid far exceeds the draw.
+#[test]
+fn installed_grid_exceeds_draw_in_a_bust() {
+    let s = simulate(&first_principles_v2(fizzle(Params::default())));
+    let last = s.last().unwrap();
+    assert!(last.ai_power_installed_gw > 5.0 * last.ai_power_gw,
+            "installed {} vs draw {}", last.ai_power_installed_gw, last.ai_power_gw);
+    assert!(s.windows(2).all(|w| w[1].ai_power_installed_gw >= w[0].ai_power_installed_gw));
+}

@@ -258,7 +258,9 @@ fn book_sa(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, top: 
     for k in 0..n {
         let (d, states) = conditioned_draw(&mut draws, &mut rej, n);
         let ctx = PathContext::from_params(&d.params);
-        let mut vals = sampled_values(&d.params);
+        // Drivers are the CORE draw (pre-fizzle, pre-lens): fizzle's overrides are
+        // reported by the fizzle column, not as fake parameter effects.
+        let mut vals = sampled_values(&d.core);
         vals.push(("fizzle", d.fizzle as u8 as f64));
         vals.push(("severe_taiwan", ctx.taiwan_start.is_some() as u8 as f64));
         vals.push(("ai_rev_growth_2026", d.params.ai_rev_growth_2026));
@@ -518,12 +520,23 @@ fn monte_carlo(n: usize, seed: u64) {
 // against the investable outputs, over a large Monte Carlo sample.
 // ---------------------------------------------------------------------------
 
+/// Fractional ranks: tied values share the average of their positions, so binary
+/// and discrete drivers (fizzle, singularity_year) are not under-ranked.
 fn ranks(v: &[f64]) -> Vec<f64> {
     let mut idx: Vec<usize> = (0..v.len()).collect();
     idx.sort_by(|&a, &b| v[a].partial_cmp(&v[b]).unwrap());
     let mut r = vec![0.0; v.len()];
-    for (rank, &i) in idx.iter().enumerate() {
-        r[i] = rank as f64;
+    let mut i = 0;
+    while i < idx.len() {
+        let mut j = i;
+        while j + 1 < idx.len() && v[idx[j + 1]] == v[idx[i]] {
+            j += 1;
+        }
+        let avg = (i + j) as f64 / 2.0;
+        for &k in &idx[i..=j] {
+            r[k] = avg;
+        }
+        i = j + 1;
     }
     r
 }
@@ -608,4 +621,19 @@ pub fn sensitivity(n: usize, seed: u64) {
         report.insert(oname.to_string(), serde_json::Value::Array(top));
     }
     println!("{}", serde_json::to_string_pretty(&report).unwrap());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ranks, spearman};
+
+    // Ties share the average rank, so a binary driver that fully separates the
+    // outcome reports |rho| near its true value rather than ~half of it.
+    #[test]
+    fn ranks_average_ties() {
+        assert_eq!(ranks(&[1.0, 0.0, 1.0, 0.0]), vec![2.5, 0.5, 2.5, 0.5]);
+        let flag: Vec<f64> = (0..100).map(|i| (i % 2) as f64).collect();
+        let out: Vec<f64> = (0..100).map(|i| (i % 2) as f64 * 10.0 + i as f64 * 1e-3).collect();
+        assert!(spearman(&flag, &out) > 0.85);
+    }
 }

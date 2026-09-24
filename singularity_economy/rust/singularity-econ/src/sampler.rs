@@ -233,6 +233,8 @@ pub fn fizzle_mass() -> f64 {
 /// only) and whether the path is a fizzle.
 pub struct BookDraw {
     pub params: Params,
+    /// The core mc/sa draw before fizzle and the lens were applied.
+    pub core: Params,
     pub lambda: f64,
     pub fizzle: bool,
 }
@@ -257,6 +259,7 @@ impl BookSampler {
 
     pub fn draw(&mut self) -> BookDraw {
         let p = self.core.params();
+        let core = p.clone();
         let u_fizzle: f64 = Uniform::new(0.0, 1.0).sample(&mut self.aux);
         let u_lambda: f64 = Uniform::new(0.0, 1.0).sample(&mut self.aux);
         // Forward-q growth seed (F5): observed 2026 AI-revenue growth +100-250%/yr.
@@ -280,6 +283,6 @@ impl BookSampler {
             Lens::V2 => (crate::scenarios::first_principles_v2(p), 1.0),
             Lens::Mix => (crate::scenarios::lens_blend(p, u_lambda), u_lambda),
         };
-        BookDraw { params, lambda, fizzle }
+        BookDraw { params, core, lambda, fizzle }
     }
 }

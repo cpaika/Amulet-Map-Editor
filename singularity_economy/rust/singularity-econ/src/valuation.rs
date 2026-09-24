@@ -181,7 +181,8 @@ pub struct ValuationParams {
     /// Average debt maturity (years): the share repriced by year t is 1-(1-1/M)^t.
     pub debt_maturity: f64,
     pub tax_rate: f64,
-    /// Annual decline in compute unit cost — must match `Params::hw_cost_decline`.
+    /// Upper bound on the compute unit-cost decline used by the flow terminal (the
+    /// calendar `Params::hw_cost_decline`); the actual rate is read off the path.
     /// In a dollar steady state falling unit cost keeps the UNIT stock growing, so
     /// the steady-state spend must be computed in dollars, not units.
     pub compute_cost_decline: f64,
@@ -239,7 +240,7 @@ impl ValuationParams {
         let ss_factor = |d: f64, c: f64| 1.0 - (1.0 - d) * (1.0 - c) / (1.0 + g);
         let ratio = match pool {
             RatioPool::PowerEquipment => {
-                let base_value = self.power_equip_cost_per_gw * last.ai_power_gw;
+                let base_value = self.power_equip_cost_per_gw * last.ai_power_installed_gw;
                 base_value * ss_factor(1.0 / self.power_equipment_life, 0.0)
                     / last.pools.power_equipment.max(1e-12)
             }
@@ -250,8 +251,24 @@ impl ValuationParams {
                 if added <= 1e-12 {
                     return 1.0;
                 }
-                last.compute_stock * ss_factor(self.compute_deprec, self.compute_cost_decline)
-                    / added
+                // Unit-cost decline read off the path itself (capex / units added over
+                // the last two years), capped at the calendar rate: under Wright's-law
+                // learning (v2) the late-horizon decline is ~0.10-0.12, ~0 in a bust.
+                let c = if n >= 3 {
+                    let prev2 = &states[n - 3];
+                    let added_prev =
+                        prev.compute_stock - prev2.compute_stock * (1.0 - self.compute_deprec);
+                    if added_prev > 1e-12 && prev.ai_capex > 1e-12 {
+                        let unit_now = last.ai_capex / added;
+                        let unit_prev = prev.ai_capex / added_prev;
+                        (1.0 - unit_now / unit_prev).clamp(0.0, self.compute_cost_decline)
+                    } else {
+                        self.compute_cost_decline
+                    }
+                } else {
+                    self.compute_cost_decline
+                };
+                last.compute_stock * ss_factor(self.compute_deprec, c) / added
             }
             _ => 1.0,
         };
@@ -368,7 +385,8 @@ pub fn earnings_with(c: &Company, states: &[YearState], vp: &ValuationParams) ->
             let interest0 = c.net_debt_b * (r0 + spread);
             let unlevered0 = c.ntm_earnings_b + interest0 * after_tax;
             let repriced = 1.0 - (1.0 - 1.0 / vp.debt_maturity.max(1.0)).powi(i as i32);
-            let cost_t = r0 + spread + repriced * (s.long_rate - r0);
+            // Real burden: inflation above the anchor erodes nominal principal.
+            let cost_t = r0 + spread + repriced * (s.long_rate - r0) - s.infl_premium;
             let levered = unlevered0 * mult - c.net_debt_b * cost_t * after_tax;
             let g = vp.leverage_gain.clamp(0.0, 1.0);
             (1.0 - g) * plain + g * levered
@@ -505,7 +523,10 @@ fn scenario_discount(states: &[YearState], dr_beta: f64) -> f64 {
     // invariant 2026 base year; including it diluted the cross-scenario rate spread.
     let flows = &states[1..states.len().max(2)];
     let n = flows.len().max(1) as f64;
-    let mean_long: f64 = flows.iter().map(|s| s.long_rate).sum::<f64>() / n;
+    // Real flows are discounted at the REAL component of the rate move: the
+    // fiscal-dominance expected-inflation premium is stripped (Fisher); it is 0
+    // when that regime is off, so the legacy discount is unchanged.
+    let mean_long: f64 = flows.iter().map(|s| s.long_rate - s.infl_premium).sum::<f64>() / n;
     DISCOUNT_RATE + dr_beta * (mean_long - 0.045)
 }
 
@@ -513,7 +534,7 @@ fn scenario_discount(states: &[YearState], dr_beta: f64) -> f64 {
 /// path-mean rate on it left the B11 rate coupling a near-no-op. The terminal is a
 /// perpetuity struck at horizon end, so it prices off the TERMINAL-year long rate.
 fn terminal_discount(states: &[YearState], dr_beta: f64) -> f64 {
-    let last = states.last().map_or(0.045, |s| s.long_rate);
+    let last = states.last().map_or(0.045, |s| s.long_rate - s.infl_premium);
     DISCOUNT_RATE + dr_beta * (last - 0.045)
 }
 

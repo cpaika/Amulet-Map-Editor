@@ -120,6 +120,8 @@ pub struct MacroOutputs {
     pub transfer_cap_squeeze: f64,
     pub gov_debt_gdp: f64,
     pub term_premium_bp: f64,
+    /// Expected-inflation premium inside `long_rate` (0 when the regime is off).
+    pub infl_premium: f64,
 }
 
 #[derive(Debug, Clone)]
@@ -216,14 +218,26 @@ impl MacroState {
         if fd > 0.0 && self.steps > 1 {
             primary -= fd.min(1.0) * mp.bohn_response * (self.gov_debt_gdp - mp.gov_debt_2026).max(0.0);
         }
+        // Under the regime, interest accrues at the effective COUPON on the stock
+        // (rolled first), consistent with debt_service = coupon x debt: inflation in
+        // nominal growth erodes the stock at once while the cost of debt catches up
+        // only as it rolls — the inflation tax. Legacy keeps the marginal rate.
+        let snowball_rate = if fd > 0.0 && self.steps > 1 {
+            self.coupon += 0.15 * (self.long_rate - self.coupon);
+            self.coupon
+        } else {
+            self.long_rate
+        };
         self.gov_debt_gdp = (self.gov_debt_gdp + primary
-            - (nominal_growth - self.long_rate) * self.gov_debt_gdp)
+            - (nominal_growth - snowball_rate) * self.gov_debt_gdp)
             .max(0.3);
         // Debt service prices off the effective COUPON, which rolls toward the
         // current 10y as legacy stock matures (~15%/yr) — not the whole stock
         // repriced instantly (re-audit #16: that fired the 4.5% fiscal collision
         // unconditionally from 2026 with transfers still ~0).
-        self.coupon += 0.15 * (self.long_rate - self.coupon);
+        if !(fd > 0.0 && self.steps > 1) {
+            self.coupon += 0.15 * (self.long_rate - self.coupon);
+        }
         let debt_service = self.coupon * self.gov_debt_gdp;
         self.debt_service_prev = debt_service;
 
@@ -240,6 +254,7 @@ impl MacroState {
             transfer_cap_squeeze: 0.5 * (debt_service - 0.045).max(0.0),
             gov_debt_gdp: self.gov_debt_gdp,
             term_premium_bp: self.tp_bp,
+            infl_premium: self.infl_premium,
         }
     }
 
