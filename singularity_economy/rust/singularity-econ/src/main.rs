@@ -4,7 +4,7 @@
 //!   singularity-econ mc <n> <seed>          # Monte Carlo distributions (JSON)
 
 use singularity_econ::companies::{load_financials, universe};
-use singularity_econ::sampler::Sampler;
+use singularity_econ::sampler::{sampled_values, Sampler};
 use singularity_econ::scenarios::{
     scenario_states, scenario_states_enhanced, scenario_states_v2,
 };
@@ -284,15 +284,10 @@ fn spearman(a: &[f64], b: &[f64]) -> f64 {
 
 pub fn sensitivity(n: usize, seed: u64) {
     let mut draw = Sampler::new(seed);
-    let param_names = [
-        "singularity_year", "singularity_boost", "adoption_halflife",
-        "max_displacement_rate", "chip_supply_gain", "chip_base_growth",
-        "power_supply_gain", "power_base_growth", "power_growth_ceiling",
-        "capex_gdp_cap", "component_supply_gain", "robot_cost_2028_k",
-        "robot_learning_rate", "internal_funding_share", "momentum_gain",
-        "backlash_gain", "transition_drag",
-    ];
-    let mut param_vals: Vec<Vec<f64>> = vec![Vec::new(); param_names.len()];
+    // All sampled parameters (sampler::sampled_values) — previously a hard-coded
+    // 17 of ~44, which hid drivers the sampler already drew.
+    let mut param_names: Vec<&'static str> = Vec::new();
+    let mut param_vals: Vec<Vec<f64>> = Vec::new();
     let mut out_silicon_norm: Vec<f64> = Vec::new();
     let mut out_power_margin_32: Vec<f64> = Vec::new();
     let mut out_credit_min: Vec<f64> = Vec::new();
@@ -302,15 +297,12 @@ pub fn sensitivity(n: usize, seed: u64) {
 
     for _ in 0..n {
         let p = draw.params();
-        let vals = [
-            p.singularity_year as f64, p.singularity_boost, p.adoption_halflife,
-            p.max_displacement_rate, p.chip_supply_gain, p.chip_base_growth,
-            p.power_supply_gain, p.power_base_growth, p.power_growth_ceiling,
-            p.capex_gdp_cap, p.component_supply_gain, p.robot_cost_2028_k,
-            p.robot_learning_rate, p.internal_funding_share, p.momentum_gain,
-            p.backlash_gain, p.transition_drag,
-        ];
-        for (i, v) in vals.iter().enumerate() {
+        let sv = sampled_values(&p);
+        if param_names.is_empty() {
+            param_names = sv.iter().map(|(k, _)| *k).collect();
+            param_vals = vec![Vec::new(); sv.len()];
+        }
+        for (i, (_, v)) in sv.iter().enumerate() {
             param_vals[i].push(*v);
         }
         let states = simulate(&p);

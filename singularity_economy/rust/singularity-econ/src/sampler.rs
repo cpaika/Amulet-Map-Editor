@@ -141,3 +141,57 @@ impl Sampler {
         }
     }
 }
+
+/// Every parameter the sampler varies, read back from a drawn `Params`: the
+/// single list of what the Monte Carlo prior covers. `sa` ranks all of these
+/// (it used to hard-code 17 of them and hid drivers the sampler already drew,
+/// e.g. jevons_elasticity and the efficiency jump). Keep in sync with
+/// `Sampler::params` — `tests/sampler.rs` fails if a listed field stops varying.
+pub fn sampled_values(p: &Params) -> Vec<(&'static str, f64)> {
+    vec![
+        ("singularity_year", p.singularity_year as f64),
+        ("robot_gap_years", (p.robotics_year - p.singularity_year) as f64),
+        ("singularity_boost", p.singularity_boost),
+        ("algo_eff_growth_pre", p.algo_eff_growth_pre),
+        ("algo_eff_growth_post", p.algo_eff_growth_post),
+        ("adoption_halflife", p.adoption_halflife),
+        ("max_displacement_rate", p.max_displacement_rate),
+        ("addressable_cognitive", p.addressable_cognitive),
+        ("cognitive_demand_elasticity", p.cognitive_demand_elasticity),
+        ("chip_base_growth", p.chip_base_growth),
+        ("chip_supply_gain", p.chip_supply_gain),
+        ("chip_growth_ceiling", p.chip_growth_ceiling),
+        ("power_base_growth", p.power_base_growth),
+        ("power_supply_gain", p.power_supply_gain),
+        ("power_growth_ceiling", p.power_growth_ceiling),
+        ("capex_gdp_cap", p.capex_gdp_cap),
+        ("component_base_growth", p.component_base_growth),
+        ("component_supply_gain", p.component_supply_gain),
+        ("component_growth_ceiling", p.component_growth_ceiling),
+        ("bootstrap_gain", p.bootstrap_gain),
+        ("robot_learning_rate", p.robot_learning_rate),
+        ("robot_cost_2028_k", p.robot_cost_2028_k),
+        ("it_services_beta", p.it_services_beta),
+        ("bpo_beta", p.bpo_beta),
+        ("saas_beta", p.saas_beta),
+        ("prof_info_beta", p.prof_info_beta),
+        ("power_efficiency_gain", p.power_efficiency_gain),
+        ("transition_drag", p.transition_drag),
+        ("productivity_passthrough", p.productivity_passthrough),
+        ("internal_funding_share", p.internal_funding_share),
+        ("momentum_gain", p.momentum_gain),
+        ("backlash_gain", p.backlash_gain),
+        ("afford_gain", p.afford_gain),
+        ("asi_diffusion_years", p.asi_diffusion_years),
+        ("asi_delay_compression", p.asi_delay_compression),
+        ("asi_ceiling_boost", p.asi_ceiling_boost),
+        ("asi_integration_relief", p.asi_integration_relief),
+        ("geo_shock_count", p.geo_shocks.len() as f64),
+        ("incident_year", p.incident_year as f64),
+        ("incident_dread", if p.incident_dread { 1.0 } else { 0.0 }),
+        ("dread_shock_count", p.dread_shocks.len() as f64),
+        ("efficiency_jump_year", p.efficiency_jump_year as f64),
+        ("efficiency_jump_size", p.efficiency_jump_size),
+        ("jevons_elasticity", p.jevons_elasticity),
+    ]
+}
