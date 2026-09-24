@@ -692,3 +692,41 @@ fn vintage_power_draw_binds_power_no_later() {
     assert!(cum(&vintage) < cum(&legacy), "vintage {} vs legacy {}", cum(&vintage), cum(&legacy));
     assert_eq!(vintage[0].binding, Binding::Chips, "2026 must stay chips-bound");
 }
+
+// F6 displacement ramp: the reorganization lag (tau_reorg) smooths realized
+// displacement: 2027 at the observed-run-rate scale (<0.6%), no single year adding
+// more than 12pp, and the technical endpoint still approached (lag, not cap).
+#[test]
+fn reorganization_lag_smooths_the_displacement_ramp() {
+    let legacy = base();
+    let max_step = |s: &[YearState]| s.windows(2)
+        .map(|w| w[1].cog_displacement - w[0].cog_displacement).fold(0.0, f64::max);
+    assert!(max_step(&legacy) <= 0.22, "legacy ramp step {}", max_step(&legacy));
+    let lagged = run(Params { tau_reorg: 4.0, ..Params::default() });
+    assert!(max_step(&lagged) <= 0.12, "lagged ramp step {}", max_step(&lagged));
+    assert!(by_year(&lagged, 2027).cog_displacement < 0.006);
+    assert_eq!(lagged[0].cog_displacement, legacy[0].cog_displacement, "2026 is observed");
+    let (l36, g36) = (lagged.last().unwrap().cog_displacement, legacy.last().unwrap().cog_displacement);
+    assert!(l36 > 0.7 * g36, "lag must delay, not cap: {l36} vs {g36}");
+}
+
+// Fab discipline: in a demand bust the legacy fab build compounds the glut without
+// bound (v2 bust path: 36x, utilization ~3%) and pins equity sentiment at its floor.
+// With the gate on, capacity additions track utilization and the leading edge ages
+// out, so the glut stays inside the historical envelope (<= ~6x) and the observed
+// 2026 base year is untouched.
+#[test]
+fn fab_discipline_bounds_the_glut() {
+    let bust = |fd: f64| {
+        let mut p = singularity_econ::scenarios::first_principles_v2(Params::default());
+        p.ai_rev_growth_2026 = 1.0;
+        p.fab_discipline = fd;
+        run(p)
+    };
+    let (legacy, disc) = (bust(0.0), bust(1.0));
+    let peak = |s: &[YearState]| s.iter().map(|x| x.capacity_glut).fold(0.0, f64::max);
+    assert!(peak(&legacy) > 15.0, "legacy bust glut {}", peak(&legacy));
+    assert!(peak(&disc) < 6.0, "disciplined glut {}", peak(&disc));
+    let b = run(Params { fab_discipline: 1.0, ..Params::default() });
+    assert_eq!(b[0].ai_capex, base()[0].ai_capex, "2026 is observed");
+}

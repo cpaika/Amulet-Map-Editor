@@ -432,6 +432,23 @@ pub struct Params {
     /// sector's capex can out-grow the economy forever; the legacy open loop
     /// compounds 32%/yr in every scenario, fizzle included. 0 (default) = legacy.
     pub dgb_decay_rate: f64,
+    /// F6 (Sep-26 re-analysis): organizational-reorganization lag (years) between
+    /// TECHNICAL displacement (what the AI can take over) and REALIZED displacement
+    /// (jobs actually gone): realized closes the gap by 1 - exp(-1/tau) a year.
+    /// Firms re-engineer workflows before they cut (the electrification and IT
+    /// J-curves ran 5-20 years). 0 (default) = legacy: realized = technical, which
+    /// steps 1.3% -> 11% from 2027 to 2028 — more in one year than the ~9% most
+    /// whole-transition estimates carry. The 2026 base year is pinned (observed).
+    pub tau_reorg: f64,
+    /// Fab investment discipline (gate, 0 = legacy). Legacy grows fab capacity at
+    /// `chip_base_growth` whatever the utilization, so in a bust fabs keep adding
+    /// 20-45%/yr into a glut that compounds to 20x (utilization 5%) and pins the
+    /// equity-sentiment spine at its floor for good. At 1: base expansion scales with
+    /// last year's chip utilization relative to target (nobody builds a fab into a
+    /// glut), and AI-relevant leading-edge capacity ages onto trailing nodes at
+    /// `fab_obsolescence` per year.
+    pub fab_discipline: f64,
+    pub fab_obsolescence: f64,
     /// Starting (2026) perceived demand growth. `None` = `demand_growth_base`
     /// (legacy). Scenarios that lower `demand_growth_base` pin this so the observed
     /// 2026 stays the observed 2026 (a global dgb <= 0.20 flips 2026 to Demand).
@@ -627,6 +644,9 @@ impl Default for Params {
             momentum_gain: 0.5,
             demand_growth_base: 0.32,
             dgb_decay_rate: 0.0,
+            tau_reorg: 0.0,
+            fab_discipline: 0.0,
+            fab_obsolescence: 0.10,
             perceived_growth_2026: None,
             q_governor_gain: 0.0,   // off by default (satellite); ~0.5 is a live scenario
             q_risk_premium: 0.10,   // equity premium; hurdle = long_rate + this + compute_deprec
@@ -950,6 +970,7 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
     let mut last_capex = p.ai_capex_2026 * 0.8;
     let mut last_desired = p.ai_capex_2026;
     let mut prev_disp = 0.0_f64;
+    let mut disp_realized = 0.0_f64;
     let mut prev_disp_macro = 0.0_f64;
     let mut prev_adopt = 0.08_f64;
 
@@ -1167,6 +1188,16 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
             .min(prev_disp + p.max_displacement_rate / friction);
         disp = disp.max(prev_disp);
         prev_disp = disp;
+        let disp = if p.tau_reorg > 0.0 {
+            if year == p.start_year {
+                disp_realized = disp;
+            } else {
+                disp_realized += (disp - disp_realized) * (1.0 - (-1.0 / p.tau_reorg).exp());
+            }
+            disp_realized
+        } else {
+            disp
+        };
         human_cog_m = p.cognitive_workers_m * (1.0 - disp);
 
         // ---- R4: physical acceleration factor (0 pre-singularity,
@@ -1364,7 +1395,15 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         // no longer inflated by unrealistic fab growth.
         let fab_ceiling_mult =
             (1.0 + asi * p.asi_ceiling_boost * 0.5) * (1.0 + robot_infra_boost * 0.5);
-        let mut chip_growth = (p.chip_base_growth
+        let fd = p.fab_discipline.clamp(0.0, 1.0);
+        let base_growth = if fd > 0.0 {
+            let u_prev = out.last().map_or(1.0, |s| s.chip_utilization);
+            let util_factor = (u_prev / p.target_utilization).clamp(0.0, 1.0);
+            p.chip_base_growth * ((1.0 - fd) + fd * util_factor)
+        } else {
+            p.chip_base_growth
+        };
+        let mut chip_growth = (base_growth
             + l.b1_supply_response * p.chip_supply_gain * excess_margin
                 * onshoring_boost)
             .min(p.chip_growth_ceiling * fab_ceiling_mult);
@@ -1377,6 +1416,9 @@ pub fn simulate(p: &Params) -> Vec<YearState> {
         }
         let chip_delivery = chip_pipe.step_accel(chip_capacity * chip_growth, speedup);
         chip_capacity += chip_delivery;
+        if fd > 0.0 && year > p.start_year {
+            chip_capacity *= 1.0 - fd * p.fab_obsolescence;
+        }
         // The IP toll's pace is strategic: a monopolist expands only under
         // excess demand and never into slack (defending price is what market
         // power means). ASI acceleration does not apply to it either.

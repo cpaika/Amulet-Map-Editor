@@ -412,9 +412,12 @@ fn v2_silicon_verdict_switches_regime_on_growth_seed() {
             .unwrap()
             .expected_upside
     };
+    // Wave 4: fab discipline removed the phantom-glut bust (legacy -88%), so the bust
+    // regime is milder; the lock is the regime GAP, not a bust level.
     let (bust, boom) = (nvda_at(0.8), nvda_at(1.5));
-    assert!(bust < -0.3, "low-seed v2 NVDA {bust} should be the bust regime");
-    assert!(boom > 0.0, "high-seed v2 NVDA {boom} should be the boom regime");
+    assert!(bust < 0.0, "low-seed v2 NVDA {bust} should be the bust regime");
+    assert!(boom > 0.5, "high-seed v2 NVDA {boom} should be the boom regime");
+    assert!(boom - bust > 1.0, "regime gap {} too small", boom - bust);
 }
 
 // F1 lock (Sep-26 re-analysis, Wave 2): the first-principles valuation conventions

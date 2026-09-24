@@ -108,6 +108,9 @@ pub fn enhanced_realism(mut p: Params) -> Params {
     p.wage_compression_cog_gain = 0.4;
     p.wage_compression_phys_gain = 0.4;
     p.society.jg_share = 0.3;
+    // Organizational lag between technical and realized displacement (F6); tau 4
+    // matches the observed 2026 run-rate (~0.2-0.4%/yr -> 0.4% in 2027).
+    p.tau_reorg = 4.0;
     p
 }
 
@@ -146,6 +149,7 @@ pub fn first_principles_v2(p: Params) -> Params {
     p.q_mult_cap = 1.25;             // optimism accelerates investment only modestly
     p.smooth_rents = 1.0;            // saturating rents, no hard ceiling kinks (F2)
     p.vintage_power_draw = 1.0;      // racked GPUs keep their build-year draw (F7a)
+    p.fab_discipline = 1.0;          // no fab building into a glut; leading edge ages out
     p
 }
 
@@ -170,6 +174,7 @@ pub fn lens_blend(p: Params, lambda: f64) -> Params {
     q.wage_compression_cog_gain = lerp(q.wage_compression_cog_gain, v2.wage_compression_cog_gain);
     q.wage_compression_phys_gain = lerp(q.wage_compression_phys_gain, v2.wage_compression_phys_gain);
     q.society.jg_share = lerp(q.society.jg_share, v2.society.jg_share);
+    q.tau_reorg = lerp(q.tau_reorg, v2.tau_reorg);
     q.wright_gain = lerp(q.wright_gain, v2.wright_gain);
     q.q_governor_gain = lerp(q.q_governor_gain, v2.q_governor_gain);
     q.power_glut_price_gain = lerp(q.power_glut_price_gain, v2.power_glut_price_gain);
@@ -177,6 +182,7 @@ pub fn lens_blend(p: Params, lambda: f64) -> Params {
     q.dgb_decay_rate = lerp(q.dgb_decay_rate, v2.dgb_decay_rate);
     q.smooth_rents = lerp(q.smooth_rents, v2.smooth_rents);
     q.vintage_power_draw = lerp(q.vintage_power_draw, v2.vintage_power_draw);
+    q.fab_discipline = lerp(q.fab_discipline, v2.fab_discipline);
     // Form choices, not intensities: inert while q_governor_gain is 0 (lambda = 0).
     q.q_forward = v2.q_forward;
     q.q_mult_cap = v2.q_mult_cap;
