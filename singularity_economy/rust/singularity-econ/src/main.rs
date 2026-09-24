@@ -328,9 +328,19 @@ fn book_mc(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, vp: &
     let mut lambdas: Vec<f64> = Vec::with_capacity(n);
     let (mut n_fizzle, mut n_taiwan) = (0usize, 0usize);
     let mut rej = Rejections::default();
+    let (mut pw_start, mut pw_end, mut pw_count) = (Vec::new(), Vec::new(), Vec::new());
     for _ in 0..n {
         let (d, states) = conditioned_draw(&mut draws, &mut rej, n);
         let ctx = PathContext::from_params(&d.params);
+        let power_years: Vec<i32> = states.iter()
+            .filter(|s| s.binding == singularity_econ::Binding::Power)
+            .map(|s| s.year)
+            .collect();
+        pw_count.push(power_years.len() as f64);
+        if let (Some(a), Some(b)) = (power_years.first(), power_years.last()) {
+            pw_start.push(*a as f64);
+            pw_end.push(*b as f64);
+        }
         n_fizzle += ctx.fizzle as usize;
         n_taiwan += ctx.taiwan_start.is_some() as usize;
         lambdas.push(d.lambda);
@@ -381,6 +391,16 @@ fn book_mc(n: usize, seed: u64, lens: Lens, financials_path: Option<&str>, vp: &
              if *vp == ValuationParams::default() { "legacy" } else { "first-principles" },
              100.0 * n_fizzle as f64 / n as f64, 100.0 * n_taiwan as f64 / n as f64);
     println!("{}", rej.summary(n));
+    // The "power binds" headline as a distribution (Wave 2), not a point claim.
+    for v in [&mut pw_start, &mut pw_end, &mut pw_count] {
+        v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    }
+    let q3 = |v: &[f64]| if v.is_empty() { "n/a".to_string() } else {
+        format!("{:.0}/{:.0}/{:.0}", pct(v, 0.10), pct(v, 0.50), pct(v, 0.90))
+    };
+    println!("power-bound window (p10/p50/p90): first year {}  last year {}  years bound {}  never binds {:.0}%",
+             q3(&pw_start), q3(&pw_end), q3(&pw_count),
+             100.0 * (n - pw_start.len()) as f64 / n as f64);
     println!("{:<10} {:<6} {:>8} {:>8} {:>8} {:>8} {:>6} {:>7} {:>8} {:>8} {:>6} {:>6}",
              "ticker", "side", "E[up]", "p10", "p50", "p90", "P(loss)", "E[log]",
              "named", "gap", "term%", "rho_l");
