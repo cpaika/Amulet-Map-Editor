@@ -137,19 +137,20 @@ fn book(financials_path: Option<&str>, mode: &str) {
     };
     let dr_beta = singularity_econ::macrofin::MacroParams::default().dr_beta;
     let rows = evaluate_all(&comps, &states, dr_beta);
-    println!("{:<10} {:<6} {:>12} {:>8} {:>8} {:>8}",
-             "ticker", "side", "impliedCAGR", "E[up]", "worst", "best");
+    println!("{:<10} {:<6} {:>12} {:>8} {:>8} {:>8} {:>6}",
+             "ticker", "side", "impliedCAGR", "E[up]", "worst", "best", "term%");
     for r in &rows {
         let side = match r.stance {
             Stance::Long => "long",
             Stance::Short => "short",
             Stance::Watch => "watch",
         };
-        println!("{:<10} {:<6} {:>11.1}% {:>7.1}% {:>7.1}% {:>7.1}%",
+        println!("{:<10} {:<6} {:>11.1}% {:>7.1}% {:>7.1}% {:>7.1}% {:>5.0}%",
                  r.ticker, side, r.implied_cagr * 100.0,
                  r.expected_upside * 100.0,
                  r.worst_scenario_upside * 100.0,
-                 r.best_scenario_upside * 100.0);
+                 r.best_scenario_upside * 100.0,
+                 r.terminal_share * 100.0);
     }
 }
 

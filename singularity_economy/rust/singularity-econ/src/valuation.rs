@@ -238,6 +238,8 @@ pub struct ScenarioValue {
     pub scenario: &'static str,
     pub fair_value_b: f64,
     pub upside: f64,
+    /// Share of this scenario's fair value that is the year-10 terminal slice.
+    pub terminal_share: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -249,6 +251,10 @@ pub struct Evaluation {
     pub expected_upside: f64,
     pub worst_scenario_upside: f64,
     pub best_scenario_upside: f64,
+    /// Probability-weighted share of fair value coming from the terminal slice.
+    /// Above ~0.8 the name is priced almost entirely on 2036 earnings — read its
+    /// upside as a bet on the terminal-year pool, not on the 2026-35 path.
+    pub terminal_share: f64,
     pub per_scenario: Vec<ScenarioValue>,
 }
 
@@ -327,17 +333,20 @@ pub fn evaluate(
         // decaying rent above the self-consistent maximum). Terminal discounted at the
         // TERMINAL-year rate (re-audit #28) so the B11 coupling reaches the slice that
         // dominates PV. A name with no capture keeps the plain tm perpetuity.
+        let mut terminal_pv = 0.0;
         if let (Some(&last), Some(&last_rent)) = (path.last(), rent.last()) {
             let dr_t = terminal_discount(states, dr_beta);
             let base_last = (last - last_rent).max(0.0);
             let rent_mult = (tm * dr_t / (dr_t + CAPTURE_DECAY)).min(1.0 / (dr_t + CAPTURE_DECAY));
             let terminal = (base_last * tm + last_rent.max(0.0) * rent_mult) * taiwan_factor;
-            fair += terminal / (1.0 + dr_t).powi(path.len() as i32);
+            terminal_pv = terminal / (1.0 + dr_t).powi(path.len() as i32);
+            fair += terminal_pv;
         }
         per.push(ScenarioValue {
             scenario: name,
             fair_value_b: fair,
             upside: fair / c.mcap_b - 1.0,
+            terminal_share: if fair.abs() > 1e-12 { terminal_pv / fair } else { 0.0 },
         });
     }
     assert!(!per.is_empty(), "evaluate() needs at least one scenario");
@@ -347,6 +356,9 @@ pub fn evaluate(
             .unwrap_or_else(|| panic!("scenario {n} missing from states"))
             .upside * p
     }).sum();
+    let prob = |n: &str| SCENARIO_PROBS.iter().find(|(k, _)| *k == n).map_or(0.0, |(_, p)| *p);
+    let terminal_share = per.iter().map(|v| v.terminal_share * prob(v.scenario)).sum::<f64>()
+        / per.iter().map(|v| prob(v.scenario)).sum::<f64>().max(1e-12);
     let worst = per.iter().map(|v| v.upside).fold(f64::MAX, f64::min);
     let best = per.iter().map(|v| v.upside).fold(f64::MIN, f64::max);
     Evaluation {
@@ -357,6 +369,7 @@ pub fn evaluate(
         expected_upside: expected,
         worst_scenario_upside: worst,
         best_scenario_upside: best,
+        terminal_share,
         per_scenario: per,
     }
 }
